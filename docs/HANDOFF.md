@@ -4,9 +4,11 @@
 
 ## 当前工作与下一动作
 
-已用 X01–X18 原地替换旧路线，目标是已存在的公开仓库 [xinchen6666/xinapi](https://github.com/xinchen6666/xinapi)。X01 文档与 Git 基线正在收尾，远端结果以[执行日志](worklog/X01.md)为准；不能把本地初始化当成已推送。本次没有启动应用、数据库或 Mihomo，也没有导入克隆下来的上游代码到产品目录。
+已用 X01–X18 原地替换旧路线。公开文档基线已在本地提交为 `5b310228174ada93e1006c7f97c05e1f575295db`；此后另有记录推送结果的文档提交，用 `git rev-parse main` 取得最新 SHA。对 [xinchen6666/xinapi](https://github.com/xinchen6666/xinapi) 的 HTTPS 推送因本机未提供 GitHub 登录凭据而失败；只读复查 `refs/heads/main` 不存在。准确记录见[执行日志](worklog/X01.md)。没有启动业务服务或导入真实上游账号。
 
-当前恢复动作：核对 X01 的公开文件检查与远端回执。成功后，下一开发任务是 [X02 固定源码与许可](PLAN.md#x02)，其验收是一个干净克隆能找到两套完整受控源码、锁文件、归属和制品版本。X03 才开始基线构建，X06 才是能在管理员界面看到节点的可演示交付。真实账号与服务器不是 X01 的输入。
+**下一动作是同步已有提交，不是重新初始化、重新建仓或重新生成计划。**所有者先在本机通过受信的 HTTPS 凭据管理器（或已验证主机密钥的 SSH 配置）完成 GitHub 授权，授予该仓库写权限。不要在聊天、Git URL 或文档里传令牌。检查 `git remote get-url origin` 及 `git ls-remote --heads origin`：仍为空或兼容快进时执行 `git push -u origin main`；若远端已进新历史，先 fetch、检查并保留用户提交，不强推。比较 `git rev-parse main` 与 `git ls-remote origin refs/heads/main` 的完整 SHA，记录回执后再关闭 X01。
+
+之后是 [X02 固定源码与许可](PLAN.md#x02)，不是直接部署。X03 才开始基线构建，X06 才是能在管理界面看到测试节点的演示。当前无在途部署任务、服务或真实账号测试。
 
 ## 不要误判
 
