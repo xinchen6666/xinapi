@@ -29,6 +29,14 @@ python3 -B tools/verify_upstream.py --index
 python3 -B -m unittest discover -s tests -p test_verify_upstream.py -v
 ```
 
-第一条核对当前文件的内容/模式/路径集合、Git blob、SHA256和完整上游 tree；第二条核对实际将提交的 index。后续开始修改产品源码后，基线清单保持不可变；使用 `--git-ref <X02的原始导入提交>` 复核原始引入，而不是把修改后的哈希写成原上游。后续发行版本的新增/改动需单独记录。
+第一条核对当前文件的内容/模式/路径集合、Git blob、SHA256和完整上游 tree；第二条只核对实际将提交的 index，`--git-ref`只核对指定历史对象，两者不以工作树文件替代Git对象。工作树模式拒绝 `services`、组件根以及 provenance 所在目录的符号链接；provenance 必须是普通、不可执行的 JSON 文件，Git 模式为 `100644`。
+
+后续修改产品源码后，基线清单保持不可变。使用**包含当前 provenance schema 的已验证 X02 提交**复核原始引入，例如：
+
+```bash
+python3 -B tools/verify_upstream.py --git-ref dc5263120fd97ee92ddc39e947b55b4ee3bc9a82
+```
+
+最早的源码导入提交 `5b93f04…` 缺少后来增加的 `import_tree_sha` 字段，不适用于上述 schema；不能把它当作同一验证样例。后续发行版本的新增/改动单独记录，不把修改后的哈希写成原上游。
 
 清单不是秘密清理器。X02 扫描上游测试、示例和配置样本中的凭据形状，检查本项目新增资料无真实秘密；公开上游样例不能直接用于部署。不可在清单更新中偷偷纳入用户 `.env`、账号文件、私钥、原始订阅或数据库。

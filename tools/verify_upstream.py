@@ -128,6 +128,34 @@ class GitFiles:
         require(self.batch.wait() == 0, "git cat-file failed")
 
 
+def require_real_directories(root, relative):
+    """A working source tree must not depend on a linked external checkout."""
+    directory = root
+    for part in PurePosixPath(relative).parts:
+        directory = directory / part
+        require(not directory.is_symlink() and directory.is_dir(),
+                f"source directory must be a real directory: {directory.relative_to(root)}")
+    return directory
+
+
+def read_manifest(root, relative, git=None):
+    """Read provenance only from a regular, non-executable JSON file."""
+    if git is not None:
+        mode, raw = git.read(relative)
+        require(mode == "100644", f"provenance must be a regular 100644 file: {relative}")
+    else:
+        parent = require_real_directories(root, PurePosixPath(relative).parent)
+        path = parent / PurePosixPath(relative).name
+        require(not path.is_symlink() and path.is_file(),
+                f"provenance must be a regular file: {relative}")
+        require(not path.stat().st_mode & 0o100,
+                f"provenance must be a regular 100644 file: {relative}")
+        raw = path.read_bytes()
+    manifest = json.loads(raw)
+    require(isinstance(manifest, dict), f"provenance must contain a JSON object: {relative}")
+    return manifest
+
+
 def verify_component(root, manifest, pin, git=None):
     require(manifest.get("schema_version") == 1, "unsupported provenance schema")
     source = manifest.get("source", manifest)
@@ -144,7 +172,7 @@ def verify_component(root, manifest, pin, git=None):
             and {item["path"]: item["commit"] for item in links} == pin["gitlinks"],
             "optional gitlinks differ from reviewed pins")
     prefix = pin["destination"]
-    base = root / prefix
+    base = require_real_directories(root, prefix) if git is None else root / prefix
     files = manifest["files"]
     require(len(files) == manifest["file_count"], f"manifest file count: {prefix}")
     expected = {item["path"] for item in files}
@@ -211,8 +239,8 @@ def main():
     try:
         for name in ("new-api", "codex-proxy-rs"):
             path = f"third_party/{name}.provenance.json"
-            raw = git.read(path)[1] if git else (root / path).read_bytes()
-            result = verify_component(root, json.loads(raw), PINS[name], git)
+            manifest = read_manifest(root, path, git)
+            result = verify_component(root, manifest, PINS[name], git)
             print(json.dumps(result, ensure_ascii=False, sort_keys=True))
     finally:
         if git:

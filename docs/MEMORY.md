@@ -21,8 +21,7 @@
 | MEM-15 | 部署只面向单机 Docker Compose：New API、单副本 CPR 和其 Mihomo 子进程、PG18 分库分用户、两套 Redis。无 Kubernetes/Helm 交付 | 用户选型及[部署设计](DEPLOYMENT.md) | 用户改变部署范围或组件兼容条件变化 |
 | MEM-16 | 代码唯一交付远端是 [xinchen6666/xinapi](https://github.com/xinchen6666/xinapi)，两套实际产品源码将进入同一仓库，不用未发布的个人 fork 或 gitlink 代替源码 | 用户指定仓库；[开发计划](PLAN.md#x02) | 用户明确更改远端，或许可审查要求调整交付边界 |
 | MEM-17 | 每个 X 步骤都需工作日志、验证结果、状态与交接、独立 Git 提交和远端 SHA 核对；本地 commit、远端分支、合入 main 和部署是四种不同事实 | 用户要求和[日志模板](worklog/TEMPLATE.md) | 交付方式或验收流程改变 |
-
-| MEM-18 | X02原样导入上游源码，两个来源tree可以离线重构；后续修改后复核基线用 `--git-ref <X02提交>`，不可把改变过的内容当原上游更新清单 | [第三方索引](../third_party/README.md)、[X02日志](worklog/X02.md) | 上游升级、源码导入方式或清单schema改变 |
+| MEM-18 | X02原样导入上游源码，两个来源tree可以离线重构；后续修改后复核基线用 `--git-ref dc5263120fd97ee92ddc39e947b55b4ee3bc9a82` 等包含当前schema的已验证提交；最早5b93f04缺import_tree字段，不能混用 | [第三方索引](../third_party/README.md)、[X02日志](worklog/X02.md) | 上游升级、源码导入方式或清单schema改变 |
 | MEM-19 | CPR两个gitlink只供UI/插件源码联调，正式构建不用初始化；默认UI依赖仍由pnpm锁定到公开提交并需要prepack，不是离线包 | [构建依赖锁](../third_party/cpr-build-dependencies.lock.json)及原开发指南 | 正式构建流程或依赖版本改变 |
 | MEM-20 | Cockpit业务代码在X02尚未复制；Mihomo `.gz` 资产hash来自官方release元数据，不能冒充本地下载/解压/执行验证 | [抽离清单](../third_party/cockpit-adoption.md)、[Mihomo锁](../third_party/mihomo.lock.json) | X06/X08实际采用和制品下载时 |
 

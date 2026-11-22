@@ -2,12 +2,13 @@
 
 import copy
 import hashlib
+import json
 from pathlib import Path
 import tempfile
 import subprocess
 import unittest
 
-from tools.verify_upstream import GitFiles, VerificationError, object_hash, tree_hash, verify_component
+from tools.verify_upstream import GitFiles, VerificationError, object_hash, read_manifest, tree_hash, verify_component
 
 
 class SourceVerificationTests(unittest.TestCase):
@@ -126,6 +127,111 @@ class SourceVerificationTests(unittest.TestCase):
         manifest["files"][0]["mode"] = "100755"
         with self.assertRaisesRegex(VerificationError, "mode differs"):
             verify_component(self.root, manifest, self.pin)
+
+    def test_source_directory_links_are_rejected(self):
+        for linked_path in ("services/new-api", "services"):
+            with self.subTest(linked_path=linked_path), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory) / "project"
+                external = Path(directory) / "external"
+                if linked_path == "services/new-api":
+                    (root / "services").mkdir(parents=True)
+                    external.mkdir()
+                    source = external
+                else:
+                    root.mkdir()
+                    (external / "new-api").mkdir(parents=True)
+                    source = external / "new-api"
+                (source / "input.txt").write_bytes(b"unchanged upstream\n")
+                (source / "input.txt").chmod(0o644)
+                (root / linked_path).symlink_to(external, target_is_directory=True)
+                with self.assertRaises(VerificationError):
+                    verify_component(root, self.manifest, self.pin)
+
+    def test_manifest_worktree_file_and_parent_links_are_rejected(self):
+        for link_kind in ("manifest", "directory"):
+            with self.subTest(link_kind=link_kind), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory) / "project"
+                root.mkdir()
+                external = Path(directory) / "external"
+                external.mkdir()
+                target = external / "manifest.json"
+                target.write_text(json.dumps(self.manifest))
+                if link_kind == "manifest":
+                    (root / "third_party").mkdir()
+                    (root / "third_party/manifest.json").symlink_to(target)
+                else:
+                    (root / "third_party").symlink_to(external, target_is_directory=True)
+                with self.assertRaises(VerificationError):
+                    read_manifest(root, "third_party/manifest.json")
+
+    def test_manifest_worktree_requires_a_regular_json_object(self):
+        directory = self.root / "third_party"
+        directory.mkdir()
+        path = directory / "manifest.json"
+        path.write_text(json.dumps(self.manifest))
+        path.chmod(0o644)
+        self.assertEqual(read_manifest(self.root, "third_party/manifest.json"), self.manifest)
+        path.chmod(0o755)
+        with self.assertRaises(VerificationError):
+            read_manifest(self.root, "third_party/manifest.json")
+        path.chmod(0o644)
+        path.write_text("[]")
+        with self.assertRaises(VerificationError):
+            read_manifest(self.root, "third_party/manifest.json")
+
+    def test_manifest_git_modes_are_checked_in_index_and_history(self):
+        subprocess.run(["git", "init", "-q"], cwd=self.root, check=True)
+        relative = "third_party/manifest.json"
+        oid = subprocess.check_output(["git", "hash-object", "-w", "--stdin"], cwd=self.root,
+                                      input=json.dumps(self.manifest).encode()).decode().strip()
+        for mode in ("100644", "120000", "100755"):
+            subprocess.run(["git", "update-index", "--add", "--cacheinfo", mode, oid, relative],
+                           cwd=self.root, check=True)
+            tree = subprocess.check_output(["git", "write-tree"], cwd=self.root, text=True).strip()
+            for revision in (None, tree):
+                with self.subTest(mode=mode, historical=revision is not None):
+                    reader = GitFiles(self.root, revision)
+                    try:
+                        if mode == "100644":
+                            self.assertEqual(read_manifest(self.root, relative, reader), self.manifest)
+                        else:
+                            with self.assertRaises(VerificationError):
+                                read_manifest(self.root, relative, reader)
+                    finally:
+                        reader.close()
+
+    def test_index_and_history_do_not_read_changed_worktree_files(self):
+        subprocess.run(["git", "init", "-q"], cwd=self.root, check=True)
+        directory = self.root / "third_party"
+        directory.mkdir()
+        relative = "third_party/manifest.json"
+        path = self.root / relative
+        path.write_text(json.dumps(self.manifest))
+        path.chmod(0o644)
+        subprocess.run(["git", "add", "services", "third_party"], cwd=self.root, check=True)
+        tree = subprocess.check_output(["git", "write-tree"], cwd=self.root, text=True).strip()
+        path.write_text("invalid worktree JSON")
+        (self.base / "input.txt").write_bytes(b"modified but not staged")
+        for revision in (None, tree):
+            reader = GitFiles(self.root, revision)
+            try:
+                manifest = read_manifest(self.root, relative, reader)
+                self.assertEqual(verify_component(self.root, manifest, self.pin, reader)["files"], 1)
+            finally:
+                reader.close()
+        subprocess.run(["git", "add", "services/new-api/input.txt"], cwd=self.root, check=True)
+        reader = GitFiles(self.root)
+        try:
+            with self.assertRaises(VerificationError):
+                verify_component(self.root, read_manifest(self.root, relative, reader), self.pin, reader)
+        finally:
+            reader.close()
+        reader = GitFiles(self.root, tree)
+        try:
+            self.assertEqual(verify_component(self.root, read_manifest(self.root, relative, reader),
+                                             self.pin, reader)["files"], 1)
+        finally:
+            reader.close()
 
     def test_symlink_outside_source_is_rejected(self):
         outside = self.root / 'outside.txt'
