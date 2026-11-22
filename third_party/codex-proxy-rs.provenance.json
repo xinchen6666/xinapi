@@ -4,8 +4,9 @@
   "repository": "https://github.com/zyycn/codex-proxy-rs",
   "commit": "58cbb607505dda4a1cee6e01b9f76e267ad3c261",
   "git_tree_sha": "d606f1081ffdeb53dbbd9efd89c6edef9427887e",
+  "import_tree_sha": "3edc9042af879db4d0d8c5a09c39d2b142f5994c",
   "destination": "services/codex-proxy-rs",
-  "method": "Reconstructed full Git tree from cached files and upstream gitlinks; matched fixed GitHub commit tree before copying",
+  "method": "Reconstructed the complete upstream root tree, explicitly recorded omitted optional development gitlinks, and independently verified the imported source-only tree against the fixed release commit.",
   "upstream_source_modified": false,
   "file_count": 2074,
   "files": [

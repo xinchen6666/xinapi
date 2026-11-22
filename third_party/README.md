@@ -5,7 +5,7 @@ X02 原样引入 New API 和 CPR 的固定源码，不更改其业务逻辑、�
 | 组件 | 仓库内内容与许可 | 固定依据 |
 | --- | --- | --- |
 | New API | [完整源码](../services/new-api/README.md)、[AGPLv3](../services/new-api/LICENSE)、[NOTICE](../services/new-api/NOTICE) | [逐文件清单](new-api.provenance.json)，2,840 文件，根 tree `11dbbb8a51210a38b84d9f9358c56c9d0415f5e8` |
-| codex-proxy-rs | [正式宿主源码](../services/codex-proxy-rs/README.md)、[Apache-2.0](../services/codex-proxy-rs/LICENSE) | [逐文件清单](codex-proxy-rs.provenance.json)，2,074文件；加回记录中的两个可选 gitlink 后根 tree `d606f1081ffdeb53dbbd9efd89c6edef9427887e` |
+| codex-proxy-rs | [正式宿主源码](../services/codex-proxy-rs/README.md)、[Apache-2.0](../services/codex-proxy-rs/LICENSE) | [逐文件清单](codex-proxy-rs.provenance.json)，2,074文件；发布 tree `d606f1081ffdeb53dbbd9efd89c6edef9427887e` 含两个可选 gitlink。本项目的导入 tree `3edc9042af879db4d0d8c5a09c39d2b142f5994c` 仅含这2,074个普通文件 |
 | Cockpit | 本步只提供[抽离采用清单](cockpit-adoption.md)和[原许可声明](LICENSES/cockpit-license-notice.zh.md)，未复制 Rust/Tauri 代码进产品 | 固定提交与具体文件在清单中；CC BY-NC-SA 条件不能因非商业自用就自动视为与 Apache/AGPL 混合兼容 |
 | Mihomo | [固定 release 制品资料](mihomo.lock.json)及[GPLv3 文本](LICENSES/mihomo-GPL-3.0.txt)，未纳入压缩包或运行二进制 | SHA256 对应官方 release 的 `.gz` 资产字节，不代表已验证解压后的程序；下载与执行留给构建/引擎任务 |
 

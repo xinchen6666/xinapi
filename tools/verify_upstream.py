@@ -20,13 +20,15 @@ PINS = {
         "component": "new-api", "destination": "services/new-api",
         "repository": "https://github.com/QuantumNous/new-api",
         "commit": "8542c9d6490b4330fe18160930f81ae7428bc777",
-        "tree": "11dbbb8a51210a38b84d9f9358c56c9d0415f5e8", "gitlinks": {},
+        "tree": "11dbbb8a51210a38b84d9f9358c56c9d0415f5e8",
+        "import_tree": "11dbbb8a51210a38b84d9f9358c56c9d0415f5e8", "gitlinks": {},
     },
     "codex-proxy-rs": {
         "component": "codex-proxy-rs", "destination": "services/codex-proxy-rs",
         "repository": "https://github.com/zyycn/codex-proxy-rs",
         "commit": "58cbb607505dda4a1cee6e01b9f76e267ad3c261",
         "tree": "d606f1081ffdeb53dbbd9efd89c6edef9427887e",
+        "import_tree": "3edc9042af879db4d0d8c5a09c39d2b142f5994c",
         "gitlinks": {"modules/ui": "501495d5b1e9d65840d4cdee5e0e228f361613ee",
                      "modules/plugins": "b02d267a19fd39bd004f408a685c4db51b555c99"},
     },
@@ -134,7 +136,9 @@ def verify_component(root, manifest, pin, git=None):
     require(manifest.get("destination") == pin["destination"], "unexpected source destination")
     require(source.get("repository") == pin["repository"] and source.get("commit") == pin["commit"],
             "source repository/commit differs from reviewed pin")
-    require(declared_tree == pin["tree"], "declared source tree differs from reviewed pin")
+    require(declared_tree == pin["tree"], "declared upstream source tree differs from reviewed pin")
+    require(manifest.get("import_tree_sha") == pin["import_tree"],
+            "declared imported file tree differs from reviewed pin")
     links = manifest.get("gitlinks", [])
     require(len(links) == len(pin["gitlinks"])
             and {item["path"]: item["commit"] for item in links} == pin["gitlinks"],
@@ -183,16 +187,17 @@ def verify_component(root, manifest, pin, git=None):
     else:
         actual = {name[len(prefix) + 1:] for name in git.files if name.startswith(prefix + "/")}
     require(actual == expected, f"source inventory differs: {prefix}; missing {len(expected - actual)}, extra {len(actual - expected)}")
+    require(tree_hash(entries) == pin["import_tree"], f"imported file tree differs: {prefix}")
     for link in links:
         require(link.get("disposition") == "omitted_optional_source_development_gitlink",
                 f"unreviewed gitlink: {link['path']}")
         entries.append((link["path"], "160000", link["commit"]))
-    expected_tree = pin["tree"]
-    require(tree_hash(entries) == expected_tree, f"source tree differs: {prefix}")
+    require(tree_hash(entries) == pin["tree"], f"upstream root tree differs: {prefix}")
     for required in manifest.get("required_inputs", []):
         require(required in expected, f"required input not present: {required}")
     return {"component": manifest["component"], "files": len(files), "bytes": total,
-            "tree": expected_tree, "optional_gitlinks_omitted": len(manifest.get("gitlinks", []))}
+            "import_tree": pin["import_tree"], "tree": pin["tree"],
+            "optional_gitlinks_omitted": len(links)}
 
 
 def main():

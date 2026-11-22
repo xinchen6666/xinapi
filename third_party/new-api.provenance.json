@@ -5,9 +5,11 @@
     "repository": "https://github.com/QuantumNous/new-api",
     "commit": "8542c9d6490b4330fe18160930f81ae7428bc777",
     "git_tree": "11dbbb8a51210a38b84d9f9358c56c9d0415f5e8",
+    "import_tree": "11dbbb8a51210a38b84d9f9358c56c9d0415f5e8",
     "git_object_format": "sha1"
   },
   "destination": "services/new-api",
+  "import_tree_sha": "11dbbb8a51210a38b84d9f9358c56c9d0415f5e8",
   "file_count": 2840,
   "total_bytes": 30947009,
   "mode_counts": {

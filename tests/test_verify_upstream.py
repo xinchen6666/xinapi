@@ -24,9 +24,11 @@ class SourceVerificationTests(unittest.TestCase):
                  "sha256": hashlib.sha256(data).hexdigest(), "git_blob_sha": object_hash("blob", data)}
         self.pin = {"component": "new-api", "destination": "services/new-api",
                     "repository": "https://example.invalid/upstream", "commit": "b" * 40,
-                    "tree": tree_hash([("input.txt", "100644", entry["git_blob_sha"])]), "gitlinks": {}}
+                    "tree": tree_hash([("input.txt", "100644", entry["git_blob_sha"])]),
+                    "import_tree": tree_hash([("input.txt", "100644", entry["git_blob_sha"])]),
+                    "gitlinks": {}}
         self.manifest = {"schema_version": 1, "component": "new-api", "destination": "services/new-api",
-                         "file_count": 1, "files": [entry], "required_inputs": ["input.txt"],
+                         "import_tree_sha": self.pin["import_tree"], "file_count": 1, "files": [entry], "required_inputs": ["input.txt"],
                          "source": {"repository": self.pin["repository"], "commit": self.pin["commit"], "git_tree": self.pin["tree"]},
                          "gitlinks": []}
 
