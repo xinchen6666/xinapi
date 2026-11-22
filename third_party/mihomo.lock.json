@@ -1,0 +1,74 @@
+{
+  "schema_version": 1,
+  "repository": "https://github.com/MetaCubeX/mihomo",
+  "tag": "v1.19.33",
+  "commit": "3f27ef39f8c96bbfbc8b0b9bb10f5c9ef60149d8",
+  "tag_ref_api_url": "https://api.github.com/repos/MetaCubeX/mihomo/git/ref/tags/v1.19.33",
+  "tag_object_type": "commit",
+  "release": {
+    "id": 419818179,
+    "api_url": "https://api.github.com/repos/MetaCubeX/mihomo/releases/tags/v1.19.33",
+    "html_url": "https://github.com/MetaCubeX/mihomo/releases/tag/v1.19.33",
+    "published_at": "2026-10-21T16:56:13Z",
+    "immutable": false,
+    "prerelease": false
+  },
+  "source_url": "https://github.com/MetaCubeX/mihomo/tree/3f27ef39f8c96bbfbc8b0b9bb10f5c9ef60149d8",
+  "corresponding_source_url": "https://github.com/MetaCubeX/mihomo/archive/3f27ef39f8c96bbfbc8b0b9bb10f5c9ef60149d8.tar.gz",
+  "license": {
+    "declared": "GNU General Public License version 3",
+    "upstream_url": "https://github.com/MetaCubeX/mihomo/blob/3f27ef39f8c96bbfbc8b0b9bb10f5c9ef60149d8/LICENSE",
+    "copy": "LICENSES/mihomo-GPL-3.0.txt",
+    "git_blob_sha1": "f288702d2fa16d3cdf0035b15a9fcbc552cd88e7",
+    "sha256": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986"
+  },
+  "assets": [
+    {
+      "platform": "linux/amd64",
+      "os": "linux",
+      "arch": "amd64",
+      "variant": "compatible",
+      "name": "mihomo-linux-amd64-compatible-v1.19.33.gz",
+      "asset_id": 663189170,
+      "api_url": "https://api.github.com/repos/MetaCubeX/mihomo/releases/assets/663189170",
+      "download_url": "https://github.com/MetaCubeX/mihomo/releases/download/v1.19.33/mihomo-linux-amd64-compatible-v1.19.33.gz",
+      "format": "gzip-compressed executable",
+      "size_bytes": 22893972,
+      "sha256": "386508bfb1c72c43b6a0eda73708ecdce82546581b0ebcb16366c53757c622b6",
+      "upstream_digest": "sha256:386508bfb1c72c43b6a0eda73708ecdce82546581b0ebcb16366c53757c622b6",
+      "digest_source": "GitHub Releases API: assets[].digest",
+      "digest_scope": "compressed .gz asset bytes",
+      "unpacked_sha256": null
+    },
+    {
+      "platform": "linux/arm64",
+      "os": "linux",
+      "arch": "arm64",
+      "variant": "generic",
+      "name": "mihomo-linux-arm64-v1.19.33.gz",
+      "asset_id": 663189164,
+      "api_url": "https://api.github.com/repos/MetaCubeX/mihomo/releases/assets/663189164",
+      "download_url": "https://github.com/MetaCubeX/mihomo/releases/download/v1.19.33/mihomo-linux-arm64-v1.19.33.gz",
+      "format": "gzip-compressed executable",
+      "size_bytes": 20824326,
+      "sha256": "ba408b317080ee265c46cb923a50018c1b82cbd708551cdd46a1e3e307396187",
+      "upstream_digest": "sha256:ba408b317080ee265c46cb923a50018c1b82cbd708551cdd46a1e3e307396187",
+      "digest_source": "GitHub Releases API: assets[].digest",
+      "digest_scope": "compressed .gz asset bytes",
+      "unpacked_sha256": null
+    }
+  ],
+  "verification": {
+    "checked_at_utc": "2026-11-22T09:13:57Z",
+    "method": "matched tag ref + release asset metadata over HTTPS",
+    "binary_not_downloaded": true,
+    "not_executed": true,
+    "build": false,
+    "archive_sha256_recomputed_locally": false,
+    "unpacked_sha256_verified": false,
+    "upstream_binary_signature_verified": false,
+    "source_archive_downloaded": false,
+    "binary_in_repository_or_image": false,
+    "distribution_approved": false
+  }
+}

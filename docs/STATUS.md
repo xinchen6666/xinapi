@@ -5,7 +5,7 @@
 | ID | 状态 | 负责人／工作域 | 最近事实或验收入口 |
 | --- | --- | --- | --- |
 | X01 | done | lead，文档和 Git | [执行日志](worklog/X01.md)：两个原始提交已推至 `main`，Git 与 GitHub API 读回的[基线提交](https://github.com/xinchen6666/xinapi/commit/bcf6eff7632da4ce00ca48492691fae58131bcc1)一致；见 E009 |
-| X02 | pending | 集成、上游许可 | 固定源码与依赖，可从同一仓库获得实际文件 |
+| X02 | in_progress | lead；x02-newapi、x02-licenses 分工 | 固定源码导入、构建输入和来源清单；验证后在工作分支交付，不启动服务 |
 | X03 | pending | 构建与 CI | 两服务基线镜像与检查 |
 | X04 | pending | Compose 与基础设施 | 五服务空环境、保留卷重启和内网隔离 |
 | X05 | pending | New API Go／React | 管理员只读页与后端拒绝 |

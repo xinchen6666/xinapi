@@ -106,6 +106,20 @@ E001–E006 是 X01 之前的历史证据，仅支持当时的工作与版本；
 - 对 [GitHub main ref](https://api.github.com/repos/xinchen6666/xinapi/git/ref/heads/main) 的独立 HTTP 查询和 `git ls-remote --exit-code origin refs/heads/main` 当时都返回 `bcf6eff7632da4ce00ca48492691fae58131bcc1`，与 `git rev-parse main` 相同。X01 发布验收通过，E008 为已解除的历史阻碍。本文的后续回执提交不改变上述基线证据。
 - 范围：文档发布与 Git 历史，不是业务构建、部署或 V01–V20 产品测试；其他任务未开工。
 
+### E010 X02：不可变源码导入与验证工具
+
+- 对象：New API `8542c9d6490b4330fe18160930f81ae7428bc777`、CPR `58cbb607505dda4a1cee6e01b9f76e267ad3c261`。工作分支 `task/X02-source-baseline`，起点 `24edbd5`；2026-11-22 UTC。
+- New API 的GitHub commit、本地Git树及2,840文件重构tree均为 `11dbbb8a51210a38b84d9f9358c56c9d0415f5e8`；CPR的2,074文件加记录中的两个可选gitlink重构tree为 `d606f1081ffdeb53dbbd9efd89c6edef9427887e`，匹配固定上游commit。两个目录是实际文件，无嵌套Git；正式源码内容未改。
+- 已运行 `python3 -B tools/verify_upstream.py` 和 `--index`：共4,914文件、54,206,232字节的路径集合、内容、模式、Git blob及SHA256通过。暂存模式4,910个100644、4个100755，无160000。52个CPR本地Cargo路径及New API的Docker/Go本地模块输入存在；这是静态输入核查，不是构建通过。
+- 已运行 `python3 -B -m unittest discover -s tests -p test_verify_upstream.py -v`：初版7项通过，只读复核发现清单身份、intent-to-add及owner执行位三项误报边界后修正；最终11项通过，包含父提交有非空文件时的意向空文件替换。来源身份采用独立固定pin，index按完整name-status拒绝源目录意向条目，模式按Git owner执行位。两套原始导入未发现受影响内容，工作树与index已重验。
+- 上游公开示例和单测含凭据形状。扫描4,885个UTF-8源文件发现94项形状候选（93个认证URL及1个API-key样例），均在上游示例/测试/CI与前端示例中；没有把候选联网验证，也不代表排除全部秘密类型。正式提交另检查本项目新增文件和暂存清单。
+- 后续干净检出、补充复核和GitHub回执见[X02日志](worklog/X02.md)。产品V01–V20、包安装、应用构建和真实账号测试仍 `not_run`。
+
+### E011 X02：依赖与内核锁定
+
+- CPR UI及三个Git Cargo来源的完整commit可通过官方GitHub API解析，原Cargo/pnpm锁文件不变；没有安装或执行包脚本。Mihomo固定v1.19.33及tag commit，Linux压缩资产的SHA256来自官方release digest；未下载/运行二进制，也未验证签名或解压后hash。
+- [第三方索引](../third_party/README.md)标明两个可选模块省略原因、普通网络依赖边界、许可和Cockpit抽离路线。X02不复制其未确认兼容的业务代码。来源校验不替代X03的包与镜像构建，更不等于已部署出口功能。
+
 ## 未来记录模板
 
 每个run使用唯一证据ID，写：任务ID；checked_at（时区ISO时间）；执行者；证据种类；真实提交/工作区摘要；脱敏环境；实际命令/步骤；预期；实际；`passed/failed/partial/skipped/not_run`；本地持久证据路径；缺口；失效条件。未执行的命令只放计划，不放实际记录。
