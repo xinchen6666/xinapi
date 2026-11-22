@@ -100,6 +100,12 @@ E001–E006 是 X01 之前的历史证据，仅支持当时的工作与版本；
 - 本地基线：`5b310228174ada93e1006c7f97c05e1f575295db`；对象完整性检查成功。
 - 2026-11-22 07:53 UTC：实际 HTTPS 推送因未取得本机 GitHub 凭据失败；只读复查目标 `main` 无 ref。此项 `blocked`，不计作 GitHub 已交付；不影响已完成的文档本地校验。详见[X01 工作日志](worklog/X01.md)。
 
+### E009 X01：远端发布已核实
+
+- 2026-11-22 08:18 UTC：用户授权发布后，GitHub API 显示目标仓库当时没有分支；对 `origin` 执行普通 HTTPS push，返回 `[new branch] main -> main`，没有强推或改写既有提交。
+- 对 [GitHub main ref](https://api.github.com/repos/xinchen6666/xinapi/git/ref/heads/main) 的独立 HTTP 查询和 `git ls-remote --exit-code origin refs/heads/main` 当时都返回 `bcf6eff7632da4ce00ca48492691fae58131bcc1`，与 `git rev-parse main` 相同。X01 发布验收通过，E008 为已解除的历史阻碍。本文的后续回执提交不改变上述基线证据。
+- 范围：文档发布与 Git 历史，不是业务构建、部署或 V01–V20 产品测试；其他任务未开工。
+
 ## 未来记录模板
 
 每个run使用唯一证据ID，写：任务ID；checked_at（时区ISO时间）；执行者；证据种类；真实提交/工作区摘要；脱敏环境；实际命令/步骤；预期；实际；`passed/failed/partial/skipped/not_run`；本地持久证据路径；缺口；失效条件。未执行的命令只放计划，不放实际记录。

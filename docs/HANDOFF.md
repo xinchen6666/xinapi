@@ -4,11 +4,9 @@
 
 ## 当前工作与下一动作
 
-已用 X01–X18 原地替换旧路线。公开文档基线已在本地提交为 `5b310228174ada93e1006c7f97c05e1f575295db`；此后另有记录推送结果的文档提交，用 `git rev-parse main` 取得最新 SHA。对 [xinchen6666/xinapi](https://github.com/xinchen6666/xinapi) 的 HTTPS 推送因本机未提供 GitHub 登录凭据而失败；只读复查 `refs/heads/main` 不存在。准确记录见[执行日志](worklog/X01.md)。没有启动业务服务或导入真实上游账号。
+X01 已完成：本地文档基线 `5b31022` 及后续记录 `bcf6eff` 已原样推送至 [xinchen6666/xinapi 的 main](https://github.com/xinchen6666/xinapi/tree/main)。2026-11-22 08:18 UTC，Git 和 GitHub API 均读回完整基线 SHA `bcf6eff7632da4ce00ca48492691fae58131bcc1`。前次未取得凭据的阻碍已解除，本次没有把凭据保存到 Git 配置。发布证据见[执行日志](worklog/X01.md)。本交接随独立回执提交维护。
 
-**下一动作是同步已有提交，不是重新初始化、重新建仓或重新生成计划。**所有者先在本机通过受信的 HTTPS 凭据管理器（或已验证主机密钥的 SSH 配置）完成 GitHub 授权，授予该仓库写权限。不要在聊天、Git URL 或文档里传令牌。检查 `git remote get-url origin` 及 `git ls-remote --heads origin`：仍为空或兼容快进时执行 `git push -u origin main`；若远端已进新历史，先 fetch、检查并保留用户提交，不强推。比较 `git rev-parse main` 与 `git ls-remote origin refs/heads/main` 的完整 SHA，记录回执后再关闭 X01。
-
-之后是 [X02 固定源码与许可](PLAN.md#x02)，不是直接部署。X03 才开始基线构建，X06 才是能在管理界面看到测试节点的演示。当前无在途部署任务、服务或真实账号测试。
+**下一项是 [X02 固定源码与许可](PLAN.md#x02)。** 开工时先从 `origin/main` 核对分支，再按上游清单准备实际源码树和许可清单。不需要重复建仓、重做计划或重发基线。X03 才开始基线构建，X06 才有可演示的节点预览。本次没有启动业务服务、部署容器、导入真实账号或开始 X02。
 
 ## 不要误判
 
