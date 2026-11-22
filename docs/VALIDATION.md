@@ -121,6 +121,14 @@ E001–E006 是 X01 之前的历史证据，仅支持当时的工作与版本；
 - Mihomo `v1.19.33` 的tag commit固定为`3f27ef39f8c96bbfbc8b0b9bb10f5c9ef60149d8`；记录Linux amd64-compatible、arm64官方压缩资产ID、大小和release SHA-256，许可文件SHA已和Git blob对照。二进制未下载、未解压、未执行、签名未验、压缩外摘要未知；实际采用和分发前需按清单复核GPL对应源码。
 - 以上是X02源和元数据验收，不是产品构建、运行、授权、出口或V01–V20验收。
 
+### E012 X02：GitHub 工作分支与 Draft PR
+
+- GitHub API确认PR head commit `22feb1265e76b2d3c4c9629fae2b55e4d7f2d944`，远端root tree `01129bf09e94ed3e6ca1047b895ed472e5c5a780`；该tree与本地X02目标文件tree完全相同。GitHub MCP创建的commit metadata SHA与本地commit不同，但服务文件SHA/tree一致。
+- GitHub API分别确认PR head `services/new-api` tree=`11dbbb8a51210a38b84d9f9358c56c9d0415f5e8`、`services/codex-proxy-rs` import tree=`3edc9042af879db4d0d8c5a09c39d2b142f5994c`，与两份来源清单一致。CPR上游release root tree `d606f1081ffdeb53dbbd9efd89c6edef9427887e`另含两个可选dev gitlink；本项目未提交gitlink，分别有批准的SHA/省略原因记录。
+- X02源分支的 Draft PR #1 指向 `main`，状态open、draft、未合并；查询时没有status/check-run结果。远端分支正文证据来自GitHub commit/tree API；普通clone超时，未记录为成功。本项目源码构建、服务运行和账号/出口仍未验证。该工作状态为 `in_progress`，待审阅/检查/合并。
+- PR检查查询：Draft、未合并、base main、无status/check-run结果。X02保持 `in_progress`，等待审阅、必要检查与合并；main仍是此前核实的基线。
+- 交付对象只含X02源码/来源说明及校验器，没包含Mihomo二进制；无构建、运行、账号授权或公网出口验收。
+
 ## 未来记录模板
 
 每个run使用唯一证据ID，写：任务ID；checked_at（时区ISO时间）；执行者；证据种类；真实提交/工作区摘要；脱敏环境；实际命令/步骤；预期；实际；`passed/failed/partial/skipped/not_run`；本地持久证据路径；缺口；失效条件。未执行的命令只放计划，不放实际记录。
