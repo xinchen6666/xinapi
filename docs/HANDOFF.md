@@ -1,25 +1,25 @@
 # 当前交接
 
-小团队非商业使用，单机Docker Compose。新会话先核对[状态](STATUS.md)、本页和实际Git分支，再查询PR当前head。只把查询时的状态当事实。
+项目为朋友小团队非商业使用，采用单机Docker Compose。先读[状态](STATUS.md)、本页和[协作入口](../AGENTS.md)，再核对实际分支、GitHub PR和已验证提交。
 
-## X02 当前交付
+## 当前成果
 
-固定 New API、CPR 源码、来源清单、验证器和回归测试已推至工作分支 [`task/X02-source-baseline`](https://github.com/xinchen6666/xinapi/tree/task/X02-source-baseline)，位于 [Draft PR #1](https://github.com/xinchen6666/xinapi/pull/1)，base `main`。
+X02固定源码基线已交付到 [task/X02-source-baseline](https://github.com/xinchen6666/xinapi/tree/task/X02-source-baseline)，审阅入口为 [PR #1](https://github.com/xinchen6666/xinapi/pull/1)。两服务共4,914文件，来源清单、许可、Mihomo制品元数据及离线校验工具齐全。逐文件/模式/tree验证和11项工具测试通过；与远端已验证SHA相同的独立本地克隆也已通过，无研究缓存。记录见[X02日志](worklog/X02.md)和[E010–E012](VALIDATION.md#e010-x02固定源码导入与内容核验)。
 
-最近一次检查的PR head/tree可从[X02日志](worklog/X02.md)读取；远端head可能在日志同步提交后继续变化。开始下一项前需实时查询PR/branch，确认PR仍Draft/open、未合并，并检查实际CI状态。GitHub API曾核对远端X02服务tree与manifest一致；普通clone超时，因此未宣称远端clone通过。
-
-X02没有构建/运行New API、CPR、Mihomo或Compose；没有安装运行时依赖，没有真实账号、OAuth、订阅或公网出口测试。Cockpit业务实现未复制，Mihomo二进制未下载。
+X02完成表示任务验收并交付工作分支；不表示PR已合入main、CI通过或服务已部署。CI建立和应用构建是X03的任务，当前没有GitHub checks/status不能冒称通过，也不应成为X02源码交付反复重跑的理由。
 
 ## 下一步
 
-维护者审阅Draft PR #1、确认许可边界及必要检查。若仅合并交接记录，GitHub会生成新的PR head commit SHA；接手时先读GitHub当前branch/PR，不照抄上述可能过时的SHA。未经用户授权不合并main、不部署。PR合入后复核merge SHA并将X02设为done，之后从合并后的main开启[X03基线构建与CI](PLAN.md#x03)。
+进入[X03 基线构建与CI](PLAN.md#x03)前核对PR #1的审阅、合并状态和远端ref。若PR尚未合并，明确使用X02工作分支作为基线或先依仓库流程合并；不要从缺少源码的旧main启动构建。不得跳过用户授权去部署真实服务器或导入账号。
 
-## 固定来源与误判边界
+标准Git网络传输曾不稳定，X02使用过MCP文本提交。本地原有平行提交保存在 `backup/X02-local-before-sync-27fe3a2a1100`。已按远端commit SHA和相同tree校验后对齐工作分支，不再对备份分支重复推送、重放历史或强推。最新head以实际Git/PR查询为准，不为文档自引用不断增加提交。
+
+## 固定边界
 
 - New API upstream/import tree：`11dbbb8a51210a38b84d9f9358c56c9d0415f5e8`。
-- CPR发布root tree `d606f1081ffdeb53dbbd9efd89c6edef9427887e` 含两个可选UI/plugin源码gitlink；xinapi不存嵌套repo，普通文件import tree为`3edc9042af879db4d0d8c5a09c39d2b142f5994c`。manifest分别锁这两个tree与省略SHA。
-- Cockpit CC BY-NC-SA与Apache/AGPL的组合兼容性未确认，X02只保留逐文件采用清单，没有复制实现。Mihomo `.gz`摘要来自release API；未下载、解压、签名核验或执行。
-- 五服务Compose、依赖安装、两应用构建仍属X03及以后。固定源码存在不表示可构建或已部署。
-- CPR强制出口和成员权限是后续需求；账号停用不等于后台token刷新停发，禁用代理可能回到默认网络。
+- CPR上游发布tree：`d606f1081ffdeb53dbbd9efd89c6edef9427887e`；省略两个可选源码联调gitlink后的普通文件import tree：`3edc9042af879db4d0d8c5a09c39d2b142f5994c`。这不是文件丢失，也不应将gitlink重新混入父仓库。
+- 后续修改源码后，基线校验使用已确认的X02提交，不覆盖原始来源哈希。正式包依赖仍要按锁文件下载，X02不是离线依赖包。
+- Cockpit未复制业务实现；混合许可边界仍待实际采用时确认。Mihomo `.gz`摘要来自官方release元数据；未下载、解压、验签或执行。
+- 还没有两服务业务构建、根五服务Compose、真实OAuth或固定出口验收。工作记录、模拟数据和未执行项不能替代运行证据。
 
-凭据不写入源码、日志、PR或交接。当前无Docker进程、数据库、账号或订阅数据运行。
+凭据不写入源码、日志、PR或交接。当前没有本项目业务容器、数据库或真实账号流量。

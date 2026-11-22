@@ -110,8 +110,8 @@ E001–E006 是 X01 之前的历史证据，仅支持当时的工作与版本；
 
 - 对象：New API `8542c9d6490b4330fe18160930f81ae7428bc777`；CPR `58cbb607505dda4a1cee6e01b9f76e267ad3c261`；X02工作分支 `task/X02-source-baseline`，起点 `24edbd5`。
 - New API上游和导入tree均为 `11dbbb8a51210a38b84d9f9358c56c9d0415f5e8`，2,840个文件。CPR上游发布root tree为 `d606f1081ffdeb53dbbd9efd89c6edef9427887e`，其中包含两个开发联调gitlink；本项目明确不留嵌套repo。CPR实际2,074普通文件组成的独立import tree为 `3edc9042af879db4d0d8c5a09c39d2b142f5994c`。两个tree均分别固定、可复算。
-- `python3 -B tools/verify_upstream.py`、`--index`及`--git-ref 5b93f04d4805fab67b11ede5f0d605defc9a874a`已通过；逐项校验路径、执行位、大小、Git blob、SHA-256、清单和tree。源暂存文件4,914个，无160000，未导入研究缓存。
-- `python3 -B -m unittest discover -s tests -p test_verify_upstream.py -v`最终11项通过。回归覆盖来源pin不可被清单改写、Git意向空文件、owner执行位、可选gitlink、省略路径、嵌套Git和内容篡改。Independent handoff-review指出风险后，已在X02中修正。
+- 对已发布提交 `dc5263120fd97ee92ddc39e947b55b4ee3bc9a82` 的独立本地克隆，`python3 -B tools/verify_upstream.py`、`--index`、`--git-ref HEAD` 均通过；逐项校验路径、执行位、大小、Git blob、SHA-256、清单和tree。4,914个源文件，无160000，克隆不含研究缓存。原 `5b93f04…` 缺少后增的import_tree字段，不能用当前schema声称其同样通过。
+- `python3 -B -m unittest discover -s tests -p test_verify_upstream.py -v`最终11项通过。回归覆盖来源pin不可被清单改写、Git意向空文件、owner执行位、可选gitlink、省略路径、嵌套Git和内容篡改。x02-review指出风险后，已在X02中修正。
 - New API原始`VERSION`是空blob；构建生成的`web/dist`不在来源tree。CPR锁文件所列Git依赖可解析，52个本地Cargo path及Docker输入已静态核对。没有安装依赖、运行上游程序或构建镜像。
 - 初始源码扫描发现94项凭据形状候选，逐路径检查都属于上游样例、测试、CI或i18n内容；未验证是否能访问，不代表穷举所有秘密。当前包中没有本团队账号、订阅链接或凭据。公开前仍应复核其增量。
 
@@ -121,13 +121,13 @@ E001–E006 是 X01 之前的历史证据，仅支持当时的工作与版本；
 - Mihomo `v1.19.33` 的tag commit固定为`3f27ef39f8c96bbfbc8b0b9bb10f5c9ef60149d8`；记录Linux amd64-compatible、arm64官方压缩资产ID、大小和release SHA-256，许可文件SHA已和Git blob对照。二进制未下载、未解压、未执行、签名未验、压缩外摘要未知；实际采用和分发前需按清单复核GPL对应源码。
 - 以上是X02源和元数据验收，不是产品构建、运行、授权、出口或V01–V20验收。
 
-### E012 X02：GitHub 工作分支与 Draft PR
+### E012 X02：工作分支交付与独立检出
 
-- GitHub API确认PR head commit `22feb1265e76b2d3c4c9629fae2b55e4d7f2d944`，远端root tree `01129bf09e94ed3e6ca1047b895ed472e5c5a780`；该tree与本地X02目标文件tree完全相同。GitHub MCP创建的commit metadata SHA与本地commit不同，但服务文件SHA/tree一致。
-- GitHub API分别确认PR head `services/new-api` tree=`11dbbb8a51210a38b84d9f9358c56c9d0415f5e8`、`services/codex-proxy-rs` import tree=`3edc9042af879db4d0d8c5a09c39d2b142f5994c`，与两份来源清单一致。CPR上游release root tree `d606f1081ffdeb53dbbd9efd89c6edef9427887e`另含两个可选dev gitlink；本项目未提交gitlink，分别有批准的SHA/省略原因记录。
-- X02源分支的 Draft PR #1 指向 `main`，状态open、draft、未合并；查询时没有status/check-run结果。远端分支正文证据来自GitHub commit/tree API；普通clone超时，未记录为成功。本项目源码构建、服务运行和账号/出口仍未验证。该工作状态为 `in_progress`，待审阅/检查/合并。
-- 在2026-11-22 UTC后续状态核对中，Draft PR #1 的head为 `bfd56a6c26db28599dc2194095675ec9839296bf`，base main，未合并，tree与本地X02源码tree相同；status/check-runs为空。之后仅同步X02交接记录可能推进head的metadata SHA，未来应重查当前PR ref。
-- 交付对象只含X02源码/来源说明及校验器，没包含Mihomo二进制；无构建、运行、账号授权或公网出口验收。
+- 源码和校验器已交付到 [工作分支](https://github.com/xinchen6666/xinapi/tree/task/X02-source-baseline)，审阅入口 [PR #1](https://github.com/xinchen6666/xinapi/pull/1)，base `main`，尚未合并。X02完成指来源基线验收及分支交付，不把合并与部署算作已发生。
+- GitHub核对过的提交 `dc5263120fd97ee92ddc39e947b55b4ee3bc9a82` 的root tree为 `72a5a3338823625db5ab8484d576cecbd3f2a856`，与本地同内容tree一致；两服务import tree分别为 E010 中的 `11db…` 和 `3edc…`。MCP曾产生与本地不同的commit metadata，内容未丢失。
+- 标准Git传输间歇失败后，通过GitHub API取得缺失的已发布commit元数据；仅在完整Git commit对象重构SHA精确匹配远端SHA时写入本地对象库。确认tree一致、父对象完备、工作树干净，保存原分支到 `backup/X02-local-before-sync-27fe3a2a1100`，再对齐本地branch和tracking。未删除本地历史，未强推或改写远端。
+- 从与远端一致的 `dc526312…` 使用 `git clone --no-local` 建立独立本地检出：三种来源校验、11项回归及 `git fsck --full --no-dangling` 成功，工作树干净，无研究缓存。这是本地独立克隆，不是那次超时的HTTPS网络clone。
+- CI/status为空：未声称CI通过；构建与CI属X03，真实应用与V01–V20均未执行。本次收尾只同步验收和交接，源子树及验证器不变；具体最新分支SHA在最终发布后单独核对，不在每次回执中自引用。
 
 ## 未来记录模板
 
