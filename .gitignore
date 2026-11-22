@@ -1,0 +1,35 @@
+# Local-only reference code; the product source will live under services/.
+/research/checkouts/
+/.runtime/
+/.scrape-images/
+/.scrape-cache/
+# Secrets and local operator overrides (a sanitized example may be tracked).
+.env
+.env.*
+!.env.example
+.envrc
+secrets/
+*.key
+*.pem
+*.p12
+*.pfx
+*.sqlite
+*.sqlite3
+*.db
+*.dump
+*.log
+*.bundle
+/backups/
+/data/
+/logs/
+/deploy/data/
+/deploy/logs/
+**/.codex/auth.json
+/deploy/local/
+/deploy/config.yaml
+/auth.json
+/compose.override.yaml
+node_modules/
+target/
+coverage/
+.DS_Store
