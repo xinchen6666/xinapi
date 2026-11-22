@@ -6,7 +6,7 @@
 
 固定 New API、CPR 源码、来源清单、验证器和回归测试已推至工作分支 [`task/X02-source-baseline`](https://github.com/xinchen6666/xinapi/tree/task/X02-source-baseline)，位于 [Draft PR #1](https://github.com/xinchen6666/xinapi/pull/1)，base `main`。
 
-最后一次状态查询记录在[X02日志](worklog/X02.md)：PR head 为 `bfd56a6c26db28599dc2194095675ec9839296bf`，PR仍Draft/open/未合并，未见CI status/check-runs。PR head root tree与本地X02目标tree相同，New API及CPR导入tree各自匹配来源清单。普通GitHub克隆超时；内容已用GitHub commit/tree API复核，不能把API树对照称为一次成功克隆。
+最近一次检查的PR head/tree可从[X02日志](worklog/X02.md)读取；远端head可能在日志同步提交后继续变化。开始下一项前需实时查询PR/branch，确认PR仍Draft/open、未合并，并检查实际CI状态。GitHub API曾核对远端X02服务tree与manifest一致；普通clone超时，因此未宣称远端clone通过。
 
 X02没有构建/运行New API、CPR、Mihomo或Compose；没有安装运行时依赖，没有真实账号、OAuth、订阅或公网出口测试。Cockpit业务实现未复制，Mihomo二进制未下载。
 
