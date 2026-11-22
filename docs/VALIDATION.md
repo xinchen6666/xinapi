@@ -126,7 +126,7 @@ E001–E006 是 X01 之前的历史证据，仅支持当时的工作与版本；
 - GitHub API确认PR head commit `22feb1265e76b2d3c4c9629fae2b55e4d7f2d944`，远端root tree `01129bf09e94ed3e6ca1047b895ed472e5c5a780`；该tree与本地X02目标文件tree完全相同。GitHub MCP创建的commit metadata SHA与本地commit不同，但服务文件SHA/tree一致。
 - GitHub API分别确认PR head `services/new-api` tree=`11dbbb8a51210a38b84d9f9358c56c9d0415f5e8`、`services/codex-proxy-rs` import tree=`3edc9042af879db4d0d8c5a09c39d2b142f5994c`，与两份来源清单一致。CPR上游release root tree `d606f1081ffdeb53dbbd9efd89c6edef9427887e`另含两个可选dev gitlink；本项目未提交gitlink，分别有批准的SHA/省略原因记录。
 - X02源分支的 Draft PR #1 指向 `main`，状态open、draft、未合并；查询时没有status/check-run结果。远端分支正文证据来自GitHub commit/tree API；普通clone超时，未记录为成功。本项目源码构建、服务运行和账号/出口仍未验证。该工作状态为 `in_progress`，待审阅/检查/合并。
-- PR检查查询：Draft、未合并、base main、无status/check-run结果。X02保持 `in_progress`，等待审阅、必要检查与合并；main仍是此前核实的基线。
+- 在2026-11-22 UTC后续状态核对中，Draft PR #1 的head为 `bfd56a6c26db28599dc2194095675ec9839296bf`，base main，未合并，tree与本地X02源码tree相同；status/check-runs为空。之后仅同步X02交接记录可能推进head的metadata SHA，未来应重查当前PR ref。
 - 交付对象只含X02源码/来源说明及校验器，没包含Mihomo二进制；无构建、运行、账号授权或公网出口验收。
 
 ## 未来记录模板
