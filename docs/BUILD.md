@@ -35,6 +35,12 @@ python3 -B tools/build_image.py cpr --registry docker.m.daocloud.io
 
 这种通道替代不保证下载站始终可达，也不是新的可信版本来源。基线源码、锁文件和基础镜像digest是身份依据。APT仍会获取当时的安全更新，因此不承诺不同日期构建的镜像逐字相同；实际镜像用ID/digest标识。
 
+## CPR 发行版本
+
+统一构建入口从所选提交的 `services/codex-proxy-rs/release/version.yaml` 读取顶层 `version`，显式传入 `CPR_VERSION`，并将该值记录为回执的 `release_version`。当前发行值为 `3.54.2`。历史构建也使用各自提交中的发行值，工作树里的临时修改独立保留。
+
+CI按本次回执的镜像执行 `--version`，将实际输出与同一提交的发行值比较；空输出、其他版本和命令执行错误都使版本步骤失败。此检查证明镜像的版本标识，数据库与业务集成另有对应任务。
+
 ## 项目检查与 CI
 
 ```bash

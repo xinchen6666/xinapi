@@ -60,6 +60,24 @@ def read_git_file(root, revision, path):
     return git(root, "cat-file", "blob", oid)
 
 
+def cpr_release_version(root, revision):
+    """Read the top-level release version from the selected CPR commit."""
+    text = read_git_file(
+        root, revision, "services/codex-proxy-rs/release/version.yaml"
+    ).decode("utf-8")
+    for line in text.splitlines():
+        if line.startswith("version:"):
+            version = line.partition(":")[2].partition("#")[0].strip()
+            if version[:1] in ("'", '"') and version[-1:] == version[:1]:
+                version = version[1:-1]
+            if re.fullmatch(
+                r"\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?", version
+            ):
+                return version
+            break
+    raise BuildError("CPR release/version.yaml must define a release version.")
+
+
 def read_target(root, revision, component):
     spec = json.loads(read_git_file(root, revision, "deploy/build-targets.json"))
     if (
@@ -81,6 +99,8 @@ def read_target(root, revision, component):
         spec["source_repository"],
     ):
         raise BuildError("Invalid public source repository label.")
+    if component == "cpr":
+        target = {**target, "release_version": cpr_release_version(root, revision)}
     return spec, target
 
 
@@ -165,6 +185,8 @@ def build_command(
             "--build-arg",
             "CARGO_BUILD_JOBS=2",
         ]
+        if target.get("release_version"):
+            command += ["--build-arg", "CPR_VERSION=" + target["release_version"]]
     else:
         command += ["--build-arg", "BUILD_JOBS=2", "--build-arg", "GOPROXY=" + go_proxy]
     if builder:
@@ -285,6 +307,7 @@ def main(root=None):
         "platform": args.platform,
         "registry": args.registry,
         "image_tag": tag,
+        "release_version": target.get("release_version"),
         "go_proxy": args.go_proxy if args.component == "new-api" else None,
         "builder_tool_sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
         "started_at": started.isoformat(),

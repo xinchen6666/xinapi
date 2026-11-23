@@ -99,8 +99,26 @@ jobs:
           driver-opts: image=moby/buildkit:v0.26.2@sha256:de10faf919fc71ba4eb1dd7bd6449566d012b0c9436b1c61bfee21d621b009aa
       - name: Build CPR runtime from committed snapshot
         run: python3 -B tools/build_image.py cpr --tag xinapi/cpr:ci --output .runtime/builds/cpr.json
-      - name: Verify executable without service startup
-        run: docker run --rm --network none --read-only --cpus 1 --memory 512m --entrypoint /app/bin/codex-proxy-rs xinapi/cpr:ci --version
+      - name: Verify CPR release version
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          import subprocess
+          from tools.build_image import cpr_release_version
+
+          receipt = json.loads(Path(".runtime/builds/cpr.json").read_text())
+          expected = cpr_release_version(Path.cwd(), receipt["revision"])
+          actual = subprocess.check_output([
+              "docker", "run", "--rm", "--network", "none", "--read-only",
+              "--cpus", "1", "--memory", "512m", "--entrypoint",
+              "/app/bin/codex-proxy-rs", receipt["image_id"], "--version"
+          ], text=True, timeout=30).strip()
+          print(f"CPR release expected={expected!r}, actual={actual!r}")
+          if actual != expected:
+              raise SystemExit("CPR version must match the selected release version.")
+          print(f"CPR release version verified: {actual}")
+          PY
       - name: Upload build metadata only, not full logs or images
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
