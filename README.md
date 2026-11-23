@@ -7,6 +7,7 @@
 | 想做什么 | 去哪里 |
 | --- | --- |
 | 查看每一步如何开发、如何验证 | [Docker 开发计划 X01–X18](docs/PLAN.md) |
+| 在本机启动五服务 | [Compose 运行手册](docs/COMPOSE.md)、[X04 联调日志](docs/worklog/X04.md) |
 | 了解五个服务、首次安装和恢复设计 | [Docker 部署设计](docs/DEPLOYMENT.md) |
 | 看现在完成了什么、推送到哪 | [任务状态](docs/STATUS.md)、[X02 工作日志](docs/worklog/X02.md)、[X03 构建日志](docs/worklog/X03.md) |
 | 构建镜像和运行持续检查 | [构建入口与边界](docs/BUILD.md) |
@@ -18,7 +19,7 @@
 
 只交付单机 Linux Docker Compose。New API 提供 React 管理界面和 Go 后端；内部 CPR（codex-proxy-rs）处理账号授权、刷新和模型请求，监督 Mihomo 子进程。PostgreSQL 18 分库分用户，两个应用各用独立 Redis。账号默认不得在代理故障后改走直连；公网 IP 能否真正独立取决于提供商和实际验证。没有支付、K8s 或 Helm 工作项。
 
-第一个可见里程碑是 **X06：管理员粘贴自造的订阅链接能预览节点**，不必先提供真实账号。[New API 源码](services/new-api/README.md)、[CPR 源码](services/codex-proxy-rs/README.md)及[第三方来源索引](third_party/README.md)已随本仓库维护；正式构建依赖仍按各自锁文件下载，不是离线全依赖包。根 Compose 和集成业务在后续步骤交付。
+第一个订阅演示里程碑是 **X06：管理员粘贴自造的订阅链接能预览节点**。[New API 源码](services/new-api/README.md)、[CPR 源码](services/codex-proxy-rs/README.md)及[第三方来源索引](third_party/README.md)已随本仓库维护。X04 交付五服务本机运行环境，管理页面和业务集成按后续步骤开发。
 
 ## 研究材料
 

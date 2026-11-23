@@ -158,6 +158,11 @@ E001–E006 是 X01 之前的历史证据，仅支持当时的工作与版本；
 - [PR版本修订CI 45120537811](https://github.com/xinchen6666/xinapi/actions/runs/45120537811)与[push版本修订CI 45120533870](https://github.com/xinchen6666/xinapi/actions/runs/45120533870)的changes、quality、两个镜像及汇总均成功。独立读取两轮CPR作业日志，均显示 `CPR release version verified: 3.54.2`，版本步骤exit0。
 - R1版本传递与CI输出比较已完成复核。旧空版本镜像的exit1及修订镜像的exit0分别记录；最终记录提交只整理文档，版本实现和配方保持已验证状态。X04保持pending。
 
+### E016 X04：五服务本机联调
+
+- [X04 工作日志](worklog/X04.md)记录已启动的五个服务、授权连接到各自库、跨库拒绝、独立 Redis 认证和 AOF、宿主回环绑定、首次管理员及保留卷重建后的登录。
+- 公开脚本权限导致的初次失败亦保留在日志中；修正后的空卷成功。此为本机 Linux/amd64 隔离项目的功能结果，真实上游流量属于后续工作。
+
 ## 未来记录模板
 
 每个run使用唯一证据ID，写：任务ID；checked_at（时区ISO时间）；执行者；证据种类；真实提交/工作区摘要；脱敏环境；实际命令/步骤；预期；实际；`passed/failed/partial/skipped/not_run`；本地持久证据路径；缺口；失效条件。未执行的命令只放计划，不放实际记录。
