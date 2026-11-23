@@ -138,6 +138,16 @@ E001–E006 是 X01 之前的历史证据，仅支持当时的工作与版本；
 - 独立只读复核确认两项已修，index/historical仍只读取Git对象。实际worktree、暂存区`--index`、`--git-ref dc5263120fd97ee92ddc39e947b55b4ee3bc9a82`三种模式均通过；源目录、原始manifest和制品锁/许可相对审查起点无变化。9个预期修改文件，23份项目文档的165个本地链接通过，`git diff --cached --check`通过。
 - 不涉及X03或上游应用构建/运行，不更改`services/`、锁文件或许可文本。PR不合并，不部署。最终提交/PR SHA通过GitHub发布后单独核对，不为自引用重复提交。
 
+### E014 X03：实际镜像构建与持续检查
+
+- 基线：X02审查提交 `072e434a528bb9295d9c6d4ee6000c91b03485ca`，源代码/锁/逐文件manifest没有修改。构建适配在根deploy目录，固定Go/Bun/Rust/Node/pnpm及原基础镜像digest。范围见[X03日志](worklog/X03.md)、[构建说明](BUILD.md)。
+- New API：Bun1.4.4、Rsbuild2.2.0前端及Go1.26.10（原PGO）实际编译通过。最终本地标记镜像OCI index `sha256:0013ce97c44f35483e51fb77b8932eb0060eeb3e4ea1d245ab4e097d175dec34`，应用二进制SHA256 `9f884a66ef8ba4e532be6487f65cb36a8473d1509f652b0460397818ed95bd3d`。无网络只读短命版本/帮助和许可证对照通过；原VERSION空blob导致版本输出为空，不伪造release。详见[独立证据](evidence/X03-new-api.json)。
+- CPR：固定UI包prepack、TypeScript/Vite生产构建和Rust1.99.1 release --locked通过（47m12s）。最终OCI index `sha256:74061ea616944a0a220158d0adb56510520d8299a525a01b6f8db060d1ad6b75`，非root用户cpr，版本3.54.2；帮助、静态资源、PG18.7备份客户端和原Apache许可SHA对照通过。详见[独立证据](evidence/X03-cpr.json)。没有数据库连接或服务端口。
+- 网络边界：原Docker Hub路径超时，不据此认定pin不存在。替代registry的每个manifest原始字节SHA与原pin相同；实际层下载仍按同digest。Go proxy显式切换但保checksums/GOSUMDB；Cargo使用临时builder Git CLI/HTTP1.1保全部原commit。失败和主动取消尝试保留，不伪装通过或清空历史。
+- CI：提交 `c70bb0c2bc9b22c837d3d1ec87c65492148021c6` 的[run 45101737824](https://github.com/xinchen6666/xinapi/actions/runs/45101737824)实际changes、quality、两个镜像和汇总均成功；不是仅静态工作流验证。Ruff版本/wheel SHA、actions完整SHA、BuildKit版本/digest固定，权限只contents read，无镜像registry推送。
+- 发布前复核补严格receipt：缺少BuildKit metadata、导出digest与加载镜像不符、平台/source/revision错误均失败。47项工具回归通过；真实Docker29的index ID/metadata形态通过。已提交快照 `a1da347925957c6f1a0ec50bd8157bb55457246a` 经构建入口本地New API验证通过；其[新版CI run 45104467732](https://github.com/xinchen6666/xinapi/actions/runs/45104467732)changes、quality、两个镜像和汇总均实际成功；该run对应47项工具回归及严格metadata代码。最终记录提交只更改文档/证据，源代码与构建逻辑不变，复用这个未受影响的完整构建证据。
+- 以上只覆盖构建、项目工具检查和短命CLI，不代表Go/Rust全部业务unit、管理页面、数据库、OAuth、Clash、固定出口或V01–V20已经通过。cache重建标注为cache重建，APT安全更新/构建时间可能改变字节，不承诺跨日期逐字相同。详细日志在忽略目录，公開只存脱敏摘要。
+
 ## 未来记录模板
 
 每个run使用唯一证据ID，写：任务ID；checked_at（时区ISO时间）；执行者；证据种类；真实提交/工作区摘要；脱敏环境；实际命令/步骤；预期；实际；`passed/failed/partial/skipped/not_run`；本地持久证据路径；缺口；失效条件。未执行的命令只放计划，不放实际记录。

@@ -24,6 +24,7 @@
 | MEM-18 | X02原样导入上游源码，两个来源tree可以离线重构；后续修改后复核基线用 `--git-ref dc5263120fd97ee92ddc39e947b55b4ee3bc9a82` 等包含当前schema的已验证提交；最早5b93f04缺import_tree字段，不能混用 | [第三方索引](../third_party/README.md)、[X02日志](worklog/X02.md) | 上游升级、源码导入方式或清单schema改变 |
 | MEM-19 | CPR两个gitlink只供UI/插件源码联调，正式构建不用初始化；默认UI依赖仍由pnpm锁定到公开提交并需要prepack，不是离线包 | [构建依赖锁](../third_party/cpr-build-dependencies.lock.json)及原开发指南 | 正式构建流程或依赖版本改变 |
 | MEM-20 | Cockpit业务代码在X02尚未复制；Mihomo `.gz` 资产hash来自官方release元数据，不能冒充本地下载/解压/执行验证 | [抽离清单](../third_party/cockpit-adoption.md)、[Mihomo锁](../third_party/mihomo.lock.json) | X06/X08实际采用和制品下载时 |
+| MEM-21 | X03根Dockerfile是对原固定镜像的网络/资源/身份适配，源码/锁不改；构建入口从指定Git提交提取context，不使用未提交.env或缓存作为源码。Docker29 containerd的image ID可能是OCI index，不能误当config digest；receipt须绑定exported digest、平台和source标签 | [构建说明](BUILD.md)、[X03日志](worklog/X03.md)及[E014](VALIDATION.md#e014-x03实际镜像构建与持续检查) | Docker导出格式、构建流程、源版本或分发方式改变 |
 
 ## 不要从旧记录恢复的假设
 

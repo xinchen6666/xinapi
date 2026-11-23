@@ -1,0 +1,508 @@
+{
+  "schema_version": 1,
+  "task": "X03",
+  "component": "codex-proxy-rs",
+  "checked_at": "2026-11-23T03:10:19.426384+00:00",
+  "source": {
+    "repository": "https://github.com/zyycn/codex-proxy-rs",
+    "commit": "58cbb607505dda4a1cee6e01b9f76e267ad3c261",
+    "upstream_root_tree": "d606f1081ffdeb53dbbd9efd89c6edef9427887e",
+    "import_tree": "3edc9042af879db4d0d8c5a09c39d2b142f5994c",
+    "modified": false
+  },
+  "build_environment": {
+    "platform": "linux/amd64",
+    "buildx_version": "0.30.1",
+    "buildkit_version": "v0.26.2 (parent-managed default builder)",
+    "builder_driver": "docker",
+    "docker_config": "isolated project-local config, not copied into image"
+  },
+  "build_recipe": {
+    "path": "deploy/docker/cpr.Dockerfile",
+    "sha256": "9ac554074219a120410f34ced33e86678f8beeb91521d6717b7b0203acde3cc5",
+    "target": "runtime",
+    "tag": "xinapi/cpr:x03-baseline",
+    "registry_default": "docker.io",
+    "registry_used": "docker.m.daocloud.io",
+    "frontend": "daemon BuildKit v0.26.2 built-in Dockerfile frontend; external syntax image not pulled",
+    "adaptations": [
+      "IMAGE_REGISTRY with library path and unchanged upstream version/digest",
+      "bundled frontend keeps RUN --mount semantics",
+      "CARGO_BUILD_JOBS defaults to 2; explicit source version/revision build args",
+      "Runtime custom upstream repository/revision/import-tree/release-tree/version labels distinct from later monorepo OCI labels",
+      "Builder-only CARGO_NET_GIT_FETCH_WITH_CLI=true and Git HTTP/1.1 after parent-authorized cancellation; TLS verification retained"
+    ],
+    "upstream_dockerfile_modified": false,
+    "root_adaptation_created": true,
+    "dockerignore_path": "deploy/docker/cpr.Dockerfile.dockerignore",
+    "dockerignore_sha256": "8f5569a7812bd3f37797b0107453ff8376a2a9e91336a6d1295a98af9f0ad70e",
+    "sha256_before_cli_retry": "6535f7e4ac6dcfa3dadd2456b3a2df794d31f53088019bdd928741f5830b2c63",
+    "sha256_before_license_rebuild": "eada3b7a35def82abf31ffe2f955f7e7b32fa936ff6799679bf4df347aa5d196",
+    "license_copy": {
+      "source": "services/codex-proxy-rs/LICENSE",
+      "image_path": "/licenses/codex-proxy-rs-LICENSE",
+      "source_sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4",
+      "verified_in_final_image": true,
+      "image_sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4"
+    }
+  },
+  "declared_toolchains": {
+    "node": "26.13.1",
+    "pnpm": "12.6.0",
+    "rust": "1.99.1",
+    "ui_commit": "501495d5b1e9d65840d4cdee5e0e228f361613ee",
+    "ui_prepack_required": true,
+    "git_cargo_sources": "fixed complete commits in original Cargo.lock; resolved and used in the successful release build"
+  },
+  "attempts": [
+    {
+      "id": "cpr-runtime-baseline-1",
+      "command": "docker --config <project>/.runtime/x03/docker-config buildx build --progress plain --load --platform linux/amd64 --target runtime -f services/codex-proxy-rs/deploy/Dockerfile -t xinapi/cpr:x03-baseline services/codex-proxy-rs",
+      "command_path_note": "<project> is a redaction of the actual working directory, not a build variable",
+      "result": "failed",
+      "exit_code": 1,
+      "failed_stage": "resolve external Dockerfile frontend at Dockerfile line 1",
+      "error": "failed to resolve source metadata for docker.io/docker/dockerfile:1.7@sha256:a57df69d0ea827fb7266491f2813635de6f17269be881f696fbfdf2d83dda33e: registry-1.docker.io HTTPS HEAD connect timeout",
+      "error_scope": "network/registry connection; this does not establish that the immutable digest is absent or invalid",
+      "local_log": ".runtime/x03/cpr-build-baseline.log",
+      "backend_compilation_started": false,
+      "frontend_install_started": false
+    },
+    {
+      "id": "cpr-runtime-mirror-2",
+      "started_at": "2026-11-23T01:54:24.393990+00:00",
+      "recipe": "deploy/docker/cpr.Dockerfile",
+      "command": "docker --config <project>/.runtime/x03/docker-config buildx build --progress plain --load --platform linux/amd64 --target runtime --build-arg IMAGE_REGISTRY=docker.m.daocloud.io --build-arg CARGO_BUILD_JOBS=2 --build-arg CPR_VERSION=3.54.2 --build-arg CPR_GIT_SHA=58cbb607505dda4a1cee6e01b9f76e267ad3c261 --metadata-file .runtime/x03/cpr-build-mirror-metadata.json -f deploy/docker/cpr.Dockerfile -t xinapi/cpr:x03-baseline services/codex-proxy-rs",
+      "command_path_note": "<project> replaces only the actual project directory",
+      "result": "cancelled",
+      "exit_code": null,
+      "local_log": ".runtime/x03/cpr-build-mirror.log",
+      "frontend_install_started": true,
+      "backend_git_fetch_started": true,
+      "backend_compilation_confirmed": false,
+      "base_manifest_metadata_resolved": true,
+      "progress_note": "Observed before cancellation: base layers, npm/pnpm and fixed Cargo Git fetch progressed with timeout retries. This attempt was later cancelled; it did not produce the final image.",
+      "context_ignore_note": "The first mirror attempt began before the adjacent root ignore file was installed and reported a 2-byte default ignore. Its context contained fixed source only. Future build/CI must use the now-present adjacent ignore policy.",
+      "frontend_install_and_prepack_result": "passed",
+      "frontend_build_result": "passed",
+      "frontend_build_detail": {
+        "pnpm": "12.6.0",
+        "vite": "8.3.8",
+        "vue_tsc_typecheck": true,
+        "frontend_build_seconds": 84.7,
+        "ui_package_version": "0.13.1",
+        "ui_commit": "501495d5b1e9d65840d4cdee5e0e228f361613ee",
+        "production_index_html_emitted": true,
+        "third_party_licenses_emitted": true
+      },
+      "pg_backup_clients_result": "passed",
+      "pg_backup_clients_detail": {
+        "pg_dump": "PostgreSQL 18.7",
+        "pg_restore": "PostgreSQL 18.7",
+        "database_connection": false
+      },
+      "backend_progress_note": "SQLx fetch progressed after built-in retries; remaining pinned WebSocket Git dependencies/index download in progress. No Rust compiler success claimed.",
+      "signal": "SIGTERM",
+      "cancelled_at": "2026-11-23T02:15:13.828741+00:00",
+      "cancel_reason": "Parent-authorized bounded retry after prolonged pinned Git transport stall. Last output at cancellation showed crate downloads had recovered; this was not a compiler failure.",
+      "backend_git_fetch_completed": true,
+      "crate_download_started": true
+    },
+    {
+      "id": "cpr-runtime-cli-3",
+      "started_at": "2026-11-23T02:18:00.966338+00:00",
+      "recipe": "deploy/docker/cpr.Dockerfile",
+      "recipe_sha256": "eada3b7a35def82abf31ffe2f955f7e7b32fa936ff6799679bf4df347aa5d196",
+      "command": "timeout --signal=TERM --kill-after=30s 3600 docker --config <project>/.runtime/x03/docker-config buildx build --progress plain --load --platform linux/amd64 --target runtime --build-arg IMAGE_REGISTRY=docker.m.daocloud.io --build-arg CARGO_BUILD_JOBS=2 --build-arg CPR_VERSION=3.54.2 --build-arg CPR_GIT_SHA=58cbb607505dda4a1cee6e01b9f76e267ad3c261 --metadata-file .runtime/x03/cpr-build-cli-metadata.json -f deploy/docker/cpr.Dockerfile -t xinapi/cpr:x03-baseline services/codex-proxy-rs",
+      "result": "passed",
+      "exit_code": 0,
+      "deadline_seconds": 3600,
+      "local_log": ".runtime/x03/cpr-build-cli.log",
+      "cache_note": "Reuses successful frontend/runtime layers and Cargo cache downloads; lockfiles and source pins still unchanged; cache use is not treated as independent compilation evidence.",
+      "backend_compilation_started": true,
+      "backend_first_compilation_seconds": 1210.1,
+      "backend_compilation_result": "passed",
+      "progress_note": "Actual Rust compilation followed pinned dependency downloads; the release binary and runtime image completed successfully at the recorded completion time.",
+      "completed_at": "2026-11-23T03:06:56.131284+00:00",
+      "backend_release_build_seconds": 2833.0,
+      "compiler_profile": "release optimized, unchanged upstream thin LTO/codegen/panic settings",
+      "runtime_export_and_load": true,
+      "intermediate_image_config_id": "sha256:71a9624a07fcac92ac5d2db4e1755dbb391d68f8f5d63a2e76b1c8b5101eec44",
+      "intermediate_license_copy_present": false
+    },
+    {
+      "id": "cpr-runtime-license-4",
+      "started_at": "2026-11-23T03:06:56.131632+00:00",
+      "recipe": "deploy/docker/cpr.Dockerfile",
+      "recipe_sha256": "9ac554074219a120410f34ced33e86678f8beeb91521d6717b7b0203acde3cc5",
+      "command": "timeout --signal=TERM --kill-after=15s 300 docker --config <project>/.runtime/x03/docker-config buildx build --progress plain --load --platform linux/amd64 --target runtime --build-arg IMAGE_REGISTRY=docker.m.daocloud.io --build-arg CARGO_BUILD_JOBS=2 --build-arg CPR_VERSION=3.54.2 --build-arg CPR_GIT_SHA=58cbb607505dda4a1cee6e01b9f76e267ad3c261 --metadata-file .runtime/x03/cpr-build-final-metadata.json -f deploy/docker/cpr.Dockerfile -t xinapi/cpr:x03-baseline services/codex-proxy-rs",
+      "result": "passed",
+      "exit_code": 0,
+      "deadline_seconds": 300,
+      "local_log": ".runtime/x03/cpr-build-final.log",
+      "reason": "Final cached rebuild after the parent required including original Apache license and corrected X04 PG pin comments; no Rust/frontend source modification or dependency replacement.",
+      "completed_at": "2026-11-23T03:09:00.969032+00:00",
+      "backend_and_frontend_layers": "CACHED from the successful actual compile/build attempt",
+      "license_copy_layer": "executed",
+      "runtime_export_and_load": true
+    }
+  ],
+  "result": "passed",
+  "image": {
+    "created": true,
+    "tag": "xinapi/cpr:x03-baseline",
+    "id": "sha256:74061ea616944a0a220158d0adb56510520d8299a525a01b6f8db060d1ad6b75",
+    "manifest_index_digest": "sha256:74061ea616944a0a220158d0adb56510520d8299a525a01b6f8db060d1ad6b75",
+    "config_digest": "sha256:a6d3052645fbf802ccb7d8119f697be072b8f76f9d44065b154521c54d594557",
+    "id_note": "This Docker Engine containerd store identifies image.Id with the OCI index digest; it is not the config digest. Actual image.Id matched Buildx metadata containerimage.digest and RepoDigest.",
+    "platform": "linux/amd64",
+    "user": "cpr",
+    "size_bytes": 63287513,
+    "labels": {
+      "io.xinapi.upstream.release-tree": "d606f1081ffdeb53dbbd9efd89c6edef9427887e",
+      "io.xinapi.upstream.revision": "58cbb607505dda4a1cee6e01b9f76e267ad3c261",
+      "io.xinapi.upstream.source": "https://github.com/zyycn/codex-proxy-rs",
+      "io.xinapi.upstream.tree": "3edc9042af879db4d0d8c5a09c39d2b142f5994c",
+      "io.xinapi.upstream.version": "3.54.2"
+    }
+  },
+  "checks": [
+    {
+      "kind": "source-input-integrity",
+      "result": "passed",
+      "scope": "Dockerfile, Dockerfile.dockerignore, backend Cargo.toml/Cargo.lock/toolchain, frontend package/lock/workspace, release version match imported manifest"
+    },
+    {
+      "kind": "anonymous-registry-metadata-preflight",
+      "result": "unverified",
+      "scope": "anonymous token/manifest requests could not complete (URLError); no layer pull or digest replacement"
+    },
+    {
+      "kind": "alternate-registry-same-digest",
+      "result": "passed",
+      "method": "download manifest JSON bytes; compute SHA256; match pinned original OCI image index digest",
+      "registry": "docker.m.daocloud.io",
+      "records": [
+        {
+          "upstream_reference": "postgres:18-bookworm@sha256:194e55feb2597b1465dbee81cc9fd8d204566cd2eb42c8d22fd6c931a38781b1",
+          "mirror_reference": "docker.m.daocloud.io/library/postgres:18-bookworm@sha256:194e55feb2597b1465dbee81cc9fd8d204566cd2eb42c8d22fd6c931a38781b1",
+          "checked_at": "2026-11-23T01:50:11.549157+00:00",
+          "result": "passed",
+          "http_status": 200,
+          "content_sha256": "sha256:194e55feb2597b1465dbee81cc9fd8d204566cd2eb42c8d22fd6c931a38781b1",
+          "expected_digest": "sha256:194e55feb2597b1465dbee81cc9fd8d204566cd2eb42c8d22fd6c931a38781b1",
+          "docker_content_digest": "sha256:194e55feb2597b1465dbee81cc9fd8d204566cd2eb42c8d22fd6c931a38781b1",
+          "media_type": "application/vnd.oci.image.index.v1+json",
+          "bytes": 6491,
+          "platforms": [
+            {
+              "architecture": "amd64",
+              "os": "linux"
+            },
+            {
+              "architecture": "unknown",
+              "os": "unknown"
+            },
+            {
+              "architecture": "arm",
+              "os": "linux",
+              "variant": "v7"
+            },
+            {
+              "architecture": "unknown",
+              "os": "unknown"
+            },
+            {
+              "architecture": "arm64",
+              "os": "linux",
+              "variant": "v8"
+            },
+            {
+              "architecture": "unknown",
+              "os": "unknown"
+            },
+            {
+              "architecture": "386",
+              "os": "linux"
+            },
+            {
+              "architecture": "unknown",
+              "os": "unknown"
+            },
+            {
+              "architecture": "ppc64le",
+              "os": "linux"
+            },
+            {
+              "architecture": "unknown",
+              "os": "unknown"
+            }
+          ]
+        },
+        {
+          "upstream_reference": "node:26.13.1-bookworm-slim@sha256:5df79989ed685e09f0a98019db4cebfb22fb9df1a53c0161664a011f7ff6b0f1",
+          "mirror_reference": "docker.m.daocloud.io/library/node:26.13.1-bookworm-slim@sha256:5df79989ed685e09f0a98019db4cebfb22fb9df1a53c0161664a011f7ff6b0f1",
+          "checked_at": "2026-11-23T01:50:11.550814+00:00",
+          "result": "passed",
+          "http_status": 200,
+          "content_sha256": "sha256:5df79989ed685e09f0a98019db4cebfb22fb9df1a53c0161664a011f7ff6b0f1",
+          "expected_digest": "sha256:5df79989ed685e09f0a98019db4cebfb22fb9df1a53c0161664a011f7ff6b0f1",
+          "docker_content_digest": "sha256:5df79989ed685e09f0a98019db4cebfb22fb9df1a53c0161664a011f7ff6b0f1",
+          "media_type": "application/vnd.oci.image.index.v1+json",
+          "bytes": 3929,
+          "platforms": [
+            {
+              "architecture": "amd64",
+              "os": "linux"
+            },
+            {
+              "architecture": "unknown",
+              "os": "unknown"
+            },
+            {
+              "architecture": "arm64",
+              "os": "linux",
+              "variant": "v8"
+            },
+            {
+              "architecture": "unknown",
+              "os": "unknown"
+            },
+            {
+              "architecture": "ppc64le",
+              "os": "linux"
+            },
+            {
+              "architecture": "unknown",
+              "os": "unknown"
+            }
+          ]
+        },
+        {
+          "upstream_reference": "rust:1.99.1-bookworm@sha256:9181b56c2a21ab1d5e73cffe04fc762426d30aa7fac3c91141dd033f49a7fc8b",
+          "mirror_reference": "docker.m.daocloud.io/library/rust:1.99.1-bookworm@sha256:9181b56c2a21ab1d5e73cffe04fc762426d30aa7fac3c91141dd033f49a7fc8b",
+          "checked_at": "2026-11-23T01:50:11.551961+00:00",
+          "result": "passed",
+          "http_status": 200,
+          "content_sha256": "sha256:9181b56c2a21ab1d5e73cffe04fc762426d30aa7fac3c91141dd033f49a7fc8b",
+          "expected_digest": "sha256:9181b56c2a21ab1d5e73cffe04fc762426d30aa7fac3c91141dd033f49a7fc8b",
+          "docker_content_digest": "sha256:9181b56c2a21ab1d5e73cffe04fc762426d30aa7fac3c91141dd033f49a7fc8b",
+          "media_type": "application/vnd.oci.image.index.v1+json",
+          "bytes": 6481,
+          "platforms": [
+            {
+              "architecture": "amd64",
+              "os": "linux"
+            },
+            {
+              "architecture": "unknown",
+              "os": "unknown"
+            },
+            {
+              "architecture": "arm",
+              "os": "linux",
+              "variant": "v7"
+            },
+            {
+              "architecture": "unknown",
+              "os": "unknown"
+            },
+            {
+              "architecture": "arm64",
+              "os": "linux",
+              "variant": "v8"
+            },
+            {
+              "architecture": "unknown",
+              "os": "unknown"
+            },
+            {
+              "architecture": "386",
+              "os": "linux"
+            },
+            {
+              "architecture": "unknown",
+              "os": "unknown"
+            },
+            {
+              "architecture": "ppc64le",
+              "os": "linux"
+            },
+            {
+              "architecture": "unknown",
+              "os": "unknown"
+            }
+          ]
+        },
+        {
+          "upstream_reference": "debian:bookworm-slim@sha256:734a72b3d6142a71993b4bc580ca01d8ca687f77a2c422d96a961d3376b179bc",
+          "mirror_reference": "docker.m.daocloud.io/library/debian:bookworm-slim@sha256:734a72b3d6142a71993b4bc580ca01d8ca687f77a2c422d96a961d3376b179bc",
+          "checked_at": "2026-11-23T01:50:11.553081+00:00",
+          "result": "passed",
+          "http_status": 200,
+          "content_sha256": "sha256:734a72b3d6142a71993b4bc580ca01d8ca687f77a2c422d96a961d3376b179bc",
+          "expected_digest": "sha256:734a72b3d6142a71993b4bc580ca01d8ca687f77a2c422d96a961d3376b179bc",
+          "docker_content_digest": "sha256:734a72b3d6142a71993b4bc580ca01d8ca687f77a2c422d96a961d3376b179bc",
+          "media_type": "application/vnd.oci.image.index.v1+json",
+          "bytes": 5651,
+          "platforms": [
+            {
+              "architecture": "amd64",
+              "os": "linux"
+            },
+            {
+              "architecture": "unknown",
+              "os": "unknown"
+            },
+            {
+              "architecture": "arm",
+              "os": "linux",
+              "variant": "v7"
+            },
+            {
+              "architecture": "unknown",
+              "os": "unknown"
+            },
+            {
+              "architecture": "arm64",
+              "os": "linux",
+              "variant": "v8"
+            },
+            {
+              "architecture": "unknown",
+              "os": "unknown"
+            },
+            {
+              "architecture": "386",
+              "os": "linux"
+            },
+            {
+              "architecture": "unknown",
+              "os": "unknown"
+            },
+            {
+              "architecture": "ppc64le",
+              "os": "linux"
+            },
+            {
+              "architecture": "unknown",
+              "os": "unknown"
+            }
+          ]
+        }
+      ],
+      "scope": "manifest metadata only; image layer transfer and package install not yet validated"
+    },
+    {
+      "kind": "fixed-cargo-commit-cli-fetch-probes",
+      "result": "timeout",
+      "method": "three owned temporary Git repositories, depth=1 HTTP/1.1 fetch of the exact locked commits, each with 30s deadline",
+      "records": [
+        {
+          "name": "sqlx",
+          "repository": "https://github.com/transact-rs/sqlx",
+          "expected_commit": "10462fa4414c6c7f1ed1d39bb31678e3b726878c",
+          "checked_at": "2026-11-23T02:14:39.063784+00:00",
+          "command": "git -C <owned-temporary-repository> -c http.version=HTTP/1.1 fetch --depth=1 https://github.com/transact-rs/sqlx 10462fa4414c6c7f1ed1d39bb31678e3b726878c",
+          "result": "timeout",
+          "exit_code": null,
+          "deadline_seconds": 30
+        },
+        {
+          "name": "tokio-tungstenite",
+          "repository": "https://github.com/openai-oss-forks/tokio-tungstenite",
+          "expected_commit": "7447c427513cfe685f236e1ac0513c4ea3dd9c0b",
+          "checked_at": "2026-11-23T02:15:09.101996+00:00",
+          "command": "git -C <owned-temporary-repository> -c http.version=HTTP/1.1 fetch --depth=1 https://github.com/openai-oss-forks/tokio-tungstenite 7447c427513cfe685f236e1ac0513c4ea3dd9c0b",
+          "result": "timeout",
+          "exit_code": null,
+          "deadline_seconds": 30
+        },
+        {
+          "name": "tungstenite",
+          "repository": "https://github.com/openai-oss-forks/tungstenite-rs",
+          "expected_commit": "bc589d684755a8c02da0fc7e58d0861cbfc306f1",
+          "checked_at": "2026-11-23T02:15:39.140758+00:00",
+          "command": "git -C <owned-temporary-repository> -c http.version=HTTP/1.1 fetch --depth=1 https://github.com/openai-oss-forks/tungstenite-rs bc589d684755a8c02da0fc7e58d0861cbfc306f1",
+          "result": "timeout",
+          "exit_code": null,
+          "deadline_seconds": 30
+        }
+      ],
+      "scope": "Read-only network diagnostic; timeout does not imply commit absence. Prior Cargo run reached registry crate downloads after resolving these git sources."
+    },
+    {
+      "kind": "offline-runtime-smoke",
+      "result": "passed",
+      "command": "python3 -B .runtime/x03/cpr-smoke.py --image-id sha256:74061ea616944a0a220158d0adb56510520d8299a525a01b6f8db060d1ad6b75",
+      "conditions": "Three short-lived docker run --rm containers; --network none --read-only --cap-drop ALL --security-opt no-new-privileges; no configuration or service boot",
+      "records": [
+        {
+          "check": "cli-version",
+          "result": "passed",
+          "exit_code": 0,
+          "network": "none",
+          "read_only": true,
+          "stdout": "3.54.2",
+          "stderr": ""
+        },
+        {
+          "check": "cli-help",
+          "result": "passed",
+          "exit_code": 0,
+          "network": "none",
+          "read_only": true,
+          "stdout": "Usage: codex-proxy-rs [serve]\n       codex-proxy-rs plugin <instance-id> <command> [options]\n\n  --help     Show help without loading configuration\n  --version  Show version\n  plugin --help  List enabled plugin commands without starting HTTP",
+          "stderr": ""
+        },
+        {
+          "check": "static-assets-and-clients",
+          "result": "passed",
+          "exit_code": 0,
+          "network": "none",
+          "read_only": true,
+          "stdout": "pg_dump (PostgreSQL) 18.7 (Debian 18.7-1.pgdg12+5)\npg_restore (PostgreSQL) 18.7 (Debian 18.7-1.pgdg12+5)\n218a85fa042b2e53fb36d22eb5c7a89b06bb17836a763076d5f688b5ec77b65b  /app/web/dist/index.html\nc71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4  /licenses/codex-proxy-rs-LICENSE",
+          "stderr": ""
+        }
+      ],
+      "license_sha256_matches_source": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4"
+    },
+    {
+      "kind": "smoke-image-identifier-preflight",
+      "initial_result": "failed",
+      "initial_exit_code": 1,
+      "cause": "The first invocation passed the exported config digest instead of the Engine image.Id; assertion failed before any container started.",
+      "resolution": "Read actual image.Id and verified it equals the OCI index digest in metadata/RepoDigest, then successfully ran the full offline checks; no assertion was weakened."
+    }
+  ],
+  "not_run": [
+    "Actual model server startup",
+    "PostgreSQL or Redis connection/migrations",
+    "OAuth or real accounts",
+    "Clash/Mihomo egress or public-IP checks",
+    "HTTP/SSE/WS service integration",
+    "Image publication to a registry",
+    "Github CI results (owned by lead)"
+  ],
+  "no_secrets_in_evidence": true,
+  "service_started": false,
+  "business_dependencies_changed": false,
+  "fallback_tags_or_digests_used": false,
+  "next_condition": "Lead integrates and reviews root recipe/evidence, adds monorepo OCI revision labels through the shared build CLI, runs CI and records its separate verdict. Local image and no-network smoke success do not authorize business deployment.",
+  "upstream_build_recipe": {
+    "path": "services/codex-proxy-rs/deploy/Dockerfile",
+    "sha256": "5177903b80887b1521b42a12eeb649ac8e28a284ffa060216754465bbe7681a4",
+    "target": "runtime",
+    "tag": "xinapi/cpr:x03-baseline",
+    "immutable_image_refs": [
+      "docker/dockerfile:1.7@sha256:a57df69d0ea827fb7266491f2813635de6f17269be881f696fbfdf2d83dda33e",
+      "postgres:18-bookworm@sha256:194e55feb2597b1465dbee81cc9fd8d204566cd2eb42c8d22fd6c931a38781b1",
+      "node:26.13.1-bookworm-slim@sha256:5df79989ed685e09f0a98019db4cebfb22fb9df1a53c0161664a011f7ff6b0f1",
+      "rust:1.99.1-bookworm@sha256:9181b56c2a21ab1d5e73cffe04fc762426d30aa7fac3c91141dd033f49a7fc8b",
+      "debian:bookworm-slim@sha256:734a72b3d6142a71993b4bc580ca01d8ca687f77a2c422d96a961d3376b179bc"
+    ],
+    "upstream_dockerfile_modified": false,
+    "root_adaptation_created": false
+  },
+  "pending_checks": []
+}
