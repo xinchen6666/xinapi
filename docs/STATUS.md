@@ -1,12 +1,12 @@
 # 项目进度
 
-目标：[xinchen6666/xinapi](https://github.com/xinchen6666/xinapi)，单机 Docker Compose。更新：2026-11-22 UTC。**本表是 X 任务的唯一进度来源**；不以已有上游源码、文档或工具看板推断集成产品完成。
+目标：[xinchen6666/xinapi](https://github.com/xinchen6666/xinapi)，单机 Docker Compose。更新：2026-11-23 UTC。**本表是 X 任务的唯一进度来源**；不以已有上游源码、文档或工具看板推断集成产品完成。
 
 | ID | 状态 | 负责人／工作域 | 最近事实或验收入口 |
 | --- | --- | --- | --- |
 | X01 | done | lead，文档和 Git | [执行日志](worklog/X01.md)：两个原始提交已推至 `main`，Git 与 GitHub API 读回的[基线提交](https://github.com/xinchen6666/xinapi/commit/bcf6eff7632da4ce00ca48492691fae58131bcc1)一致；见 E009 |
-| X02 | done | lead；x02-audit-code、x02-audit-scope 复核 | 固定源码基线已交付[PR #1](https://github.com/xinchen6666/xinapi/pull/1)；本次审查修复2项校验错误通过，16项测试通过，见[E013](VALIDATION.md#e013-x02审查修订)；未合并，X03按用户要求保持pending |
-| X03 | pending | 构建与 CI | 两服务基线镜像与检查 |
+| X02 | done | lead；x02-audit-code、x02-audit-scope 复核 | 固定源码基线已交付[PR #1](https://github.com/xinchen6666/xinapi/pull/1)；本次审查修复2项校验错误通过，16项测试通过，见[E013](VALIDATION.md#e013-x02审查修订)；未合并，X03现按用户继续指令推进 |
+| X03 | in_progress | lead；两个镜像构建分工 | 基于已审查X02 head `072e434`，检查Docker/Buildx、复现原始镜像和CI；PR #1未合并，不自动合并或部署 |
 | X04 | pending | Compose 与基础设施 | 五服务空环境、保留卷重启和内网隔离 |
 | X05 | pending | New API Go／React | 管理员只读页与后端拒绝 |
 | X06 | pending | 订阅解析／管理表单 | 自造订阅预览，首次演示 |

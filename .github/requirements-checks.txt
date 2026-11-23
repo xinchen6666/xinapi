@@ -1,0 +1,2 @@
+# Ubuntu 24.04 / Linux amd64 check runner; hash verified against PyPI 0.14.10 metadata.
+ruff==0.14.10 --hash=sha256:59aabd2e2c4fd614d2862e7939c34a532c04f1084476d6833dddef4afab87e9f

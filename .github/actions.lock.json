@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "checked_at": "2026-11-23",
+  "actions": [
+    {
+      "action": "actions/checkout",
+      "tag_checked": "v4",
+      "commit": "11d5960a326750d5838078e36cf38b85af677262"
+    },
+    {
+      "action": "docker/setup-buildx-action",
+      "tag_checked": "v3",
+      "commit": "8d2750c68a42422c14e847fe6c8ac0403b4cbd6f"
+    },
+    {
+      "action": "actions/upload-artifact",
+      "tag_checked": "v4",
+      "commit": "ea165f8d65b6e75b540449e92b4886f43607fa02"
+    }
+  ]
+}

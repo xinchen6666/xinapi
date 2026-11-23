@@ -8,7 +8,8 @@
 | --- | --- |
 | 查看每一步如何开发、如何验证 | [Docker 开发计划 X01–X18](docs/PLAN.md) |
 | 了解五个服务、首次安装和恢复设计 | [Docker 部署设计](docs/DEPLOYMENT.md) |
-| 看现在完成了什么、推送到哪 | [任务状态](docs/STATUS.md)、[X02 工作日志](docs/worklog/X02.md) |
+| 看现在完成了什么、推送到哪 | [任务状态](docs/STATUS.md)、[X02 工作日志](docs/worklog/X02.md)、[X03 构建日志](docs/worklog/X03.md) |
+| 构建镜像和运行持续检查 | [构建入口与边界](docs/BUILD.md) |
 | 换人／换 agent 继续 | [协作入口](AGENTS.md)、[当前交接](docs/HANDOFF.md) |
 | 查产品范围和设计依据 | [项目需求](docs/PROJECT.md)、[架构](docs/ARCHITECTURE.md)、[决策](docs/DECISIONS.md) |
 | 查长期约束、来源、许可证和证据 | [项目记忆](docs/MEMORY.md)、[固定上游清单](docs/UPSTREAM.md)、[验收记录](docs/VALIDATION.md) |

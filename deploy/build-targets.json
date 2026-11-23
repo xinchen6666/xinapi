@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "source_repository": "https://github.com/xinchen6666/xinapi",
+  "upstream_baseline": "072e434a528bb9295d9c6d4ee6000c91b03485ca",
+  "targets": {
+    "new-api": {
+      "context": "services/new-api",
+      "dockerfile": "deploy/docker/new-api.Dockerfile",
+      "dockerignore": "services/new-api/.dockerignore",
+      "target": null,
+      "image_name": "xinapi/new-api"
+    },
+    "cpr": {
+      "context": "services/codex-proxy-rs",
+      "dockerfile": "deploy/docker/cpr.Dockerfile",
+      "dockerignore": "services/codex-proxy-rs/deploy/Dockerfile.dockerignore",
+      "target": "runtime",
+      "image_name": "xinapi/cpr"
+    }
+  }
+}

@@ -1,0 +1,137 @@
+name: X03 source checks and image builds
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - 'task/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: x03-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  changes:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    outputs:
+      new_api: ${{ steps.paths.outputs.new_api }}
+      cpr: ${{ steps.paths.outputs.cpr }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - id: paths
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before || '' }}
+          HEAD_SHA: ${{ github.sha }}
+        run: python3 -B tools/select_checks.py
+
+  quality:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Install hash-pinned project check tool
+        run: |
+          python3 -m venv .runtime/check-tools
+          .runtime/check-tools/bin/python -m pip install --disable-pip-version-check --require-hashes -r .github/requirements-checks.txt
+      - name: Project infrastructure formatting and lint
+        run: |
+          .runtime/check-tools/bin/ruff format --check tools/build_image.py tools/select_checks.py tools/check_project.py tests/test_build_image.py tests/test_select_checks.py tests/test_check_project.py
+          .runtime/check-tools/bin/ruff check --select E9,F63,F7,F82 tools tests
+      - name: Unit tests for project tools
+        run: python3 -B -m unittest discover -s tests -p 'test_*.py' -v
+      - name: Verify immutable imported baseline
+        run: python3 -B tools/verify_upstream.py --git-ref 072e434a528bb9295d9c6d4ee6000c91b03485ca
+      - name: Committed documentation, task records and secret signatures
+        run: python3 -B tools/check_project.py --git-ref HEAD
+
+  new_api_image:
+    needs: [changes, quality]
+    if: needs.changes.outputs.new_api == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 50
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f
+        with:
+          version: v0.30.1
+          driver-opts: image=moby/buildkit:v0.26.2@sha256:de10faf919fc71ba4eb1dd7bd6449566d012b0c9436b1c61bfee21d621b009aa
+      - name: Build New API from committed snapshot
+        run: python3 -B tools/build_image.py new-api --tag xinapi/new-api:ci --output .runtime/builds/new-api.json
+      - name: Verify executable without service startup
+        run: docker run --rm --network none --read-only --cpus 1 --memory 512m --entrypoint /new-api xinapi/new-api:ci --help
+      - name: Upload build metadata only, not full logs or images
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: new-api-build-metadata
+          path: .runtime/builds/*.json
+          if-no-files-found: warn
+          retention-days: 7
+
+  cpr_image:
+    needs: [changes, quality]
+    if: needs.changes.outputs.cpr == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f
+        with:
+          version: v0.30.1
+          driver-opts: image=moby/buildkit:v0.26.2@sha256:de10faf919fc71ba4eb1dd7bd6449566d012b0c9436b1c61bfee21d621b009aa
+      - name: Build CPR runtime from committed snapshot
+        run: python3 -B tools/build_image.py cpr --tag xinapi/cpr:ci --output .runtime/builds/cpr.json
+      - name: Verify executable without service startup
+        run: docker run --rm --network none --read-only --cpus 1 --memory 512m --entrypoint /app/bin/codex-proxy-rs xinapi/cpr:ci --version
+      - name: Upload build metadata only, not full logs or images
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: cpr-build-metadata
+          path: .runtime/builds/*.json
+          if-no-files-found: warn
+          retention-days: 7
+
+  checks_summary:
+    if: always()
+    needs: [changes, quality, new_api_image, cpr_image]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Require requested checks, not skipped or failed prerequisites
+        env:
+          CHANGE_RESULT: ${{ needs.changes.result }}
+          QUALITY_RESULT: ${{ needs.quality.result }}
+          NEW_API_REQUESTED: ${{ needs.changes.outputs.new_api }}
+          CPR_REQUESTED: ${{ needs.changes.outputs.cpr }}
+          NEW_API_RESULT: ${{ needs.new_api_image.result }}
+          CPR_RESULT: ${{ needs.cpr_image.result }}
+        run: |
+          python3 - <<'PY'
+          import os
+          required = [("changes", os.environ["CHANGE_RESULT"]), ("quality", os.environ["QUALITY_RESULT"])]
+          for component in ("NEW_API", "CPR"):
+              if os.environ[component + "_REQUESTED"] == "true":
+                  required.append((component, os.environ[component + "_RESULT"]))
+          for name, result in required:
+              print(name, result)
+          raise SystemExit(0 if all(result == "success" for _, result in required) else 1)
+          PY
