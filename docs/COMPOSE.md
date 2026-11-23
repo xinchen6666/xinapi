@@ -18,16 +18,17 @@ chmod 0755 deploy/compose/init-db.sh
 chmod 0644 deploy/compose/cpr-entrypoint.sh services/codex-proxy-rs/deploy/config.example.yaml
 python3 -B tools/init_compose.py
 docker compose config --quiet
-docker compose up -d postgres redis-newapi redis-cpr
+python3 -B tools/start_compose.py --build --timeout 120
 ```
 
 `chmod` 只面向公开脚本、模板，尤其适用于 umask 为 077 的检出。生成器按服务写入 `.runtime/x04/`，目录 0700，文件 0600。自选目录时同步设置 `XINAPI_CONFIG_DIR` 和生成器的 `--directory`。复用已有完整配置，缺项时停止并提示。展开的 Compose 配置和 `docker inspect` 环境段含有秘密，仅供部署者本地使用。
 
-首次空卷建库需要几秒钟。执行下面的 SQL，输出 `cpr` 后再启动两个应用；如果 PostgreSQL 仍在初始化，稍后重试同一条：
+[启动入口](../tools/start_compose.py)以两应用实际配置连接各自数据库、认证各自 Redis，并检查 New API `/api/status` 和 CPR `/readyz`。所有条件成功后 exit 0；依赖延迟时在总时限内继续等待，初始化缺项或超时则 exit 1，原配置和命名卷保留。输出仅含服务就绪状态，凭据留在进程内。Compose 的 `--wait` 与容器 running 状态仅代表其现有等待范围；本项目以启动入口的最终结果判断可用。
+
+项目名可由 `--project-name` 或 `COMPOSE_PROJECT_NAME` 指定；`COMPOSE_FILE` 及 `XINAPI_*` 环境继续沿用 Docker Compose 的约定。已启动项目可执行一次性验证：
 
 ```bash
-docker compose exec -T postgres sh -ec 'PGPASSWORD="$CPR_DB_PASSWORD" psql -X -h 127.0.0.1 -U cpr -d cpr -Atc "select current_database()"'
-docker compose up -d --wait
+python3 -B tools/start_compose.py --wait-only --timeout 120
 docker compose ps
 ```
 
@@ -45,7 +46,46 @@ PG18 卷挂在 `/var/lib/postgresql`。专用初始化身份建立 `newapi` 与 
 
 ```bash
 docker compose down
-docker compose up -d --wait
+python3 -B tools/start_compose.py --timeout 120
 ```
 
-使用常规 `down` 保留命名卷。首次初始化中断时，PostgreSQL 启动脚本会识别已有数据目录缺少完成标记并拒绝向应用提供半套数据库；先停止该项目，保留卷和原配置并检查初始化错误。全新演练可指定独立项目名和端口。应用接入真实订阅、OAuth 及出口策略分别由后续任务交付。
+使用常规 `down` 保留命名卷。首次初始化中断时，PostgreSQL 启动脚本会识别已有数据目录缺少完成标记并拒绝向应用提供半套数据库；按下节在原卷完成补救。全新演练可指定独立项目名和端口。应用接入真实订阅、OAuth 及出口策略分别由后续任务交付。
+
+## 在原卷补全首次初始化
+
+适用状态为已有 PG_VERSION、缺少 `.xinapi-databases-ready`，常见阶段为只建立角色、只建立一个应用库，或授权已提交而完成标记尚待写入。原配置目录、项目名和镜像继续沿用。先检查本机受保护的 PostgreSQL 启动日志，修正公开挂载文件的读取权限等原始原因。
+
+先停止应用和普通数据库容器，再以原管理身份启动仅接受 Unix socket 的维护容器；该容器使用同一 PostgreSQL 卷，保持宿主端口为空：
+
+```bash
+docker compose stop
+chmod 0644 deploy/compose/complete-db-init.sh
+docker compose run --no-deps -d --name xinapi-pg-maintenance \
+  --entrypoint docker-entrypoint.sh \
+  --volume "$PWD/deploy/compose/complete-db-init.sh:/etc/xinapi/complete-db-init.sh:ro" \
+  postgres postgres -c listen_addresses=
+```
+
+以下命令输出 `1` 后继续；启动中的连接失败可稍后重试：
+
+```bash
+docker exec xinapi-pg-maintenance sh -ec \
+  'PGPASSWORD="$POSTGRES_PASSWORD" psql -X -w -U "$POSTGRES_USER" -d postgres -Atc "SELECT 1"'
+```
+
+[补全脚本](../deploy/compose/complete-db-init.sh)先检查已有角色权限和数据库归属，再创建缺失角色或数据库。已启用角色使用原配置实际认证，认证成功后保留已有口令；NOLOGIN 角色在两库授权齐全后使用原配置口令启用。最后验证两个角色各自登录成功、跨库访问被拒绝，随后写入完成标记。遇到已有角色权限、库归属或原口令冲突时，按提示核对原部署配置与对象，继续保留该卷；完成标记由脚本在验证成功后写入。
+
+```bash
+docker exec --user postgres xinapi-pg-maintenance \
+  sh /etc/xinapi/complete-db-init.sh
+```
+
+确认输出 `initialization completed on the retained volume` 后，停止本节建立的维护容器，并通过正式启动入口验证五服务：
+
+```bash
+docker stop xinapi-pg-maintenance
+docker rm xinapi-pg-maintenance
+python3 -B tools/start_compose.py --timeout 120
+```
+
+补全操作保留卷中的已有表和记录。完成标记已存在时，脚本提示通过正式启动入口验证服务。最后使用原管理员口令和原应用凭据验证登录，并读取原业务记录确认数据保持。

@@ -28,7 +28,7 @@ services:
       - -ec
       - |
         if [ -s "$${PGDATA:?}/PG_VERSION" ] && [ ! -f "$${PGDATA}/.xinapi-databases-ready" ]; then
-          echo 'Incomplete xinapi cluster initialization; inspect startup logs and preserve volume.' >&2
+          echo 'Incomplete xinapi cluster initialization; preserve volume and original credentials. See docs/COMPOSE.md for preserved-volume repair.' >&2
           exit 1
         fi
         exec docker-entrypoint.sh postgres

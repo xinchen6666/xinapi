@@ -7,7 +7,7 @@
 | X01 | done | lead，文档和 Git | [执行日志](worklog/X01.md)：两个原始提交已推至 `main`，Git 与 GitHub API 读回的[基线提交](https://github.com/xinchen6666/xinapi/commit/bcf6eff7632da4ce00ca48492691fae58131bcc1)一致；见 E009 |
 | X02 | done | lead；x02-audit-code、x02-audit-scope 复核 | 固定源码基线已交付[PR #1](https://github.com/xinchen6666/xinapi/pull/1)；本次审查修复2项校验错误通过，16项测试通过，见[E013](VALIDATION.md#e013-x02审查修订)；未合并，X03现按用户继续指令推进 |
 | X03 | done | lead；CPR版本修订复核完成 | [PR #2](https://github.com/xinchen6666/xinapi/pull/2)包含R1修订；本机及[新CI](https://github.com/xinchen6666/xinapi/actions/runs/45120537811)实际版本输出3.54.2，全部作业成功；47项原工具回归通过，见[E015](VALIDATION.md#e015-x03cpr-发行版本修订)。X04待启动 |
-| X04 | done | lead；Compose 与基础设施 | [X04 联调日志](worklog/X04.md)：五服务本机启动、两层管理员登录、跨库权限和 Redis 隔离及保留卷重建通过 |
+| X04 | in_progress | lead；修订交付 | [修订复验](worklog/X04.md#已确认修订与复验2026-11-23)：真实就绪启动、依赖延迟、原卷补全及原凭据数据保持通过；正在同步 PR #3，见 E018 |
 | X05 | pending | New API Go／React | 管理员只读页与后端拒绝 |
 | X06 | pending | 订阅解析／管理表单 | 自造订阅预览，首次演示 |
 | X07 | pending | CPR Store／Admin | 快照、节点身份、刷新差异与迁移 |
