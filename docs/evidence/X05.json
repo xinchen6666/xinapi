@@ -1,6 +1,6 @@
 {
   "task": "X05",
-  "checked_at": "2026-11-23T17:47:51.586921+00:00",
+  "checked_at": "2026-11-23T17:58:46.924842+00:00",
   "result": "partial",
   "versions": {
     "Go": "1.26.10",
@@ -137,6 +137,43 @@
         }
       },
       "temporary_fixtures_removed": true
+    },
+    "language-results": {
+      "en": {
+        "heading": true,
+        "real_empty": true,
+        "real_proxy": true
+      },
+      "zhCN": {
+        "heading": true,
+        "real_empty": true,
+        "real_proxy": true
+      },
+      "zhTW": {
+        "heading": true,
+        "real_empty": true,
+        "real_proxy": true
+      },
+      "fr": {
+        "heading": true,
+        "real_empty": true,
+        "real_proxy": true
+      },
+      "ja": {
+        "heading": true,
+        "real_empty": true,
+        "real_proxy": true
+      },
+      "ru": {
+        "heading": true,
+        "real_empty": true,
+        "real_proxy": true
+      },
+      "vi": {
+        "heading": true,
+        "real_empty": true,
+        "real_proxy": true
+      }
     }
   },
   "existing_tests": {
