@@ -172,6 +172,44 @@ def build_command(
     return command + [str(context)]
 
 
+def verify_loaded_image(image, metadata, revision, source_url, platform):
+    """Tie the loaded object to this exporter result, platform and source labels."""
+    if not isinstance(metadata, dict) or not isinstance(image, dict):
+        raise BuildError("Build metadata and image inspection must be JSON objects.")
+    digest = metadata.get("containerimage.digest")
+    if not isinstance(digest, str) or not re.fullmatch(r"sha256:[0-9a-f]{64}", digest):
+        raise BuildError("BuildKit did not provide the exported image digest.")
+    descriptor = metadata.get("containerimage.descriptor")
+    if descriptor is not None and (
+        not isinstance(descriptor, dict) or descriptor.get("digest") != digest
+    ):
+        raise BuildError("BuildKit descriptor and exported digest differ.")
+    expected_ids = {digest}
+    config_digest = metadata.get("containerimage.config.digest")
+    if config_digest is not None:
+        if not isinstance(config_digest, str) or not re.fullmatch(
+            r"sha256:[0-9a-f]{64}", config_digest
+        ):
+            raise BuildError("BuildKit provided an invalid configuration digest.")
+        expected_ids.add(config_digest)
+    # Classic Docker identifies images by config; the containerd store identifies
+    # the loaded OCI index. Both must be anchored to the exporter metadata.
+    repo_digests = image.get("RepoDigests") or []
+    if image.get("Id") not in expected_ids and not any(
+        item.endswith("@" + digest) for item in repo_digests if isinstance(item, str)
+    ):
+        raise BuildError("Loaded image does not match the BuildKit result.")
+    if f"{image.get('Os', '')}/{image.get('Architecture', '')}" != platform:
+        raise BuildError("Loaded image platform differs from the requested platform.")
+    labels = image.get("Config", {}).get("Labels") or {}
+    if (
+        labels.get("org.opencontainers.image.revision") != revision
+        or labels.get("org.opencontainers.image.source") != source_url
+    ):
+        raise BuildError("Loaded image source labels differ from the selected commit.")
+    return image["Id"]
+
+
 def main(root=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("component", choices=("new-api", "cpr"))
@@ -199,7 +237,9 @@ def main(root=None):
     root = Path(root) if root is not None else Path(__file__).resolve().parents[1]
     revision = resolve_revision(root, args.revision)
     spec, target = read_target(root, revision, args.component)
-    tag = args.tag or target["image_name"] + ":" + revision[:12]
+    tag = args.tag or target["image_name"] + ":" + revision[
+        :12
+    ] + "-" + args.platform.replace("/", "-")
     runtime = root / ".runtime"
     runtime.mkdir(exist_ok=True)
     started = datetime.now(timezone.utc)
@@ -315,15 +355,17 @@ def main(root=None):
                     inspect + ["image", "inspect", tag], env=env
                 )
                 image = json.loads(info)[0]
-                labels = image.get("Config", {}).get("Labels") or {}
-                if labels.get("org.opencontainers.image.revision") != revision:
-                    raise BuildError(
-                        "Loaded image does not carry the selected source revision."
-                    )
-                receipt["image_id"] = image["Id"]
-                receipt["buildkit"] = (
-                    json.loads(metadata.read_bytes()) if metadata.exists() else {}
+                if not metadata.is_file():
+                    raise BuildError("BuildKit metadata file is missing.")
+                build_metadata = json.loads(metadata.read_bytes())
+                receipt["image_id"] = verify_loaded_image(
+                    image,
+                    build_metadata,
+                    revision,
+                    spec["source_repository"],
+                    args.platform,
                 )
+                receipt["buildkit"] = build_metadata
         except subprocess.TimeoutExpired:
             receipt.update(result="failed", exit_code=124, failure="build_timeout")
         except (

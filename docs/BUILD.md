@@ -20,7 +20,7 @@ python3 -B tools/build_image.py cpr --revision HEAD
 
 [构建入口](../tools/build_image.py)从指定提交读取配方和source tree，在临时目录解包Git快照，不发送未提交的`.env`、研究缓存或根Git目录。Dockerfile、ignore policy必须是Git普通文件。默认只`--load`到本机，不推送镜像或启动服务。
 
-每次构建保存独立JSON回执、BuildKit元数据和本地日志到忽略的`.runtime/`，记录Git提交、source tree、配方/ignore摘要、镜像ID、平台和实际退出码。指定`--output`时必须是该目录下尚不存在的JSON文件，避免覆盖旧证据。成功还会检查镜像的OCI revision与所选提交一致，不能把上次残留tag当作成功。
+每次构建保存独立JSON回执、BuildKit元数据和本地日志到忽略的`.runtime/`，记录Git提交、source tree、配方/ignore摘要、镜像ID、平台和实际退出码。指定`--output`时必须是该目录下尚不存在的JSON文件，避免覆盖旧证据。成功必须取得有效BuildKit导出元数据，将本次exported digest与加载的Docker对象绑定，并确认实际OS/架构、OCI source和revision符合请求；缺失元数据、错平台或残留tag会失败。兼容经典Docker的config ID和containerd的OCI index ID，两者仍须由同一次导出摘要锚定。默认tag包含提交与平台，减少交叉覆盖。
 
 ## 受限网络的显式替代通道
 

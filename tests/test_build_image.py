@@ -1,6 +1,7 @@
 """Build-recipe regression tests that do not require Docker or network."""
 
 import contextlib
+import copy
 import io
 import json
 import os
@@ -19,6 +20,7 @@ from tools.build_image import (
     read_target,
     resolve_revision,
     safe_path,
+    verify_loaded_image,
 )
 
 
@@ -240,6 +242,74 @@ class BuildSnapshotTests(unittest.TestCase):
         self.assertIn("CARGO_BUILD_JOBS=2", command)
         self.assertIn("CPR_GIT_SHA=" + self.revision, command)
         self.assertIn("local-builder", command)
+
+
+class ImageReceiptTests(unittest.TestCase):
+    def setUp(self):
+        self.revision = "b" * 40
+        self.source = "https://github.com/example/xinapi"
+        self.digest = "sha256:" + "a" * 64
+        self.config_digest = "sha256:" + "c" * 64
+        self.metadata = {
+            "containerimage.digest": self.digest,
+            "containerimage.descriptor": {"digest": self.digest},
+        }
+        self.image = {
+            "Id": self.digest,
+            "Os": "linux",
+            "Architecture": "amd64",
+            "Config": {
+                "Labels": {
+                    "org.opencontainers.image.revision": self.revision,
+                    "org.opencontainers.image.source": self.source,
+                }
+            },
+        }
+
+    def verify(self, image, metadata):
+        return verify_loaded_image(
+            image, metadata, self.revision, self.source, "linux/amd64"
+        )
+
+    def test_classic_and_containerd_identities_are_anchored_to_metadata(self):
+        self.assertEqual(self.verify(self.image, self.metadata), self.digest)
+        metadata = {**self.metadata, "containerimage.config.digest": self.config_digest}
+        image = {**self.image, "Id": self.config_digest}
+        self.assertEqual(self.verify(image, metadata), self.config_digest)
+        image["RepoDigests"] = ["xinapi/new-api@" + self.digest]
+        self.assertEqual(self.verify(image, self.metadata), self.config_digest)
+
+    def test_missing_empty_or_inconsistent_metadata_is_rejected(self):
+        for metadata in (
+            None,
+            {},
+            [],
+            {"containerimage.digest": "invalid"},
+            {**self.metadata, "containerimage.config.digest": "invalid"},
+            {
+                **self.metadata,
+                "containerimage.descriptor": {"digest": self.config_digest},
+            },
+        ):
+            with self.subTest(metadata=metadata), self.assertRaises(BuildError):
+                self.verify(self.image, metadata)
+
+    def test_same_revision_with_wrong_image_platform_or_source_is_rejected(self):
+        for key, value in (
+            ("Id", self.config_digest),
+            ("Architecture", "arm64"),
+            ("Os", "windows"),
+        ):
+            image = copy.deepcopy(self.image)
+            image[key] = value
+            with self.subTest(key=key), self.assertRaises(BuildError):
+                self.verify(image, self.metadata)
+        image = copy.deepcopy(self.image)
+        image["Config"]["Labels"]["org.opencontainers.image.source"] = (
+            "https://github.com/example/other"
+        )
+        with self.assertRaises(BuildError):
+            self.verify(image, self.metadata)
 
 
 if __name__ == "__main__":
