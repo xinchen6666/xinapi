@@ -6,7 +6,7 @@
 | --- | --- | --- | --- |
 | X01 | done | lead，文档和 Git | [执行日志](worklog/X01.md)：两个原始提交已推至 `main`，Git 与 GitHub API 读回的[基线提交](https://github.com/xinchen6666/xinapi/commit/bcf6eff7632da4ce00ca48492691fae58131bcc1)一致；见 E009 |
 | X02 | done | lead；x02-audit-code、x02-audit-scope 复核 | 固定源码基线已交付[PR #1](https://github.com/xinchen6666/xinapi/pull/1)；本次审查修复2项校验错误通过，16项测试通过，见[E013](VALIDATION.md#e013-x02审查修订)；未合并，X03现按用户继续指令推进 |
-| X03 | done | lead；x03-new-api、x03-cpr、x03-checks、x03-ci-review | 两镜像本地构建/无网CLI通过；[新版GitHub CI](https://github.com/xinchen6666/xinapi/actions/runs/45104467732)全部成功，47项工具回归；见[E014](VALIDATION.md#e014-x03实际镜像构建与持续检查)。工作分支交付，未合并/未部署 |
+| X03 | done | lead；x03-new-api、x03-cpr、x03-checks、x03-ci-review | 两镜像本地构建/无网CLI通过；[新版GitHub CI](https://github.com/xinchen6666/xinapi/actions/runs/45104467732)全部成功，47项工具回归；见[E014](VALIDATION.md#e014-x03实际镜像构建与持续检查)。已交付[PR #2](https://github.com/xinchen6666/xinapi/pull/2)供审阅，X04待启动 |
 | X04 | pending | Compose 与基础设施 | 五服务空环境、保留卷重启和内网隔离 |
 | X05 | pending | New API Go／React | 管理员只读页与后端拒绝 |
 | X06 | pending | 订阅解析／管理表单 | 自造订阅预览，首次演示 |

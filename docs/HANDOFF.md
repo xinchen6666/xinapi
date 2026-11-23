@@ -11,7 +11,7 @@ X03已完成工作分支交付，下一开发任务为[X04五服务Compose](PLAN
 
 ## 分支和接手
 
-X03位于 [task/X03-build-ci](https://github.com/xinchen6666/xinapi/tree/task/X03-build-ci)，它依赖尚未合并的[PR #1](https://github.com/xinchen6666/xinapi/pull/1)。X03 PR以该X02分支为base，便于只审查本步；合并流程应先收好X02，再明确重定向X03到main并复核SHA。不要将旧main当成含源码/构建工具的版本，不强推或覆盖历史。
+X03审阅入口为[PR #2](https://github.com/xinchen6666/xinapi/pull/2)，工作分支为 [task/X03-build-ci](https://github.com/xinchen6666/xinapi/tree/task/X03-build-ci)，依赖[PR #1](https://github.com/xinchen6666/xinapi/pull/1)。PR #2以X02分支为base，审阅范围聚焦本步构建与CI。合并顺序为先处理X02，再将X03调整至main，并依据实际PR状态开展后续工作。
 
 进入X04前再查PR/main真实状态，从已验证的X03基线开始。X04将建立New API、CPR、PG18分库分用户、两个Redis的根Compose，默认只对本机发布New API。当前没有根Compose、真实账号、订阅或固定出口功能验收。
 
