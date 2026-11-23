@@ -148,6 +148,16 @@ E001–E006 是 X01 之前的历史证据，仅支持当时的工作与版本；
 - 发布前复核补严格receipt：缺少BuildKit metadata、导出digest与加载镜像不符、平台/source/revision错误均失败。47项工具回归通过；真实Docker29的index ID/metadata形态通过。已提交快照 `a1da347925957c6f1a0ec50bd8157bb55457246a` 经构建入口本地New API验证通过；其[新版CI run 45104467732](https://github.com/xinchen6666/xinapi/actions/runs/45104467732)changes、quality、两个镜像和汇总均实际成功；该run对应47项工具回归及严格metadata代码。最终记录提交只更改文档/证据，源代码与构建逻辑不变，复用这个未受影响的完整构建证据。
 - 以上只覆盖构建、项目工具检查和短命CLI，不代表Go/Rust全部业务unit、管理页面、数据库、OAuth、Clash、固定出口或V01–V20已经通过。cache重建标注为cache重建，APT安全更新/构建时间可能改变字节，不承诺跨日期逐字相同。详细日志在忽略目录，公開只存脱敏摘要。
 
+### E015 X03：CPR 发行版本修订
+
+- 专项审查R1复现了统一入口的空版本输出；历史手工构建显式传入3.54.2，其版本证据只适用于对应命令。用户已确认继续修订，范围为构建版本传递、实际输出比较与交付说明。
+- `cpr_release_version`从所选提交的发行文件读取顶层版本；构建参数追加 `CPR_VERSION`，回执记录 `release_version`。CI以回执中的镜像执行版本命令，再与同一提交的发行值比较。
+- 现有47项工具回归通过，测试文件保持原样。临时Git样例验证所选提交各自返回3.54.2与3.54.3，工作树中的99.0.0独立保留；实际构建参数包含3.54.2。
+- 新CI命令对旧空版本镜像实际返回exit1，日志为expected=3.54.2、actual为空。独立只读复核确认正常3.54.2输出通过，空值和其他版本输出失败。
+- 本机修订镜像实际构建成功，使用与CI相同的版本命令得到 `expected='3.54.2', actual='3.54.2'`，exit0；执行条件为隔离网络、只读文件系统和短命容器。
+- [PR版本修订CI 45120537811](https://github.com/xinchen6666/xinapi/actions/runs/45120537811)与[push版本修订CI 45120533870](https://github.com/xinchen6666/xinapi/actions/runs/45120533870)的changes、quality、两个镜像及汇总均成功。独立读取两轮CPR作业日志，均显示 `CPR release version verified: 3.54.2`，版本步骤exit0。
+- R1版本传递与CI输出比较已完成复核。旧空版本镜像的exit1及修订镜像的exit0分别记录；最终记录提交只整理文档，版本实现和配方保持已验证状态。X04保持pending。
+
 ## 未来记录模板
 
 每个run使用唯一证据ID，写：任务ID；checked_at（时区ISO时间）；执行者；证据种类；真实提交/工作区摘要；脱敏环境；实际命令/步骤；预期；实际；`passed/failed/partial/skipped/not_run`；本地持久证据路径；缺口；失效条件。未执行的命令只放计划，不放实际记录。
