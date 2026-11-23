@@ -6,7 +6,7 @@ X04 真实就绪与原卷补全修订已普通推送，现有 [PR #3](https://gi
 
 X05 的「账号与出口」原生页面、固定后端接口、角色加操作权限、字段裁剪和私有 Key 文件消费已完成。最终镜像 `xinapi/new-api:x05-reviewed` 在真实五服务启动成功；账号空列表和自造认证代理成功。隔离夹具及浏览器验证覆盖权限拒绝、零管理调用、分页、加载、错误重试、权限撤销、七语和移动长 ID。详情见 [X05 日志](worklog/X05.md)和 [E019](VALIDATION.md#e019-x05管理员只读入口)。
 
-**待收尾：**X05 准备以 Draft PR 交付。原 `TestSetUserPermissionsStoresOnlyOverrides` 在两处完整对象期望中固定旧三类权限资源，新增资源后该项失败；用户明确授权测试文件维护后，在两处期望加入 `ResourceAccountEgress: {ActionRead: true}`，再运行完整 authz 测试。测试文件当前保持原状，X05 继续 in_progress。类型、lint、镜像、现有表格 7 项及其余 Go 权限相关回归已通过。
+**待收尾：**X05 已以 [Draft PR #4](https://github.com/xinchen6666/xinapi/pull/4)交付，base 为 X04，远端功能文件、七语证据和 PR 状态均读回通过。原 `TestSetUserPermissionsStoresOnlyOverrides` 在两处完整对象期望中固定旧三类权限资源，新增资源后该项失败；用户明确授权测试文件维护后，在两处期望加入 `ResourceAccountEgress: {ActionRead: true}`，再运行完整 authz 测试。测试文件当前保持原状，X05 继续 in_progress。类型、lint、镜像、现有表格 7 项及其余 Go 权限相关回归已通过。
 
 本机 `xinapi-x04-review` 保持真实 CPR 五服务，New API 回环端口 19304；私有配置与 Key 留在原审核目录。原 `xinapi-x04-local` 回环端口 18304 保持运行。临时 CPR 夹具已移除，命名卷与原凭据保留。[协作入口](../AGENTS.md)及[当前规则](MEMORY.md)的用户编辑继续独立保留。
 
