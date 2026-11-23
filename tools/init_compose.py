@@ -5,6 +5,7 @@ import os
 from pathlib import Path
 import secrets
 import stat
+from urllib.parse import quote, urlunsplit
 
 
 def main():
@@ -79,8 +80,18 @@ def main():
         "redis-newapi": dict(REDIS_PASSWORD=rn),
         "redis-cpr": dict(REDIS_PASSWORD=rc),
         "new-api": dict(
-            SQL_DSN=f"postgresql://newapi:{na}@postgres:5432/newapi?sslmode=disable",
-            REDIS_CONN_STRING=f"redis://:{rn}@redis-newapi:6379/0",
+            SQL_DSN=urlunsplit(
+                (
+                    "postgresql",
+                    f"newapi:{quote(na, safe='')}@postgres:5432",
+                    "/newapi",
+                    "sslmode=disable",
+                    "",
+                )
+            ),
+            REDIS_CONN_STRING=urlunsplit(
+                ("redis", f":{quote(rn, safe='')}@redis-newapi:6379", "/0", "", "")
+            ),
             SESSION_SECRET=key(),
             CRYPTO_SECRET=key(),
             TRUSTED_PROXIES="none",
