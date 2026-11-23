@@ -38,7 +38,22 @@ docker compose ps
 
 1. **团队管理员**使用 New API 的首次安装界面设置账号和口令。该身份管理 New API；团队成员仅使用 New API 入口。
 2. **部署者**通过 `docker compose exec -T cpr` 访问 CPR 容器回环 API。CPR 初始用户名为 `admin@cpr.local`，口令来自该实例私有 `cpr.env` 的 `XINAPI_CPR_INITIAL_PASSWORD`。配置渲染在容器的私有 tmpfs，服务以 UID 10001 运行。
-3. 取得内部管理凭据的流程：在容器内向 `POST /api/auth/login` 提交 `mode=admin` 和初始凭据，使用该会话调用 `GET /api/admin/settings/admin-api-key`。首次签发使用 `POST /api/admin/settings/admin-api-key/regenerate`，响应的 `data.key` 仅一次返回。将其直接交给本机受保护的后端密钥文件（0600），会话和返回值均按秘密处理；已有密钥时继续使用已有配置。**X04 验证到管理会话登录**；New API 后端消费管理密钥及成员分权属于 X05 以后，当前无需提前签发。CPR 管理端口始终留在容器网络。
+3. 在容器内向 `POST /api/auth/login` 提交 `mode=admin` 和初始凭据，使用该会话调用 `GET /api/admin/settings/admin-api-key` 查看签发状态。首次签发使用 `POST /api/admin/settings/admin-api-key/regenerate`，响应的 `data.key` 仅一次返回。将其直接保存到本机配置目录的 `new-api-secrets/cpr-admin.key`（0600）；会话、响应和文件均按秘密处理，已有 Key 时沿用已有私有文件。CPR 管理端口始终留在容器网络。
+
+## X05 账号与出口入口
+
+[配置生成器](../tools/init_compose.py)创建 `new-api-secrets/` 私有目录（0700）；已有 X04 配置也可再次运行生成器，原凭据保持。部署者将上节取得的 CPR 管理 Key 写入该目录的 `cpr-admin.key`，设置文件权限为 0600。下例的源文件由部署者选取，内容保持在受信本机：
+
+```bash
+python3 -B tools/init_compose.py --directory "${XINAPI_CONFIG_DIR:-./.runtime/x04}"
+install -m 0600 /secure/local/cpr-admin.key \
+  "${XINAPI_CONFIG_DIR:-./.runtime/x04}/new-api-secrets/cpr-admin.key"
+python3 -B tools/start_compose.py --timeout 120
+```
+
+[根 Compose](../compose.yaml)将整个目录以只读方式挂到 New API 的 `/run/xinapi`，由 `XINAPI_CPR_ADMIN_KEY_FILE=/run/xinapi/cpr-admin.key` 指定后端消费位置。Key 只由 Go 后端读取，使用固定 CPR 内部地址访问账号和出口列表。缺少有效私有文件或 CPR 暂时离线时，页面展示服务错误并提供重试；Key 文件更新后，后续请求直接读取新值。
+
+管理员登录 New API 后，从「账号与出口」查看两个只读列表。入口同时要求管理员角色与 `account_egress:read`，个人访问令牌也沿用同名 scope。账号展示状态、套餐与出口 ID；出口展示关联账号数和认证配置状态。代理地址、出口 IP、邮箱、上游身份和凭据保持在 CPR 内部。
 
 ## 数据卷和停止
 

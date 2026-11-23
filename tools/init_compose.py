@@ -12,6 +12,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--directory", type=Path, default=Path(".runtime/x04"))
     directory = parser.parse_args().directory
+    secrets_directory = directory / "new-api-secrets"
     required = {
         "postgres": (
             "POSTGRES_USER",
@@ -62,6 +63,13 @@ def main():
                 raise SystemExit(
                     f"Missing required configuration in {name}.env; retain existing credentials."
                 )
+        secrets_directory.mkdir(mode=0o700, exist_ok=True)
+        if (
+            secrets_directory.is_symlink()
+            or not secrets_directory.is_dir()
+            or secrets_directory.stat().st_mode & 0o077
+        ):
+            raise SystemExit("Use a private backend key directory (0700).")
         print("Existing private configuration retained.")
         return
 
@@ -108,6 +116,7 @@ def main():
         with (directory / (name + ".env")).open("x", encoding="utf-8") as handle:
             for field, value in envs[name].items():
                 handle.write(f"{field}={value}\n")
+    secrets_directory.mkdir(mode=0o700)
     print("Created private configuration for five Compose services.")
 
 

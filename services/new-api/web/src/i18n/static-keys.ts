@@ -19,6 +19,17 @@ For commercial licensing, please contact support@quantumnous.com
 // Static translation keys that don't get picked up by the t('...') regex.
 // These cover dynamic labels (e.g. constants, configs) that are passed into t at runtime.
 export const STATIC_I18N_KEYS = [
+  'Accounts and Egress',
+  'Read accounts and egress',
+  'View account and egress lists without credentials.',
+  'Invalid pagination parameters',
+  'Account and egress service is unavailable',
+  'Normal',
+  'Quota paused',
+  'Quota exhausted',
+  'Rate limited',
+  'Disabled',
+  'Error',
   'Generic / Gemini',
   'GPT',
   'Cache reads',

@@ -288,6 +288,7 @@ func SetApiRouter(router *gin.Engine) {
 			requestPluginRoute.POST("/dry_run", controller.DryRunRequestPlugins)
 		}
 		registerChannelRoutes(apiRouter)
+		registerAccountEgressRoutes(apiRouter)
 		registerAuthzRoutes(apiRouter)
 		tokenRoute := apiRouter.Group("/token")
 		tokenRoute.Use(middleware.UserAuth())

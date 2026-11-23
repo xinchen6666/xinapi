@@ -58,8 +58,17 @@ services:
     pull_policy: never
     depends_on: [postgres, redis-newapi]
     env_file: ${XINAPI_CONFIG_DIR:-./.runtime/x04}/new-api.env
+    environment:
+      XINAPI_CPR_ADMIN_KEY_FILE: /run/xinapi/cpr-admin.key
     ports: ['127.0.0.1:${XINAPI_PORT:-3000}:3000']
-    volumes: [newapi:/data]
+    volumes:
+      - newapi:/data
+      - type: bind
+        source: ${XINAPI_CONFIG_DIR:-./.runtime/x04}/new-api-secrets
+        target: /run/xinapi
+        read_only: true
+        bind:
+          create_host_path: false
     networks: [gateway, newapi-data]
 
   cpr:

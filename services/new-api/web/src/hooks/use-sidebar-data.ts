@@ -40,8 +40,18 @@ import {
 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
-import type { SidebarBadges, SidebarData } from '@/components/layout/types'
+import type {
+  NavItem,
+  SidebarBadges,
+  SidebarData,
+} from '@/components/layout/types'
+import {
+  ADMIN_PERMISSION_RESOURCES,
+  ADMIN_PERMISSION_ACTIONS,
+  hasPermission,
+} from '@/lib/admin-permissions'
 import { ROLE } from '@/lib/roles'
+import { useAuthStore } from '@/stores/auth-store'
 
 /**
  * Root navigation groups for the application sidebar.
@@ -51,6 +61,24 @@ import { ROLE } from '@/lib/roles'
  */
 export function useSidebarData(badges: SidebarBadges = {}): SidebarData {
   const { t } = useTranslation()
+  const user = useAuthStore((state) => state.auth.user)
+  const accountEgressItems: NavItem[] =
+    user &&
+    user.role >= ROLE.ADMIN &&
+    hasPermission(
+      user,
+      ADMIN_PERMISSION_RESOURCES.ACCOUNT_EGRESS,
+      ADMIN_PERMISSION_ACTIONS.READ
+    )
+      ? [
+          {
+            title: t('Accounts and Egress'),
+            url: '/account-egress',
+            icon: ServerCog,
+            requiredRole: ROLE.ADMIN,
+          },
+        ]
+      : []
 
   return {
     navGroups: [
@@ -133,6 +161,7 @@ export function useSidebarData(badges: SidebarBadges = {}): SidebarData {
         id: 'admin',
         title: t('Admin'),
         items: [
+          ...accountEgressItems,
           {
             title: t('Channels'),
             url: '/channels',
