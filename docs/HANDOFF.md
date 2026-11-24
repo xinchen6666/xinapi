@@ -1,16 +1,16 @@
 # 当前交接
 
-## 当前：X06 审核修复本地通过，待远端同步
+## 当前：X06 审核修复已交付，等待复审
 
 用户已授权修复，R1–R6 和部分接受显式确认均已落实。当前复验为 passed：72 项真实接口场景、桌面/移动确认、账号与配置状态对比通过；Rust 完整回归 399 / 680 / 218 项、架构 16 项、严格 Clippy、Go 与前端检查均通过。详见 [修复报告](worklog/X06-fix.md)、[脱敏证据](evidence/X06-fix.json)和 [E022](VALIDATION.md#e022-x06审核修复复验)。
 
 新合同：候选新增 parse_valid，supported 继续表示原生 HTTP/SOCKS 支持；下载目标逐跳校验全部地址并固定连接；HTTP 测试名单仅在明文 HTTP 开放本地例外。结果预算为 4096 候选、4096 诊断、完整 JSON 8 MiB，超额返回 subscription_preview_too_large。部分结果由管理员选择解析有效节点并确认范围，页面确认只保存在当前预览。
 
-本地工作分支为 task/X06-subscription-preview，原 Draft PR #5 保持。Git 通道探测超时；代码和证据先形成同组本地提交，远端同步按实际回执另记。X06 保持 in_progress 以区分功能修复通过和远端交付完成。下一动作是同步本步提交与证据，再进入后续任务。
+工作分支为 task/X06-subscription-preview，[Draft PR #5](https://github.com/xinchen6666/xinapi/pull/5)保持 open，base 为 task/X05-admin-readonly。网络恢复后已核对远端与修复前代码，差异仅为先前四张截图；保留双方历史完成常规合并，已验证的源码与证据内容保持原值，随后普通推送成功。PR 标题、正文和附件已更新。X06 为 done，下一动作是按 PR 复审修复，再安排 X07。
 
-原 xinapi-x04-review 与 xinapi-x04-local 保持原镜像和数据。本轮验证使用 xinapi-x06-audit 与 xinapi/cpr:x06-fixed、xinapi/new-api:x06-fixed；私有脚本、配置、身份和构建日志保存在 .runtime/x06-fix 与原审核私有目录。临时服务收尾后停止，隔离数据卷保留供复跑。用户在[协作入口](../AGENTS.md)和[当前规则](MEMORY.md)的编辑继续保留。
+原 xinapi-x04-review 与 xinapi-x04-local 保持原镜像和数据。本轮验证使用 xinapi-x06-audit 与 xinapi/cpr:x06-fixed、xinapi/new-api:x06-fixed；私有脚本、配置、身份和构建日志保存在 .runtime/x06-fix 与原审核私有目录。临时服务已全部停止，隔离数据卷保留供复跑。用户在[协作入口](../AGENTS.md)和[当前规则](MEMORY.md)的编辑继续保留。
 
-本地与远端存在既有历史差异，后续同步应保留本地源码、截图及用户编辑，经审阅的合并或独立分支完成集成。
+本轮通过常规合并保留此前 API 分批交付与本地实现历史；用户协作规则编辑继续单独保留。
 
 ## 上一轮 X06 交付记录
 
