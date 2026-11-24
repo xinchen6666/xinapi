@@ -147,7 +147,7 @@ async fn preview_should_return_the_whitelisted_field_set() {
             .cloned()
             .collect::<Vec<_>>();
         keys.sort();
-        assert_eq!(keys, vec!["name", "protocol", "supported"]);
+        assert_eq!(keys, vec!["name", "parse_valid", "protocol", "supported"]);
     }
     assert_eq!(candidates[0]["name"], "alpha");
     assert_eq!(candidates[0]["protocol"], "socks5");

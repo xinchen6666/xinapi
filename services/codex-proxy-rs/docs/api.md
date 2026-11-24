@@ -3533,43 +3533,54 @@ GET/HEAD 不接受正文。响应状态码为 200–599，内容类型元数据�
 
 | 方法 | 路由 | 鉴权 | 说明 |
 | --- | --- | --- | --- |
-| `POST` | `/api/admin/subscriptions/preview` | 管理端 | 一次性下载并解析订阅源，返回节点数量、协议与诊断，写入任何状态 |
+| `POST` | `/api/admin/subscriptions/preview` | 管理端 | 一次性下载、校验并返回节点元数据与诊断，结果仅用于预览 |
 
-请求正文为 `{ "source_url": "<绝对订阅地址>" }`，未知字段按 `40001` 拒绝。响应 `data` 字段：
+请求正文为 `{ "source_url": "<绝对订阅地址>" }`，额外字段按 `40001` 拒绝。响应 `data` 字段：
 
 | 字段 | 说明 |
 | --- | --- |
-| `source_url` | 提交值原样回显 |
-| `format` | `clash_yaml`、`clash_json`、`uri_list`、`base64_document`，按正文内容判定 |
-| `fetched_bytes` | 主文档解压后字节数，provider 文档单独计入自身解析 |
-| `accepted` | `candidates` 中 `supported` 为真的节点数 |
-| `rejected` | `candidates` 中 `supported` 为假的节点数，两项之和等于 `candidates` 长度 |
-| `candidates` | 逐节点 `{name, protocol, supported}`，协议取 `ss`、`vmess`、`vless`、`trojan`、`hysteria2`、`tuic`、`socks5`、`http`、`unknown` |
-| `diagnostics` | `{code, message, subject}`，`subject` 为节点名或字段名，取不到时为空字符串 |
+| `source_url` | 提交值原样回显，只返回当前管理员会话 |
+| `format` | `clash_yaml`、`clash_json`、`uri_list`、`base64_document` |
+| `fetched_bytes` | 主文档解压后字节数 |
+| `accepted` | 原生传输可用节点数，即 `supported=true` 的数量 |
+| `rejected` | 其余节点数，与 accepted 之和等于 candidates 长度 |
+| `candidates` | `{name, protocol, parse_valid, supported}`，协议取 `ss`、`vmess`、`vless`、`trojan`、`hysteria2`、`tuic`、`socks5`、`http`、`unknown` |
+| `diagnostics` | `{code, message, subject}`，subject 为节点名、provider 名或字段名 |
 
-`supported` 表示网关当前有物化路径：账号出站代理接受 `http` 与 `socks5`，其余协议等待 Mihomo 引擎接入。
-`diagnostics.code` 取 `unsupported_protocol`、`node_parse_error`、`provider_fetch_failed`、`provider_depth_limit`。
-单条节点识别失败只进诊断，其余节点照常返回 `200`；整篇正文不可读才返回错误。
+`parse_valid` 表示对应协议的地址、端口与必要认证字段校验通过；额外协议及破损节点保持 false。
+`supported` 还要求网关具备原生传输路径，当前为 HTTP/SOCKS5。其余有效协议等待 Mihomo 接入。
+解析有效性与原生传输能力分别展示，端口或凭据校验通过仍需后续连通性验证。
 
-下载边界：默认只接受 `https`；明文 `http` 仅向 `subscriptions.insecure_test_hosts` 列出的测试源主机开放，
-部署模板保持空列表。主文档正文最多 2 MiB，解压后最多 8 MiB，整次预览总时限 10 秒，跳转最多 3 次，
-每一跳都按同一规则复核 scheme 与主机。请求不带任何凭据与 Cookie，地址内的用户信息在发起请求前丢弃。
-正文只做解析：脚本、规则、监听、文件路径与 controller 配置一律跳过，解析器读取已下载的正文。
+短 Base64 和大文档包装均按解码后的文档判断格式。已识别的 YAML/JSON 语法失败返回文档错误，
+URI 列表中的错误行则逐项进入诊断。节点读取只保留公开元数据，连接秘密在解析层丢弃。
 
-Clash 文档中的 `proxy-providers` 按同一套边界受控拉取，成功时节点并入 `candidates`，失败时记
-`provider_fetch_failed` 诊断并保留主文档结果。provider 深度为一层，provider 文档内的 provider 记
-`provider_depth_limit`。文件型 provider 依赖本地路径，整段跳过。
+下载默认仅接受公网 HTTPS。每次首跳、跳转及 provider 都校验全部 DNS 地址，并将连接固定到审核后的地址集合；
+TLS SNI、Host 与证书校验继续使用原始主机。私网、环回、链路本地、多播、保留地址以及映射至这些范围的 IPv6 地址均被拒绝。
+明文 HTTP 仅向 `subscriptions.insecure_test_hosts` 精确列出的测试主机开放，允许本地自造源联调；同名 HTTPS 仍执行公网策略。
+生产模板保持空测试名单。每次请求剥离 URL userinfo，传输只带固定协商头，Cookie 与管理凭据留在各自服务边界。
 
-响应只含上表字段；主机、端口、凭据、UUID 与路径参数留在服务端。
+正文限 2 MiB，解压后限 8 MiB。主文档与全部 provider 下载共用 10 秒预算，单次下载最多跟随 3 次跳转。
+每份文档最多展开 32 个 HTTP provider；provider 深度为一层。成功项并入候选，失败项保留主文档并给出诊断。
+文件型及当前范围外的资源返回 `provider_unsupported`；结构错误返回 `provider_parse_error`。
+规则、脚本、监听、路径和 controller 配置保持静态输入，引擎启动与持久化由后续明确操作负责。
 
-| HTTP | `code` | `reason` | 场景 |
+整次预览最多返回 4096 个候选和 4096 条诊断，完整 JSON 响应限 8 MiB。
+超出结果预算返回 `subscription_preview_too_large`，整个预览以容量错误结束。
+`diagnostics.code` 取 `unsupported_protocol`、`node_parse_error`、`provider_fetch_failed`、
+`provider_depth_limit`、`provider_unsupported`、`provider_parse_error`。
+
+管理页面遇部分结果时，管理员选择解析有效的节点，再确认所选名称、跳过项和诊断范围。
+确认仅记录当前预览的审核选择，账号、绑定和运行配置保持原值；新预览、失败、换用户或重新选行会清除旧确认。
+
+| HTTP | code | reason | 场景 |
 | ---: | ---: | --- | --- |
-| 400 | `40001` | `subscription_source_invalid` | 源地址为空、超长、含控制字符或缺少主机 |
-| 400 | `40001` | `subscription_target_not_allowed` | scheme 或主机被下载策略拒绝，含跳转目标 |
-| 422 | `40001` | `subscription_unreadable` | 正文为空、Base64 解码失败、YAML／JSON 语法错误或结构无法识别 |
-| 422 | `40001` | `subscription_too_large` | 正文超 2 MiB 或解压后超 8 MiB |
-| 502 | `50201` | `subscription_timeout` | 整次预览 10 秒预算耗尽 |
+| 400 | `40001` | `subscription_source_invalid` | 地址形状错误 |
+| 400 | `40001` | `subscription_target_not_allowed` | 协议、主机或实际地址被策略拒绝 |
+| 422 | `40001` | `subscription_unreadable` | 正文、编码、语法或结构读取失败 |
+| 422 | `40001` | `subscription_too_large` | 原始/解压后正文超限 |
+| 422 | `40001` | `subscription_preview_too_large` | 候选、诊断或完整响应超出预算 |
+| 502 | `50201` | `subscription_timeout` | 下载预算耗尽 |
 | 502 | `50201` | `subscription_too_many_redirects` | 跳转超过 3 次 |
-| 502 | `50201` | `subscription_fetch_failed` | 连接、TLS、非 2xx 或读取失败 |
+| 502 | `50201` | `subscription_fetch_failed` | 连接、TLS、读取或来源状态错误 |
 
-错误正文沿用管理端信封并附带 `reason`，`message` 为英文脱敏句，不含上游正文、响应头、异常堆栈与目标 IP。
+错误信封附带稳定 reason 和脱敏英文消息，上游正文、响应头和目标地址留在内部。

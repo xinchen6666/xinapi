@@ -3,17 +3,23 @@
 //! 响应只带白名单字段：节点名、协议、可用标记、诊断码与计数
 //! 主机、端口、凭据、UUID 与路径参数留在服务端
 
-use axum::{Router, extract::State, http::StatusCode, response::IntoResponse, routing::post};
-use gateway_admin::model::subscriptions::{SubscriptionPreview, SubscriptionPreviewError};
+use axum::{
+    Router, extract::State, http::StatusCode, http::header, response::IntoResponse, routing::post,
+};
+use gateway_admin::model::subscriptions::{
+    MAX_PREVIEW_RESPONSE_BYTES, SubscriptionPreview, SubscriptionPreviewError,
+};
 use serde::{Deserialize, Serialize};
 
-use super::{AdminAuth, AdminEnvelope, AdminError, AdminJson, AdminResponse};
+use super::{AdminAuth, AdminEnvelope, AdminError, AdminJson};
 
 /// 正文内容类失败按 422 返回：请求本身合法，文档内容无法使用
 fn content_unusable(error: SubscriptionPreviewError) -> bool {
     matches!(
         error,
-        SubscriptionPreviewError::Unreadable | SubscriptionPreviewError::TooLarge
+        SubscriptionPreviewError::Unreadable
+            | SubscriptionPreviewError::TooLarge
+            | SubscriptionPreviewError::PreviewTooLarge
     )
 }
 
@@ -27,6 +33,7 @@ struct PreviewRequest {
 struct CandidateView {
     name: String,
     protocol: &'static str,
+    parse_valid: bool,
     supported: bool,
 }
 
@@ -63,6 +70,7 @@ impl From<SubscriptionPreview> for PreviewView {
                 .map(|candidate| CandidateView {
                     name: candidate.name,
                     protocol: candidate.protocol.as_str(),
+                    parse_valid: candidate.parse_valid,
                     supported: candidate.supported,
                 })
                 .collect(),
@@ -110,8 +118,14 @@ where
         .preview(&request.source_url)
         .await
         .map_err(map_error)?;
-    Ok(AdminResponse::new(
+    let body = serde_json::to_vec(&AdminEnvelope::ok(PreviewView::from(preview)))
+        .map_err(|_| map_error(SubscriptionPreviewError::PreviewTooLarge))?;
+    if body.len() > MAX_PREVIEW_RESPONSE_BYTES {
+        return Err(map_error(SubscriptionPreviewError::PreviewTooLarge));
+    }
+    Ok((
         StatusCode::OK,
-        AdminEnvelope::ok(PreviewView::from(preview)),
+        [(header::CONTENT_TYPE, "application/json")],
+        body,
     ))
 }

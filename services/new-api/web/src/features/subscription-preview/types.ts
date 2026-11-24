@@ -19,6 +19,7 @@ For commercial licensing, please contact support@quantumnous.com
 export type SubscriptionPreviewCandidate = {
   name: string
   protocol: string
+  parse_valid: boolean
   supported: boolean
 }
 
@@ -49,6 +50,7 @@ export type CandidateRow = {
   id: string
   name: string
   protocol: string
+  parse_valid: boolean
   supported: boolean
 }
 

@@ -187,7 +187,7 @@ async fn uri_list_preview_reads_fragments_and_reports_unreadable_lines() {
         MAIN_URL,
         concat!(
             "# exported fixture\n",
-            "vmess://eyJ2IjoiMiIsInBzIjoiYWxwaGEiLCJhZGQiOiIxOTguNTEuMTAwLjkiLCJwb3J0IjoiNDQzIn0=\n",
+            "vmess://eyJ2IjogIjIiLCAicHMiOiAiYWxwaGEiLCAiYWRkIjogIjE5OC41MS4xMDAuOSIsICJwb3J0IjogIjQ0MyIsICJpZCI6ICIxMTExMTExMS0xMTExLTExMTEtMTExMS0xMTExMTExMTExMTEifQ==\n",
             "vless://11111111-1111-1111-1111-111111111111@198.51.100.10:443?security=tls#beta\n",
             "ss://YWVzLTEyOC1nY206c2VjcmV0@198.51.100.11:8388#gamma%20node\n",
             "trojan://secret@198.51.100.12:8443#delta\n",
@@ -426,4 +426,165 @@ async fn preview_policy_rejects_plain_http_for_public_hosts() {
         SubscriptionFetchPolicy::default().resolve_source("http://public.example.com/sub.yaml"),
         Err(SubscriptionSourceError::TargetRejected)
     );
+}
+
+#[tokio::test]
+async fn malformed_connections_stay_rejected_while_valid_native_nodes_remain_available() {
+    let source = fixtures();
+    source.document(
+        MAIN_URL,
+        concat!(
+            "http://#bad-http\n",
+            "socks5://#bad-socks\n",
+            "vmess://!!!!#bad-vmess\n",
+            "ss://garbage#bad-ss\n",
+            "http://192.0.2.11:8080#valid-http\n",
+        ),
+    );
+    let result = preview(source, MAIN_URL).await;
+    assert_eq!((result.accepted, result.rejected), (1, 4));
+    assert!(
+        result.candidates[..4]
+            .iter()
+            .all(|node| !node.parse_valid && !node.supported)
+    );
+    assert!(result.candidates[4].parse_valid);
+    assert_eq!(result.diagnostics.len(), 4);
+    assert!(
+        result
+            .diagnostics
+            .iter()
+            .all(|item| item.code.as_str() == "node_parse_error")
+    );
+
+    let source = fixtures();
+    source.document(MAIN_URL, r#"{"proxies":[
+        {"name":"missing-server","type":"http"},
+        {"name":"bad-port","type":"socks5","server":"192.0.2.1","port":70000},
+        {"name":"bad-id","type":"vmess","server":"192.0.2.2","port":443,"uuid":"bad"},
+        {"name":"valid-vless","type":"vless","server":"192.0.2.3","port":443,"uuid":"11111111-1111-1111-1111-111111111111"}
+    ]}"#);
+    let result = preview(source, MAIN_URL).await;
+    assert_eq!(result.accepted, 0);
+    assert!(result.candidates[..3].iter().all(|node| !node.parse_valid));
+    assert!(result.candidates[3].parse_valid);
+    assert!(!result.candidates[3].supported);
+}
+
+#[tokio::test]
+async fn base64_wrappers_follow_the_decoded_document_instead_of_a_minimum_length() {
+    for inner in [
+        "http://a:80#n".to_owned(),
+        "proxies: []".to_owned(),
+        format!("http://a:80#n\n{}", " ".repeat(1_700_000)),
+    ] {
+        let source = fixtures();
+        source.document(
+            MAIN_URL,
+            base64::engine::general_purpose::STANDARD.encode(&inner),
+        );
+        let result = preview(source, MAIN_URL).await;
+        assert_eq!(result.format, SubscriptionFormat::Base64Document);
+        assert_eq!(result.accepted, usize::from(inner.starts_with("http")));
+    }
+}
+
+#[tokio::test]
+async fn structured_syntax_errors_keep_the_document_error() {
+    for body in [
+        "proxies: [\nhttp://192.0.2.11:80#hidden",
+        "{\"proxies\":[\nhttp://192.0.2.11:80#hidden",
+    ] {
+        let source = fixtures();
+        source.document(MAIN_URL, body);
+        assert_eq!(
+            preview_error(source, MAIN_URL).await,
+            SubscriptionPreviewError::Unreadable
+        );
+    }
+    let source = fixtures();
+    source.document(MAIN_URL, "broken-line\nhttp://192.0.2.11:80#valid");
+    let result = preview(source, MAIN_URL).await;
+    assert_eq!((result.accepted, result.rejected), (1, 1));
+}
+
+#[tokio::test]
+async fn skipped_provider_types_and_shapes_produce_review_diagnostics() {
+    for (body, code) in [
+        (
+            r#"{"proxy-providers":{"local":{"type":"file","path":"/etc/passwd"}}}"#,
+            "provider_unsupported",
+        ),
+        (
+            r#"{"proxy-providers":{"local":{"type":"inline","payload":[]}}}"#,
+            "provider_unsupported",
+        ),
+        (r#"{"proxy-providers":["broken"]}"#, "provider_parse_error"),
+        (
+            r#"{"proxy-providers":{"remote":{"type":"http"}}}"#,
+            "provider_parse_error",
+        ),
+    ] {
+        let source = fixtures();
+        source.document(MAIN_URL, body);
+        let result = preview(source, MAIN_URL).await;
+        assert!(result.candidates.is_empty());
+        assert_eq!(result.diagnostics.len(), 1);
+        assert_eq!(result.diagnostics[0].code.as_str(), code);
+    }
+}
+
+#[tokio::test]
+async fn preview_capacity_applies_to_nodes_diagnostics_and_combined_providers() {
+    use gateway_admin::model::subscriptions::MAX_PREVIEW_CANDIDATES;
+    let node = serde_json::json!({"name":"node", "type":"http", "server":"192.0.2.1", "port":8080});
+    let source = fixtures();
+    source.document(
+        MAIN_URL,
+        serde_json::json!({"proxies": vec![node.clone(); MAX_PREVIEW_CANDIDATES + 1]}).to_string(),
+    );
+    assert_eq!(
+        preview_error(source, MAIN_URL).await,
+        SubscriptionPreviewError::PreviewTooLarge
+    );
+    let source = fixtures();
+    source.document(
+        MAIN_URL,
+        serde_json::json!({"proxies": vec![node.clone(); MAX_PREVIEW_CANDIDATES],
+        "proxy-providers":{"remote":{"type":"http","url":PROVIDER_URL}}})
+        .to_string(),
+    );
+    source.document(
+        PROVIDER_URL,
+        serde_json::json!({"proxies":[node]}).to_string(),
+    );
+    assert_eq!(
+        preview_error(source, MAIN_URL).await,
+        SubscriptionPreviewError::PreviewTooLarge
+    );
+}
+
+#[tokio::test]
+async fn yaml_flow_maps_and_uri_scheme_case_preserve_supported_syntax() {
+    let source = fixtures();
+    source.document(
+        MAIN_URL,
+        "{proxies: [{name: flow, type: http, server: example.com, port: 80}]}",
+    );
+    let result = preview(source, MAIN_URL).await;
+    assert_eq!(result.format, SubscriptionFormat::ClashYaml);
+    assert_eq!(result.accepted, 1);
+    let source = fixtures();
+    source.document(MAIN_URL, "proxies : [\nhttp://example.com:80#hidden");
+    assert_eq!(
+        preview_error(source, MAIN_URL).await,
+        SubscriptionPreviewError::Unreadable
+    );
+    let source = fixtures();
+    source.document(
+        MAIN_URL,
+        "HTTPS://example.com/#tls\nSOCKS5H://example.com:1080#socks",
+    );
+    let result = preview(source, MAIN_URL).await;
+    assert_eq!(result.accepted, 2);
 }

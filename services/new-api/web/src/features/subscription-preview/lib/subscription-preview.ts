@@ -1,3 +1,4 @@
+import { isAxiosError } from 'axios'
 /*
 Copyright (C) 2023-2026 QuantumNous
 
@@ -16,7 +17,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { isAxiosError } from 'axios'
+import type { TFunction } from 'i18next'
 
 import type {
   CandidateGroup,
@@ -59,6 +60,7 @@ export function buildCandidateRows(
     id: `${candidate.protocol}:${index}`,
     name: candidate.name,
     protocol: candidate.protocol,
+    parse_valid: candidate.parse_valid,
     supported: candidate.supported,
   }))
 }
@@ -80,6 +82,16 @@ export function groupCandidateRows(rows: CandidateRow[]): CandidateGroup[] {
     rows: protocolRows,
     accepted: protocolRows.filter((row) => row.supported).length,
   })).sort((left, right) => left.protocol.localeCompare(right.protocol))
+}
+
+export function diagnosticMessage(
+  diagnostic: SubscriptionPreviewDiagnostic,
+  t: TFunction
+): string {
+  if (diagnostic.code === 'unsupported_protocol') {
+    return t('This protocol awaits transport integration.')
+  }
+  return t(diagnostic.message, { defaultValue: diagnostic.message })
 }
 
 export function buildDiagnosticRows(

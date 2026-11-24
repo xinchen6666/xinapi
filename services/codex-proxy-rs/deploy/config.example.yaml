@@ -80,9 +80,9 @@ api:
   request_id_header: 'x-request-id'
 
 subscriptions:
-  # 订阅预览默认只下载 https 源。明文 http 仅对下列测试源主机开放，
-  # 用于本地自造订阅样本联调；生产部署保持空列表。
-  # 逐项填写主机名，不带 scheme、端口与路径，例如 127.0.0.1、localhost。
+  # 订阅预览默认只下载公网 HTTPS，并逐跳校验实际地址
+  # 下列主机仅在明文 HTTP 时开放本地测试例外；同名 HTTPS 继续执行公网策略
+  # 每项填写纯主机名，例如 127.0.0.1、localhost；生产部署保持空列表
   insecure_test_hosts: []
 
 openai:

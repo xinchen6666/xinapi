@@ -45,6 +45,11 @@ import {
 } from './lib/subscription-preview'
 
 export function SubscriptionPreview() {
+  const userId = useAuthStore((state) => state.auth.user?.id)
+  return <SubscriptionPreviewSession key={userId ?? 'anonymous'} />
+}
+
+function SubscriptionPreviewSession() {
   const { t } = useTranslation()
   const user = useAuthStore((state) => state.auth.user)
   const [source, setSource] = useState('')
@@ -88,6 +93,7 @@ export function SubscriptionPreview() {
   })
 
   const submit = () => {
+    previewMutation.reset()
     const trimmed = source.trim()
     if (trimmed === '') {
       setSourceError(t('Enter a subscription link.'))
@@ -148,14 +154,17 @@ export function SubscriptionPreview() {
               />
             ) : null}
             {previewMutation.isSuccess ? (
-              <PreviewResult preview={previewMutation.data} />
+              <PreviewResult
+                key={previewMutation.submittedAt}
+                preview={previewMutation.data}
+              />
             ) : null}
             {previewMutation.isIdle ? (
               <EmptyState
                 icon={Rss}
                 title={t('No preview yet')}
                 description={t(
-                  'Paste a subscription link to see its node count, accepted and rejected totals, and per-node notes.'
+                  'Paste a subscription link to review parsing, transport capability, and per-node diagnostics.'
                 )}
               />
             ) : null}

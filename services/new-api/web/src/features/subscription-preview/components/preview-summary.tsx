@@ -37,12 +37,25 @@ export function PreviewSummary(props: PreviewSummaryProps) {
       value: formatNumber(props.preview.candidates.length, locale),
     },
     {
-      label: t('Accepted'),
+      label: t('Parse valid'),
+      value: formatNumber(
+        props.preview.candidates.filter((candidate) => candidate.parse_valid)
+          .length,
+        locale
+      ),
+    },
+    {
+      label: t('Native transport'),
       value: formatNumber(props.preview.accepted, locale),
     },
     {
-      label: t('Rejected'),
-      value: formatNumber(props.preview.rejected, locale),
+      label: t('Mihomo pending'),
+      value: formatNumber(
+        props.preview.candidates.filter(
+          (candidate) => candidate.parse_valid && !candidate.supported
+        ).length,
+        locale
+      ),
     },
     {
       label: t('Downloaded'),
@@ -51,7 +64,7 @@ export function PreviewSummary(props: PreviewSummaryProps) {
   ]
 
   return (
-    <dl className='grid grid-cols-2 gap-2 sm:grid-cols-5'>
+    <dl className='grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-6'>
       {stats.map((stat) => (
         <div key={stat.label} className='rounded-md border px-3 py-2'>
           <dt className='text-muted-foreground text-xs'>{stat.label}</dt>

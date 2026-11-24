@@ -16,7 +16,7 @@ use crate::{
     ports::subscription::{FetchedDocument, SubscriptionDocumentSource, SubscriptionFetchError},
 };
 
-use parse::{ProviderReference, parse_document};
+use parse::{ProviderReference, check_counts, parse_document};
 
 const PROVIDER_DOWNLOAD_FAILED_MESSAGE: &str = "The proxy provider document download failed.";
 const PROVIDER_UNREADABLE_MESSAGE: &str = "The proxy provider document is unreadable.";
@@ -69,7 +69,7 @@ impl DefaultSubscriptionsService {
         deadline: Instant,
         candidates: &mut Vec<NodeCandidate>,
         diagnostics: &mut Vec<PreviewDiagnostic>,
-    ) {
+    ) -> Result<(), SubscriptionPreviewError> {
         for provider in providers {
             let fetched = match self.policy.resolve_source(&provider.url) {
                 Ok(url) => self.fetch_document(url.as_str(), deadline).await,
@@ -83,20 +83,29 @@ impl DefaultSubscriptionsService {
                         PROVIDER_DOWNLOAD_FAILED_MESSAGE,
                         provider.name.clone(),
                     ));
+                    check_counts(candidates.len(), diagnostics.len())?;
                     continue;
                 }
             };
             let parsed = match parse_document(&document.body) {
                 Ok(parsed) => parsed,
+                Err(SubscriptionPreviewError::PreviewTooLarge) => {
+                    return Err(SubscriptionPreviewError::PreviewTooLarge);
+                }
                 Err(_) => {
                     diagnostics.push(PreviewDiagnostic::new(
                         DiagnosticCode::ProviderFetchFailed,
                         PROVIDER_UNREADABLE_MESSAGE,
                         provider.name.clone(),
                     ));
+                    check_counts(candidates.len(), diagnostics.len())?;
                     continue;
                 }
             };
+            check_counts(
+                candidates.len() + parsed.candidates.len(),
+                diagnostics.len() + parsed.diagnostics.len() + parsed.providers.len(),
+            )?;
             candidates.extend(parsed.candidates);
             diagnostics.extend(parsed.diagnostics);
             // provider 深度上限为一级，provider 文档内的 provider 只记诊断
@@ -107,7 +116,9 @@ impl DefaultSubscriptionsService {
                     nested.name,
                 )
             }));
+            check_counts(candidates.len(), diagnostics.len())?;
         }
+        check_counts(candidates.len(), diagnostics.len())
     }
 }
 
@@ -126,8 +137,7 @@ impl SubscriptionsService for DefaultSubscriptionsService {
             .fetch_document(url.as_str(), deadline)
             .await
             .map_err(fetch_error)?;
-        let parsed =
-            parse_document(&document.body).map_err(|_| SubscriptionPreviewError::Unreadable)?;
+        let parsed = parse_document(&document.body)?;
         let mut candidates = parsed.candidates;
         let mut diagnostics = parsed.diagnostics;
         self.extend_providers(
@@ -136,7 +146,7 @@ impl SubscriptionsService for DefaultSubscriptionsService {
             &mut candidates,
             &mut diagnostics,
         )
-        .await;
+        .await?;
         let accepted = candidates
             .iter()
             .filter(|candidate| candidate.supported)

@@ -1,0 +1,3486 @@
+{
+  "checked_at": "2026-11-24T20:50:47+08:00",
+  "task": "X06 V01-V03 review",
+  "verdict": "failed",
+  "scope": "synthetic sources on an isolated internal Docker Compose network; retained X06 runtime images; current source review; no source changes",
+  "images": [
+    "xinapi/cpr:x06-preview",
+    "xinapi/new-api:x06-preview"
+  ],
+  "http_test_hosts": [
+    "source.audit.test"
+  ],
+  "tls": "Dedicated audit CA trusted by isolated CPR; normal certificate verification remains active",
+  "format_assertions": [
+    {
+      "case": "yaml",
+      "names_match": true,
+      "protocols_match": true,
+      "counts_match": true,
+      "diagnostic_count": 7
+    },
+    {
+      "case": "json",
+      "names_match": true,
+      "protocols_match": true,
+      "counts_match": true,
+      "diagnostic_count": 7
+    },
+    {
+      "case": "uri",
+      "names_match": true,
+      "protocols_match": true,
+      "counts_match": true,
+      "diagnostic_count": 7
+    },
+    {
+      "case": "b64_yaml",
+      "names_match": true,
+      "protocols_match": true,
+      "counts_match": true,
+      "diagnostic_count": 7
+    },
+    {
+      "case": "b64_json",
+      "names_match": true,
+      "protocols_match": true,
+      "counts_match": true,
+      "diagnostic_count": 7
+    },
+    {
+      "case": "b64_uri",
+      "names_match": true,
+      "protocols_match": true,
+      "counts_match": true,
+      "diagnostic_count": 7
+    }
+  ],
+  "cases": [
+    {
+      "case": "yaml",
+      "status": 200,
+      "elapsed_s": 0.034,
+      "code": null,
+      "message": "",
+      "format": "clash_yaml",
+      "fetched_bytes": 1451,
+      "accepted": 2,
+      "rejected": 7,
+      "candidates": [
+        {
+          "name": "audit-http",
+          "protocol": "http",
+          "supported": true
+        },
+        {
+          "name": "audit-socks",
+          "protocol": "socks5",
+          "supported": true
+        },
+        {
+          "name": "audit-ss",
+          "protocol": "ss",
+          "supported": false
+        },
+        {
+          "name": "audit-vmess",
+          "protocol": "vmess",
+          "supported": false
+        },
+        {
+          "name": "audit-vless",
+          "protocol": "vless",
+          "supported": false
+        },
+        {
+          "name": "audit-trojan",
+          "protocol": "trojan",
+          "supported": false
+        },
+        {
+          "name": "audit-hysteria2",
+          "protocol": "hysteria2",
+          "supported": false
+        },
+        {
+          "name": "audit-tuic",
+          "protocol": "tuic",
+          "supported": false
+        },
+        {
+          "name": "audit-wireguard",
+          "protocol": "unknown",
+          "supported": false
+        }
+      ],
+      "diagnostics": [
+        {
+          "code": "unsupported_protocol",
+          "message": "Protocol ss is recognized; this gateway materializes http and socks5 nodes.",
+          "subject": "audit-ss"
+        },
+        {
+          "code": "unsupported_protocol",
+          "message": "Protocol vmess is recognized; this gateway materializes http and socks5 nodes.",
+          "subject": "audit-vmess"
+        },
+        {
+          "code": "unsupported_protocol",
+          "message": "Protocol vless is recognized; this gateway materializes http and socks5 nodes.",
+          "subject": "audit-vless"
+        },
+        {
+          "code": "unsupported_protocol",
+          "message": "Protocol trojan is recognized; this gateway materializes http and socks5 nodes.",
+          "subject": "audit-trojan"
+        },
+        {
+          "code": "unsupported_protocol",
+          "message": "Protocol hysteria2 is recognized; this gateway materializes http and socks5 nodes.",
+          "subject": "audit-hysteria2"
+        },
+        {
+          "code": "unsupported_protocol",
+          "message": "Protocol tuic is recognized; this gateway materializes http and socks5 nodes.",
+          "subject": "audit-tuic"
+        },
+        {
+          "code": "unsupported_protocol",
+          "message": "The node protocol is unrecognized; this gateway materializes http and socks5 nodes.",
+          "subject": "audit-wireguard"
+        }
+      ],
+      "error_sentinel_exposed": false
+    },
+    {
+      "case": "json",
+      "status": 200,
+      "elapsed_s": 0.021,
+      "code": null,
+      "message": "",
+      "format": "clash_json",
+      "fetched_bytes": 1428,
+      "accepted": 2,
+      "rejected": 7,
+      "candidates": [
+        {
+          "name": "audit-http",
+          "protocol": "http",
+          "supported": true
+        },
+        {
+          "name": "audit-socks",
+          "protocol": "socks5",
+          "supported": true
+        },
+        {
+          "name": "audit-ss",
+          "protocol": "ss",
+          "supported": false
+        },
+        {
+          "name": "audit-vmess",
+          "protocol": "vmess",
+          "supported": false
+        },
+        {
+          "name": "audit-vless",
+          "protocol": "vless",
+          "supported": false
+        },
+        {
+          "name": "audit-trojan",
+          "protocol": "trojan",
+          "supported": false
+        },
+        {
+          "name": "audit-hysteria2",
+          "protocol": "hysteria2",
+          "supported": false
+        },
+        {
+          "name": "audit-tuic",
+          "protocol": "tuic",
+          "supported": false
+        },
+        {
+          "name": "audit-wireguard",
+          "protocol": "unknown",
+          "supported": false
+        }
+      ],
+      "diagnostics": [
+        {
+          "code": "unsupported_protocol",
+          "message": "Protocol ss is recognized; this gateway materializes http and socks5 nodes.",
+          "subject": "audit-ss"
+        },
+        {
+          "code": "unsupported_protocol",
+          "message": "Protocol vmess is recognized; this gateway materializes http and socks5 nodes.",
+          "subject": "audit-vmess"
+        },
+        {
+          "code": "unsupported_protocol",
+          "message": "Protocol vless is recognized; this gateway materializes http and socks5 nodes.",
+          "subject": "audit-vless"
+        },
+        {
+          "code": "unsupported_protocol",
+          "message": "Protocol trojan is recognized; this gateway materializes http and socks5 nodes.",
+          "subject": "audit-trojan"
+        },
+        {
+          "code": "unsupported_protocol",
+          "message": "Protocol hysteria2 is recognized; this gateway materializes http and socks5 nodes.",
+          "subject": "audit-hysteria2"
+        },
+        {
+          "code": "unsupported_protocol",
+          "message": "Protocol tuic is recognized; this gateway materializes http and socks5 nodes.",
+          "subject": "audit-tuic"
+        },
+        {
+          "code": "unsupported_protocol",
+          "message": "The node protocol is unrecognized; this gateway materializes http and socks5 nodes.",
+          "subject": "audit-wireguard"
+        }
+      ],
+      "error_sentinel_exposed": false
+    },
+    {
+      "case": "uri",
+      "status": 200,
+      "elapsed_s": 0.021,
+      "code": null,
+      "message": "",
+      "format": "uri_list",
+      "fetched_bytes": 640,
+      "accepted": 2,
+      "rejected": 7,
+      "candidates": [
+        {
+          "name": "audit-http",
+          "protocol": "http",
+          "supported": true
+        },
+        {
+          "name": "audit-socks",
+          "protocol": "socks5",
+          "supported": true
+        },
+        {
+          "name": "audit-ss",
+          "protocol": "ss",
+          "supported": false
+        },
+        {
+          "name": "audit-vmess",
+          "protocol": "vmess",
+          "supported": false
+        },
+        {
+          "name": "audit-vless",
+          "protocol": "vless",
+          "supported": false
+        },
+        {
+          "name": "audit-trojan",
+          "protocol": "trojan",
+          "supported": false
+        },
+        {
+          "name": "audit-hy2",
+          "protocol": "hysteria2",
+          "supported": false
+        },
+        {
+          "name": "audit-tuic",
+          "protocol": "tuic",
+          "supported": false
+        },
+        {
+          "name": "audit-wireguard",
+          "protocol": "unknown",
+          "supported": false
+        }
+      ],
+      "diagnostics": [
+        {
+          "code": "unsupported_protocol",
+          "message": "Protocol ss is recognized; this gateway materializes http and socks5 nodes.",
+          "subject": "audit-ss"
+        },
+        {
+          "code": "unsupported_protocol",
+          "message": "Protocol vmess is recognized; this gateway materializes http and socks5 nodes.",
+          "subject": "audit-vmess"
+        },
+        {
+          "code": "unsupported_protocol",
+          "message": "Protocol vless is recognized; this gateway materializes http and socks5 nodes.",
+          "subject": "audit-vless"
+        },
+        {
+          "code": "unsupported_protocol",
+          "message": "Protocol trojan is recognized; this gateway materializes http and socks5 nodes.",
+          "subject": "audit-trojan"
+        },
+        {
+          "code": "unsupported_protocol",
+          "message": "Protocol hysteria2 is recognized; this gateway materializes http and socks5 nodes.",
+          "subject": "audit-hy2"
+        },
+        {
+          "code": "unsupported_protocol",
+          "message": "Protocol tuic is recognized; this gateway materializes http and socks5 nodes.",
+          "subject": "audit-tuic"
+        },
+        {
+          "code": "unsupported_protocol",
+          "message": "The node protocol is unrecognized; this gateway materializes http and socks5 nodes.",
+          "subject": "audit-wireguard"
+        }
+      ],
+      "error_sentinel_exposed": false
+    },
+    {
+      "case": "b64_yaml",
+      "status": 200,
+      "elapsed_s": 0.023,
+      "code": null,
+      "message": "",
+      "format": "base64_document",
+      "fetched_bytes": 1936,
+      "accepted": 2,
+      "rejected": 7,
+      "candidates": [
+        {
+          "name": "audit-http",
+          "protocol": "http",
+          "supported": true
+        },
+        {
+          "name": "audit-socks",
+          "protocol": "socks5",
+          "supported": true
+        },
+        {
+          "name": "audit-ss",
+          "protocol": "ss",
+          "supported": false
+        },
+        {
+          "name": "audit-vmess",
+          "protocol": "vmess",
+          "supported": false
+        },
+        {
+          "name": "audit-vless",
+          "protocol": "vless",
+          "supported": false
+        },
+        {
+          "name": "audit-trojan",
+          "protocol": "trojan",
+          "supported": false
+        },
+        {
+          "name": "audit-hysteria2",
+          "protocol": "hysteria2",
+          "supported": false
+        },
+        {
+          "name": "audit-tuic",
+          "protocol": "tuic",
+          "supported": false
+        },
+        {
+          "name": "audit-wireguard",
+          "protocol": "unknown",
+          "supported": false
+        }
+      ],
+      "diagnostics": [
+        {
+          "code": "unsupported_protocol",
+          "message": "Protocol ss is recognized; this gateway materializes http and socks5 nodes.",
+          "subject": "audit-ss"
+        },
+        {
+          "code": "unsupported_protocol",
+          "message": "Protocol vmess is recognized; this gateway materializes http and socks5 nodes.",
+          "subject": "audit-vmess"
+        },
+        {
+          "code": "unsupported_protocol",
+          "message": "Protocol vless is recognized; this gateway materializes http and socks5 nodes.",
+          "subject": "audit-vless"
+        },
+        {
+          "code": "unsupported_protocol",
+          "message": "Protocol trojan is recognized; this gateway materializes http and socks5 nodes.",
+          "subject": "audit-trojan"
+        },
+        {
+          "code": "unsupported_protocol",
+          "message": "Protocol hysteria2 is recognized; this gateway materializes http and socks5 nodes.",
+          "subject": "audit-hysteria2"
+        },
+        {
+          "code": "unsupported_protocol",
+          "message": "Protocol tuic is recognized; this gateway materializes http and socks5 nodes.",
+          "subject": "audit-tuic"
+        },
+        {
+          "code": "unsupported_protocol",
+          "message": "The node protocol is unrecognized; this gateway materializes http and socks5 nodes.",
+          "subject": "audit-wireguard"
+        }
+      ],
+      "error_sentinel_exposed": false
+    },
+    {
+      "case": "b64_json",
+      "status": 200,
+      "elapsed_s": 0.021,
+      "code": null,
+      "message": "",
+      "format": "base64_document",
+      "fetched_bytes": 1904,
+      "accepted": 2,
+      "rejected": 7,
+      "candidates": [
+        {
+          "name": "audit-http",
+          "protocol": "http",
+          "supported": true
+        },
+        {
+          "name": "audit-socks",
+          "protocol": "socks5",
+          "supported": true
+        },
+        {
+          "name": "audit-ss",
+          "protocol": "ss",
+          "supported": false
+        },
+        {
+          "name": "audit-vmess",
+          "protocol": "vmess",
+          "supported": false
+        },
+        {
+          "name": "audit-vless",
+          "protocol": "vless",
+          "supported": false
+        },
+        {
+          "name": "audit-trojan",
+          "protocol": "trojan",
+          "supported": false
+        },
+        {
+          "name": "audit-hysteria2",
+          "protocol": "hysteria2",
+          "supported": false
+        },
+        {
+          "name": "audit-tuic",
+          "protocol": "tuic",
+          "supported": false
+        },
+        {
+          "name": "audit-wireguard",
+          "protocol": "unknown",
+          "supported": false
+        }
+      ],
+      "diagnostics": [
+        {
+          "code": "unsupported_protocol",
+          "message": "Protocol ss is recognized; this gateway materializes http and socks5 nodes.",
+          "subject": "audit-ss"
+        },
+        {
+          "code": "unsupported_protocol",
+          "message": "Protocol vmess is recognized; this gateway materializes http and socks5 nodes.",
+          "subject": "audit-vmess"
+        },
+        {
+          "code": "unsupported_protocol",
+          "message": "Protocol vless is recognized; this gateway materializes http and socks5 nodes.",
+          "subject": "audit-vless"
+        },
+        {
+          "code": "unsupported_protocol",
+          "message": "Protocol trojan is recognized; this gateway materializes http and socks5 nodes.",
+          "subject": "audit-trojan"
+        },
+        {
+          "code": "unsupported_protocol",
+          "message": "Protocol hysteria2 is recognized; this gateway materializes http and socks5 nodes.",
+          "subject": "audit-hysteria2"
+        },
+        {
+          "code": "unsupported_protocol",
+          "message": "Protocol tuic is recognized; this gateway materializes http and socks5 nodes.",
+          "subject": "audit-tuic"
+        },
+        {
+          "code": "unsupported_protocol",
+          "message": "The node protocol is unrecognized; this gateway materializes http and socks5 nodes.",
+          "subject": "audit-wireguard"
+        }
+      ],
+      "error_sentinel_exposed": false
+    },
+    {
+      "case": "b64_uri",
+      "status": 200,
+      "elapsed_s": 0.019,
+      "code": null,
+      "message": "",
+      "format": "base64_document",
+      "fetched_bytes": 856,
+      "accepted": 2,
+      "rejected": 7,
+      "candidates": [
+        {
+          "name": "audit-http",
+          "protocol": "http",
+          "supported": true
+        },
+        {
+          "name": "audit-socks",
+          "protocol": "socks5",
+          "supported": true
+        },
+        {
+          "name": "audit-ss",
+          "protocol": "ss",
+          "supported": false
+        },
+        {
+          "name": "audit-vmess",
+          "protocol": "vmess",
+          "supported": false
+        },
+        {
+          "name": "audit-vless",
+          "protocol": "vless",
+          "supported": false
+        },
+        {
+          "name": "audit-trojan",
+          "protocol": "trojan",
+          "supported": false
+        },
+        {
+          "name": "audit-hy2",
+          "protocol": "hysteria2",
+          "supported": false
+        },
+        {
+          "name": "audit-tuic",
+          "protocol": "tuic",
+          "supported": false
+        },
+        {
+          "name": "audit-wireguard",
+          "protocol": "unknown",
+          "supported": false
+        }
+      ],
+      "diagnostics": [
+        {
+          "code": "unsupported_protocol",
+          "message": "Protocol ss is recognized; this gateway materializes http and socks5 nodes.",
+          "subject": "audit-ss"
+        },
+        {
+          "code": "unsupported_protocol",
+          "message": "Protocol vmess is recognized; this gateway materializes http and socks5 nodes.",
+          "subject": "audit-vmess"
+        },
+        {
+          "code": "unsupported_protocol",
+          "message": "Protocol vless is recognized; this gateway materializes http and socks5 nodes.",
+          "subject": "audit-vless"
+        },
+        {
+          "code": "unsupported_protocol",
+          "message": "Protocol trojan is recognized; this gateway materializes http and socks5 nodes.",
+          "subject": "audit-trojan"
+        },
+        {
+          "code": "unsupported_protocol",
+          "message": "Protocol hysteria2 is recognized; this gateway materializes http and socks5 nodes.",
+          "subject": "audit-hy2"
+        },
+        {
+          "code": "unsupported_protocol",
+          "message": "Protocol tuic is recognized; this gateway materializes http and socks5 nodes.",
+          "subject": "audit-tuic"
+        },
+        {
+          "code": "unsupported_protocol",
+          "message": "The node protocol is unrecognized; this gateway materializes http and socks5 nodes.",
+          "subject": "audit-wireguard"
+        }
+      ],
+      "error_sentinel_exposed": false
+    },
+    {
+      "case": "b64_short",
+      "status": 422,
+      "elapsed_s": 0.02,
+      "code": "subscription_unreadable",
+      "message": "The subscription document could not be read",
+      "error_sentinel_exposed": false
+    },
+    {
+      "case": "b64_empty_nodes",
+      "status": 422,
+      "elapsed_s": 0.019,
+      "code": "subscription_unreadable",
+      "message": "The subscription document could not be read",
+      "error_sentinel_exposed": false
+    },
+    {
+      "case": "malformed_uri",
+      "status": 200,
+      "elapsed_s": 0.022,
+      "code": null,
+      "message": "",
+      "format": "uri_list",
+      "fetched_bytes": 79,
+      "accepted": 2,
+      "rejected": 2,
+      "candidates": [
+        {
+          "name": "bad-http",
+          "protocol": "http",
+          "supported": true
+        },
+        {
+          "name": "bad-socks",
+          "protocol": "socks5",
+          "supported": true
+        },
+        {
+          "name": "bad-vmess",
+          "protocol": "vmess",
+          "supported": false
+        },
+        {
+          "name": "bad-ss",
+          "protocol": "ss",
+          "supported": false
+        }
+      ],
+      "diagnostics": [
+        {
+          "code": "unsupported_protocol",
+          "message": "Protocol vmess is recognized; this gateway materializes http and socks5 nodes.",
+          "subject": "bad-vmess"
+        },
+        {
+          "code": "unsupported_protocol",
+          "message": "Protocol ss is recognized; this gateway materializes http and socks5 nodes.",
+          "subject": "bad-ss"
+        }
+      ],
+      "error_sentinel_exposed": false
+    },
+    {
+      "case": "malformed_nodes",
+      "status": 200,
+      "elapsed_s": 0.019,
+      "code": null,
+      "message": "",
+      "format": "clash_json",
+      "fetched_bytes": 244,
+      "accepted": 2,
+      "rejected": 4,
+      "candidates": [
+        {
+          "name": "missing-address",
+          "protocol": "http",
+          "supported": true
+        },
+        {
+          "name": "bad-port",
+          "protocol": "socks5",
+          "supported": true
+        },
+        {
+          "name": "missing-vmess-fields",
+          "protocol": "vmess",
+          "supported": false
+        },
+        {
+          "name": "",
+          "protocol": "unknown",
+          "supported": false
+        },
+        {
+          "name": "missing-type",
+          "protocol": "unknown",
+          "supported": false
+        },
+        {
+          "name": "name",
+          "protocol": "unknown",
+          "supported": false
+        }
+      ],
+      "diagnostics": [
+        {
+          "code": "unsupported_protocol",
+          "message": "Protocol vmess is recognized; this gateway materializes http and socks5 nodes.",
+          "subject": "missing-vmess-fields"
+        },
+        {
+          "code": "node_parse_error",
+          "message": "The node entry is not a mapping.",
+          "subject": ""
+        },
+        {
+          "code": "node_parse_error",
+          "message": "The node entry has no readable type.",
+          "subject": "missing-type"
+        },
+        {
+          "code": "node_parse_error",
+          "message": "The node entry has no readable name.",
+          "subject": "name"
+        }
+      ],
+      "error_sentinel_exposed": false
+    },
+    {
+      "case": "mixed_uri",
+      "status": 200,
+      "elapsed_s": 0.024,
+      "code": null,
+      "message": "",
+      "format": "uri_list",
+      "fetched_bytes": 86,
+      "accepted": 1,
+      "rejected": 2,
+      "candidates": [
+        {
+          "name": "audit-good",
+          "protocol": "http",
+          "supported": true
+        },
+        {
+          "name": "",
+          "protocol": "unknown",
+          "supported": false
+        },
+        {
+          "name": "audit-unknown",
+          "protocol": "unknown",
+          "supported": false
+        }
+      ],
+      "diagnostics": [
+        {
+          "code": "node_parse_error",
+          "message": "The line holds no readable node scheme.",
+          "subject": ""
+        },
+        {
+          "code": "unsupported_protocol",
+          "message": "The node protocol is unrecognized; this gateway materializes http and socks5 nodes.",
+          "subject": "audit-unknown"
+        }
+      ],
+      "error_sentinel_exposed": false
+    },
+    {
+      "case": "invalid_utf8",
+      "status": 422,
+      "elapsed_s": 0.018,
+      "code": "subscription_unreadable",
+      "message": "The subscription document could not be read",
+      "error_sentinel_exposed": false
+    },
+    {
+      "case": "invalid_b64",
+      "status": 422,
+      "elapsed_s": 0.017,
+      "code": "subscription_unreadable",
+      "message": "The subscription document could not be read",
+      "error_sentinel_exposed": false
+    },
+    {
+      "case": "invalid_yaml",
+      "status": 422,
+      "elapsed_s": 0.022,
+      "code": "subscription_unreadable",
+      "message": "The subscription document could not be read",
+      "error_sentinel_exposed": false
+    },
+    {
+      "case": "invalid_json",
+      "status": 422,
+      "elapsed_s": 0.017,
+      "code": "subscription_unreadable",
+      "message": "The subscription document could not be read",
+      "error_sentinel_exposed": false
+    },
+    {
+      "case": "empty",
+      "status": 422,
+      "elapsed_s": 0.018,
+      "code": "subscription_unreadable",
+      "message": "The subscription document could not be read",
+      "error_sentinel_exposed": false
+    },
+    {
+      "case": "yaml_uri_fallback",
+      "status": 200,
+      "elapsed_s": 0.019,
+      "code": null,
+      "message": "",
+      "format": "uri_list",
+      "fetched_bytes": 38,
+      "accepted": 1,
+      "rejected": 1,
+      "candidates": [
+        {
+          "name": "",
+          "protocol": "unknown",
+          "supported": false
+        },
+        {
+          "name": "hidden",
+          "protocol": "http",
+          "supported": true
+        }
+      ],
+      "diagnostics": [
+        {
+          "code": "node_parse_error",
+          "message": "The line holds no readable node scheme.",
+          "subject": ""
+        }
+      ],
+      "error_sentinel_exposed": false
+    },
+    {
+      "case": "auth401",
+      "status": 422,
+      "elapsed_s": 0.019,
+      "code": "subscription_fetch_failed",
+      "message": "The subscription document could not be downloaded",
+      "error_sentinel_exposed": false
+    },
+    {
+      "case": "auth403",
+      "status": 422,
+      "elapsed_s": 0.019,
+      "code": "subscription_fetch_failed",
+      "message": "The subscription document could not be downloaded",
+      "error_sentinel_exposed": false
+    },
+    {
+      "case": "raw_exact",
+      "status": 200,
+      "elapsed_s": 0.307,
+      "code": null,
+      "message": "",
+      "format": "clash_json",
+      "fetched_bytes": 2097152,
+      "accepted": 1,
+      "rejected": 0,
+      "candidates": [
+        {
+          "name": "audit-http",
+          "protocol": "http",
+          "supported": true
+        }
+      ],
+      "diagnostics": [],
+      "error_sentinel_exposed": false
+    },
+    {
+      "case": "raw_large",
+      "status": 422,
+      "elapsed_s": 0.023,
+      "code": "subscription_too_large",
+      "message": "The subscription document is larger than the preview limit",
+      "error_sentinel_exposed": false
+    },
+    {
+      "case": "gzip_valid",
+      "status": 200,
+      "elapsed_s": 0.021,
+      "code": null,
+      "message": "",
+      "format": "clash_json",
+      "fetched_bytes": 91,
+      "accepted": 1,
+      "rejected": 0,
+      "candidates": [
+        {
+          "name": "audit-http",
+          "protocol": "http",
+          "supported": true
+        }
+      ],
+      "diagnostics": [],
+      "error_sentinel_exposed": false
+    },
+    {
+      "case": "deflate_valid",
+      "status": 200,
+      "elapsed_s": 0.02,
+      "code": null,
+      "message": "",
+      "format": "clash_json",
+      "fetched_bytes": 91,
+      "accepted": 1,
+      "rejected": 0,
+      "candidates": [
+        {
+          "name": "audit-http",
+          "protocol": "http",
+          "supported": true
+        }
+      ],
+      "diagnostics": [],
+      "error_sentinel_exposed": false
+    },
+    {
+      "case": "gzip_3m",
+      "status": 200,
+      "elapsed_s": 0.444,
+      "code": null,
+      "message": "",
+      "format": "clash_json",
+      "fetched_bytes": 3145819,
+      "accepted": 1,
+      "rejected": 0,
+      "candidates": [
+        {
+          "name": "audit-http",
+          "protocol": "http",
+          "supported": true
+        }
+      ],
+      "diagnostics": [],
+      "error_sentinel_exposed": false
+    },
+    {
+      "case": "gzip_expansion",
+      "status": 422,
+      "elapsed_s": 0.278,
+      "code": "subscription_too_large",
+      "message": "The subscription document is larger than the preview limit",
+      "error_sentinel_exposed": false
+    },
+    {
+      "case": "gzip_bad",
+      "status": 422,
+      "elapsed_s": 0.018,
+      "code": "subscription_fetch_failed",
+      "message": "The subscription document could not be downloaded",
+      "error_sentinel_exposed": false
+    },
+    {
+      "case": "unknown_encoding",
+      "status": 422,
+      "elapsed_s": 0.018,
+      "code": "subscription_fetch_failed",
+      "message": "The subscription document could not be downloaded",
+      "error_sentinel_exposed": false
+    },
+    {
+      "case": "delay_success",
+      "status": 200,
+      "elapsed_s": 0.22,
+      "code": null,
+      "message": "",
+      "format": "clash_json",
+      "fetched_bytes": 91,
+      "accepted": 1,
+      "rejected": 0,
+      "candidates": [
+        {
+          "name": "audit-http",
+          "protocol": "http",
+          "supported": true
+        }
+      ],
+      "diagnostics": [],
+      "error_sentinel_exposed": false
+    },
+    {
+      "case": "redirect?left=3",
+      "status": 200,
+      "elapsed_s": 0.041,
+      "code": null,
+      "message": "",
+      "format": "clash_json",
+      "fetched_bytes": 91,
+      "accepted": 1,
+      "rejected": 0,
+      "candidates": [
+        {
+          "name": "audit-http",
+          "protocol": "http",
+          "supported": true
+        }
+      ],
+      "diagnostics": [],
+      "error_sentinel_exposed": false
+    },
+    {
+      "case": "redirect?left=4",
+      "status": 422,
+      "elapsed_s": 0.04,
+      "code": "subscription_too_many_redirects",
+      "message": "The subscription link redirects too many times",
+      "error_sentinel_exposed": false
+    },
+    {
+      "case": "redirect_loop",
+      "status": 422,
+      "elapsed_s": 0.039,
+      "code": "subscription_too_many_redirects",
+      "message": "The subscription link redirects too many times",
+      "error_sentinel_exposed": false
+    },
+    {
+      "case": "redirect_private",
+      "status": 200,
+      "elapsed_s": 0.026,
+      "code": null,
+      "message": "",
+      "format": "clash_json",
+      "fetched_bytes": 91,
+      "accepted": 1,
+      "rejected": 0,
+      "candidates": [
+        {
+          "name": "audit-http",
+          "protocol": "http",
+          "supported": true
+        }
+      ],
+      "diagnostics": [],
+      "error_sentinel_exposed": false
+    },
+    {
+      "case": "redirect_cross",
+      "status": 200,
+      "elapsed_s": 0.026,
+      "code": null,
+      "message": "",
+      "format": "clash_json",
+      "fetched_bytes": 91,
+      "accepted": 1,
+      "rejected": 0,
+      "candidates": [
+        {
+          "name": "audit-http",
+          "protocol": "http",
+          "supported": true
+        }
+      ],
+      "diagnostics": [],
+      "error_sentinel_exposed": false
+    },
+    {
+      "case": "redirect_http_denied",
+      "status": 422,
+      "elapsed_s": 0.018,
+      "code": "subscription_target_not_allowed",
+      "message": "The subscription link target is disabled for this deployment",
+      "error_sentinel_exposed": false
+    },
+    {
+      "case": "redirect_ftp",
+      "status": 422,
+      "elapsed_s": 0.02,
+      "code": "subscription_target_not_allowed",
+      "message": "The subscription link target is disabled for this deployment",
+      "error_sentinel_exposed": false
+    },
+    {
+      "case": "provider_http",
+      "status": 200,
+      "elapsed_s": 0.025,
+      "code": null,
+      "message": "",
+      "format": "clash_json",
+      "fetched_bytes": 246,
+      "accepted": 2,
+      "rejected": 0,
+      "candidates": [
+        {
+          "name": "audit-http",
+          "protocol": "http",
+          "supported": true
+        },
+        {
+          "name": "provider-node",
+          "protocol": "socks5",
+          "supported": true
+        }
+      ],
+      "diagnostics": [],
+      "error_sentinel_exposed": false
+    },
+    {
+      "case": "provider_file",
+      "status": 200,
+      "elapsed_s": 0.019,
+      "code": null,
+      "message": "",
+      "format": "clash_json",
+      "fetched_bytes": 98,
+      "accepted": 0,
+      "rejected": 0,
+      "candidates": [],
+      "diagnostics": [],
+      "error_sentinel_exposed": false
+    },
+    {
+      "case": "provider_inline",
+      "status": 200,
+      "elapsed_s": 0.019,
+      "code": null,
+      "message": "",
+      "format": "clash_json",
+      "fetched_bytes": 157,
+      "accepted": 0,
+      "rejected": 0,
+      "candidates": [],
+      "diagnostics": [],
+      "error_sentinel_exposed": false
+    },
+    {
+      "case": "provider_bad_shape",
+      "status": 200,
+      "elapsed_s": 0.018,
+      "code": null,
+      "message": "",
+      "format": "clash_json",
+      "fetched_bytes": 38,
+      "accepted": 0,
+      "rejected": 0,
+      "candidates": [],
+      "diagnostics": [],
+      "error_sentinel_exposed": false
+    },
+    {
+      "case": "provider_missing_url",
+      "status": 200,
+      "elapsed_s": 0.019,
+      "code": null,
+      "message": "",
+      "format": "clash_json",
+      "fetched_bytes": 63,
+      "accepted": 0,
+      "rejected": 0,
+      "candidates": [],
+      "diagnostics": [
+        {
+          "code": "provider_fetch_failed",
+          "message": "The proxy provider entry holds no download URL.",
+          "subject": "empty"
+        }
+      ],
+      "error_sentinel_exposed": false
+    },
+    {
+      "case": "provider_mixed",
+      "status": 200,
+      "elapsed_s": 0.032,
+      "code": null,
+      "message": "",
+      "format": "clash_json",
+      "fetched_bytes": 381,
+      "accepted": 2,
+      "rejected": 0,
+      "candidates": [
+        {
+          "name": "audit-http",
+          "protocol": "http",
+          "supported": true
+        },
+        {
+          "name": "provider-node",
+          "protocol": "socks5",
+          "supported": true
+        }
+      ],
+      "diagnostics": [
+        {
+          "code": "provider_fetch_failed",
+          "message": "The proxy provider document download failed.",
+          "subject": "failed"
+        }
+      ],
+      "error_sentinel_exposed": false
+    },
+    {
+      "case": "provider_nested",
+      "status": 200,
+      "elapsed_s": 0.026,
+      "code": null,
+      "message": "",
+      "format": "clash_json",
+      "fetched_bytes": 253,
+      "accepted": 2,
+      "rejected": 0,
+      "candidates": [
+        {
+          "name": "audit-http",
+          "protocol": "http",
+          "supported": true
+        },
+        {
+          "name": "audit-http",
+          "protocol": "http",
+          "supported": true
+        }
+      ],
+      "diagnostics": [
+        {
+          "code": "provider_depth_limit",
+          "message": "Nested proxy providers stay one level deep.",
+          "subject": "again"
+        }
+      ],
+      "error_sentinel_exposed": false
+    },
+    {
+      "case": "provider_recursive",
+      "status": 200,
+      "elapsed_s": 0.027,
+      "code": null,
+      "message": "",
+      "format": "clash_json",
+      "fetched_bytes": 253,
+      "accepted": 2,
+      "rejected": 0,
+      "candidates": [
+        {
+          "name": "audit-http",
+          "protocol": "http",
+          "supported": true
+        },
+        {
+          "name": "audit-http",
+          "protocol": "http",
+          "supported": true
+        }
+      ],
+      "diagnostics": [
+        {
+          "code": "provider_depth_limit",
+          "message": "Nested proxy providers stay one level deep.",
+          "subject": "self"
+        }
+      ],
+      "error_sentinel_exposed": false
+    },
+    {
+      "case": "provider_count",
+      "status": 200,
+      "elapsed_s": 0.235,
+      "code": null,
+      "message": "",
+      "format": "clash_json",
+      "fetched_bytes": 4679,
+      "accepted": 32,
+      "rejected": 0,
+      "candidates": [
+        {
+          "name": "provider-node",
+          "protocol": "socks5",
+          "supported": true
+        },
+        {
+          "name": "provider-node",
+          "protocol": "socks5",
+          "supported": true
+        },
+        {
+          "name": "provider-node",
+          "protocol": "socks5",
+          "supported": true
+        },
+        {
+          "name": "provider-node",
+          "protocol": "socks5",
+          "supported": true
+        },
+        {
+          "name": "provider-node",
+          "protocol": "socks5",
+          "supported": true
+        },
+        {
+          "name": "provider-node",
+          "protocol": "socks5",
+          "supported": true
+        },
+        {
+          "name": "provider-node",
+          "protocol": "socks5",
+          "supported": true
+        },
+        {
+          "name": "provider-node",
+          "protocol": "socks5",
+          "supported": true
+        },
+        {
+          "name": "provider-node",
+          "protocol": "socks5",
+          "supported": true
+        },
+        {
+          "name": "provider-node",
+          "protocol": "socks5",
+          "supported": true
+        },
+        {
+          "name": "provider-node",
+          "protocol": "socks5",
+          "supported": true
+        },
+        {
+          "name": "provider-node",
+          "protocol": "socks5",
+          "supported": true
+        },
+        {
+          "name": "provider-node",
+          "protocol": "socks5",
+          "supported": true
+        },
+        {
+          "name": "provider-node",
+          "protocol": "socks5",
+          "supported": true
+        },
+        {
+          "name": "provider-node",
+          "protocol": "socks5",
+          "supported": true
+        },
+        {
+          "name": "provider-node",
+          "protocol": "socks5",
+          "supported": true
+        },
+        {
+          "name": "provider-node",
+          "protocol": "socks5",
+          "supported": true
+        },
+        {
+          "name": "provider-node",
+          "protocol": "socks5",
+          "supported": true
+        },
+        {
+          "name": "provider-node",
+          "protocol": "socks5",
+          "supported": true
+        },
+        {
+          "name": "provider-node",
+          "protocol": "socks5",
+          "supported": true
+        },
+        {
+          "name": "provider-node",
+          "protocol": "socks5",
+          "supported": true
+        },
+        {
+          "name": "provider-node",
+          "protocol": "socks5",
+          "supported": true
+        },
+        {
+          "name": "provider-node",
+          "protocol": "socks5",
+          "supported": true
+        },
+        {
+          "name": "provider-node",
+          "protocol": "socks5",
+          "supported": true
+        },
+        {
+          "name": "provider-node",
+          "protocol": "socks5",
+          "supported": true
+        },
+        {
+          "name": "provider-node",
+          "protocol": "socks5",
+          "supported": true
+        },
+        {
+          "name": "provider-node",
+          "protocol": "socks5",
+          "supported": true
+        },
+        {
+          "name": "provider-node",
+          "protocol": "socks5",
+          "supported": true
+        },
+        {
+          "name": "provider-node",
+          "protocol": "socks5",
+          "supported": true
+        },
+        {
+          "name": "provider-node",
+          "protocol": "socks5",
+          "supported": true
+        },
+        {
+          "name": "provider-node",
+          "protocol": "socks5",
+          "supported": true
+        },
+        {
+          "name": "provider-node",
+          "protocol": "socks5",
+          "supported": true
+        }
+      ],
+      "diagnostics": [
+        {
+          "code": "provider_fetch_failed",
+          "message": "The document holds more proxy providers than this gateway downloads.",
+          "subject": "p32"
+        }
+      ],
+      "error_sentinel_exposed": false
+    },
+    {
+      "case": "provider_redirect",
+      "status": 200,
+      "elapsed_s": 0.045,
+      "code": null,
+      "message": "",
+      "format": "clash_json",
+      "fetched_bytes": 247,
+      "accepted": 1,
+      "rejected": 0,
+      "candidates": [
+        {
+          "name": "audit-http",
+          "protocol": "http",
+          "supported": true
+        }
+      ],
+      "diagnostics": [
+        {
+          "code": "provider_fetch_failed",
+          "message": "The proxy provider document download failed.",
+          "subject": "p"
+        }
+      ],
+      "error_sentinel_exposed": false
+    },
+    {
+      "case": "provider_expansion",
+      "status": 200,
+      "elapsed_s": 0.276,
+      "code": null,
+      "message": "",
+      "format": "clash_json",
+      "fetched_bytes": 246,
+      "accepted": 1,
+      "rejected": 0,
+      "candidates": [
+        {
+          "name": "audit-http",
+          "protocol": "http",
+          "supported": true
+        }
+      ],
+      "diagnostics": [
+        {
+          "code": "provider_fetch_failed",
+          "message": "The proxy provider document download failed.",
+          "subject": "p"
+        }
+      ],
+      "error_sentinel_exposed": false
+    },
+    {
+      "case": "pure_config",
+      "status": 200,
+      "elapsed_s": 0.028,
+      "code": null,
+      "message": "",
+      "format": "clash_json",
+      "fetched_bytes": 723,
+      "accepted": 2,
+      "rejected": 0,
+      "candidates": [
+        {
+          "name": "audit-http",
+          "protocol": "http",
+          "supported": true
+        },
+        {
+          "name": "provider-node",
+          "protocol": "socks5",
+          "supported": true
+        }
+      ],
+      "diagnostics": [],
+      "error_sentinel_exposed": false
+    },
+    {
+      "case": "slow_headers",
+      "status": 422,
+      "elapsed_s": 10.014,
+      "code": "subscription_timeout",
+      "message": "The subscription download timed out",
+      "error_sentinel_exposed": false
+    },
+    {
+      "case": "slow_body",
+      "status": 422,
+      "elapsed_s": 10.014,
+      "code": "subscription_timeout",
+      "message": "The subscription download timed out",
+      "error_sentinel_exposed": false
+    },
+    {
+      "case": "provider_slow",
+      "status": 200,
+      "elapsed_s": 10.014,
+      "code": null,
+      "message": "",
+      "format": "clash_json",
+      "fetched_bytes": 389,
+      "accepted": 1,
+      "rejected": 0,
+      "candidates": [
+        {
+          "name": "audit-http",
+          "protocol": "http",
+          "supported": true
+        }
+      ],
+      "diagnostics": [
+        {
+          "code": "provider_fetch_failed",
+          "message": "The proxy provider document download failed.",
+          "subject": "slow"
+        },
+        {
+          "code": "provider_fetch_failed",
+          "message": "The proxy provider document download failed.",
+          "subject": "next"
+        }
+      ],
+      "error_sentinel_exposed": false
+    },
+    {
+      "case": "https_private_direct",
+      "status": 200,
+      "accepted": 1,
+      "userinfo_echoed": false,
+      "query_echoed": false
+    },
+    {
+      "case": "cross_auth",
+      "status": 200,
+      "accepted": 1,
+      "userinfo_echoed": true,
+      "query_echoed": false
+    },
+    {
+      "case": "source_echo",
+      "status": 200,
+      "accepted": 1,
+      "userinfo_echoed": true,
+      "query_echoed": true
+    }
+  ],
+  "supplemental": [
+    {
+      "case": "raw_chunked",
+      "status": 422,
+      "code": "subscription_too_large",
+      "elapsed_s": 0.075,
+      "accepted": null,
+      "rejected": null,
+      "fetched_bytes": null,
+      "diagnostics": null
+    },
+    {
+      "case": "gzip_exact8m",
+      "status": 200,
+      "code": null,
+      "elapsed_s": 1.282,
+      "accepted": 1,
+      "rejected": 0,
+      "fetched_bytes": 8388608,
+      "diagnostics": []
+    },
+    {
+      "case": "provider_raw_large",
+      "status": 200,
+      "code": null,
+      "elapsed_s": 0.027,
+      "accepted": 1,
+      "rejected": 0,
+      "fetched_bytes": 241,
+      "diagnostics": [
+        {
+          "code": "provider_fetch_failed",
+          "message": "The proxy provider document download failed.",
+          "subject": "p"
+        }
+      ]
+    },
+    {
+      "case": "provider_private",
+      "status": 200,
+      "code": null,
+      "elapsed_s": 0.024,
+      "accepted": 2,
+      "rejected": 0,
+      "fetched_bytes": 249,
+      "diagnostics": []
+    },
+    {
+      "case": "http_allowed",
+      "status": 200,
+      "code": null,
+      "elapsed_s": 0.013,
+      "accepted": 1,
+      "rejected": 0,
+      "fetched_bytes": 91,
+      "diagnostics": []
+    },
+    {
+      "case": "http_denied",
+      "status": 422,
+      "code": "subscription_target_not_allowed",
+      "elapsed_s": 0.012,
+      "accepted": null,
+      "rejected": null,
+      "fetched_bytes": null,
+      "diagnostics": null
+    },
+    {
+      "case": "large_b64",
+      "status": 422,
+      "code": "subscription_unreadable",
+      "elapsed_s": 2.951,
+      "accepted": null,
+      "rejected": null,
+      "fetched_bytes": null,
+      "diagnostics": null
+    },
+    {
+      "case": "response_amplification",
+      "status": 503,
+      "code": "account_egress_unavailable",
+      "elapsed_s": 5.533,
+      "accepted": null,
+      "rejected": null,
+      "fetched_bytes": null,
+      "diagnostics": null
+    },
+    {
+      "case": "response_amplification_direct_cpr",
+      "status": 200,
+      "elapsed_s": 5.517,
+      "fetched_bytes": 6624013,
+      "candidate_count": 18000,
+      "encoded_response_bytes": 12438217
+    }
+  ],
+  "seeded_state_before": {
+    "accounts": [
+      {
+        "id": "acct_01a20d86e46271fc84b425bc1c160749",
+        "name": "audit-disabled-account",
+        "enabled": false,
+        "outboundProxyId": null,
+        "status": "disabled"
+      }
+    ],
+    "proxies": [
+      {
+        "id": "proxy_01a20d80100971da95b59b708c690aa2",
+        "name": "audit-existing-proxy",
+        "enabled": true,
+        "revision": 1,
+        "accountCount": 0
+      }
+    ],
+    "config_revision": 6,
+    "processes": [
+      "4001263             docker-init",
+      "4001333             codex-proxy-rs"
+    ],
+    "script_file": "absent"
+  },
+  "seeded_state_after": {
+    "accounts": [
+      {
+        "id": "acct_01a20d86e46271fc84b425bc1c160749",
+        "name": "audit-disabled-account",
+        "enabled": false,
+        "outboundProxyId": null,
+        "status": "disabled"
+      }
+    ],
+    "proxies": [
+      {
+        "id": "proxy_01a20d80100971da95b59b708c690aa2",
+        "name": "audit-existing-proxy",
+        "enabled": true,
+        "revision": 1,
+        "accountCount": 0
+      }
+    ],
+    "config_revision": 6,
+    "processes": [
+      "4001263             docker-init",
+      "4001333             codex-proxy-rs"
+    ],
+    "script_file": "absent"
+  },
+  "state_matches": true,
+  "browser": {
+    "login": {
+      "status": 200,
+      "success": true
+    },
+    "partial": {
+      "text": "Skip to Main\nToggle Sidebar\nNew API\nUnknown version\nHome\nConsole\nModel Square\nRankings\nDocs\nAbout\nSearch\n⌘\nK\nChange language\nX\nCHAT\nPlayground\nChat\nGENERAL\nOverview\nDashboard\nAPI Keys\nUsage Logs\nAudit Logs\nTask Logs\nPERSONAL\nWallet\nProfile\nSecurity & Access\nADMIN\nAccounts and Egress\nSubscription Preview\nChannels\nModels\nUsers\nRedemption Codes\nSubscriptions\nSystem Info\nPlugins\nRequest processing\nSystem Settings\nSubscription Preview\nSubscription link\nPreview\n\nThe link is downloaded and parsed for review. Saving starts in the next step.\n\nFormat\nclash_json\nNodes\n2\nAccepted\n2\nRejected\n0\nDownloaded\n381 B\nNodes\nAll (2)\nhttp (1)\nsocks5 (1)\nName\n\t\nProtocol\n\t\nAvailable\n\naudit-http\t\nhttp\n\t\nYes\n\nprovider-node\t\nsocks5\n\t\nYes\nDiagnostics\nCode\n\t\nSubject\n\t\nMessage\n\nprovider_fetch_failed\tfailed\tThe proxy provider document download failed.\nTotal:\n2\n\nRows per page\n\n20\nGo to first page\nGo to previous page\nGo to page 1\n1\nGo to next page\nGo to last page\nCommand Palette\n\nSearch for a command to run...",
+      "dialogs": 0,
+      "formButtons": [
+        "Preview"
+      ],
+      "checkboxes": 0
+    },
+    "errorState": {
+      "status": 422,
+      "oldRowVisible": false,
+      "text": "Skip to Main\nToggle Sidebar\nNew API\nUnknown version\nHome\nConsole\nModel Square\nRankings\nDocs\nAbout\nSearch\n⌘\nK\nChange language\nX\nCHAT\nPlayground\nChat\nGENERAL\nOverview\nDashboard\nAPI Keys\nUsage Logs\nAudit Logs\nTask Logs\nPERSONAL\nWallet\nProfile\nSecurity & Access\nADMIN\nAccounts and Egress\nSubscription Preview\nChannels\nModels\nUsers\nRedemption Codes\nSubscriptions\nSystem Info\nPlugins\nRequest processing\nSystem Settings\nSubscription Preview\nSubscription link\nPreview\n\nThe link is downloaded and parsed for review. Saving starts in the next step.\n\nSubscription preview failed\nThe subscription document could not be read\nRetry\nsubscription_unreadable\nCommand Palette\n\nSearch for a command to run..."
+    },
+    "retryAvailable": true,
+    "recovered": true,
+    "errors": [],
+    "writes": [
+      {
+        "method": "POST",
+        "path": "/api/account-egress/subscription-preview"
+      },
+      {
+        "method": "POST",
+        "path": "/api/account-egress/subscription-preview"
+      },
+      {
+        "method": "POST",
+        "path": "/api/account-egress/subscription-preview"
+      }
+    ]
+  },
+  "target_requests": [
+    {
+      "case": "yaml",
+      "path": "/case/yaml",
+      "host": "source.audit.test:8443",
+      "local_address": "10.244.106.10",
+      "query_marker": false,
+      "authorization": false,
+      "cookie": false,
+      "admin_key": false,
+      "tls": true,
+      "time": 1795522826.758891
+    },
+    {
+      "case": "json",
+      "path": "/case/json",
+      "host": "source.audit.test:8443",
+      "local_address": "10.244.106.10",
+      "query_marker": false,
+      "authorization": false,
+      "cookie": false,
+      "admin_key": false,
+      "tls": true,
+      "time": 1795522826.7840576
+    },
+    {
+      "case": "uri",
+      "path": "/case/uri",
+      "host": "source.audit.test:8443",
+      "local_address": "10.244.106.10",
+      "query_marker": false,
+      "authorization": false,
+      "cookie": false,
+      "admin_key": false,
+      "tls": true,
+      "time": 1795522826.806779
+    },
+    {
+      "case": "b64_yaml",
+      "path": "/case/b64_yaml",
+      "host": "source.audit.test:8443",
+      "local_address": "10.244.106.10",
+      "query_marker": false,
+      "authorization": false,
+      "cookie": false,
+      "admin_key": false,
+      "tls": true,
+      "time": 1795522826.8277988
+    },
+    {
+      "case": "b64_json",
+      "path": "/case/b64_json",
+      "host": "source.audit.test:8443",
+      "local_address": "10.244.106.10",
+      "query_marker": false,
+      "authorization": false,
+      "cookie": false,
+      "admin_key": false,
+      "tls": true,
+      "time": 1795522826.8538074
+    },
+    {
+      "case": "b64_uri",
+      "path": "/case/b64_uri",
+      "host": "source.audit.test:8443",
+      "local_address": "10.244.106.10",
+      "query_marker": false,
+      "authorization": false,
+      "cookie": false,
+      "admin_key": false,
+      "tls": true,
+      "time": 1795522826.875139
+    },
+    {
+      "case": "b64_short",
+      "path": "/case/b64_short",
+      "host": "source.audit.test:8443",
+      "local_address": "10.244.106.10",
+      "query_marker": false,
+      "authorization": false,
+      "cookie": false,
+      "admin_key": false,
+      "tls": true,
+      "time": 1795522826.8970532
+    },
+    {
+      "case": "b64_empty_nodes",
+      "path": "/case/b64_empty_nodes",
+      "host": "source.audit.test:8443",
+      "local_address": "10.244.106.10",
+      "query_marker": false,
+      "authorization": false,
+      "cookie": false,
+      "admin_key": false,
+      "tls": true,
+      "time": 1795522826.9199858
+    },
+    {
+      "case": "malformed_uri",
+      "path": "/case/malformed_uri",
+      "host": "source.audit.test:8443",
+      "local_address": "10.244.106.10",
+      "query_marker": false,
+      "authorization": false,
+      "cookie": false,
+      "admin_key": false,
+      "tls": true,
+      "time": 1795522826.9438062
+    },
+    {
+      "case": "malformed_nodes",
+      "path": "/case/malformed_nodes",
+      "host": "source.audit.test:8443",
+      "local_address": "10.244.106.10",
+      "query_marker": false,
+      "authorization": false,
+      "cookie": false,
+      "admin_key": false,
+      "tls": true,
+      "time": 1795522826.9655428
+    },
+    {
+      "case": "mixed_uri",
+      "path": "/case/mixed_uri",
+      "host": "source.audit.test:8443",
+      "local_address": "10.244.106.10",
+      "query_marker": false,
+      "authorization": false,
+      "cookie": false,
+      "admin_key": false,
+      "tls": true,
+      "time": 1795522826.987519
+    },
+    {
+      "case": "invalid_utf8",
+      "path": "/case/invalid_utf8",
+      "host": "source.audit.test:8443",
+      "local_address": "10.244.106.10",
+      "query_marker": false,
+      "authorization": false,
+      "cookie": false,
+      "admin_key": false,
+      "tls": true,
+      "time": 1795522827.013591
+    },
+    {
+      "case": "invalid_b64",
+      "path": "/case/invalid_b64",
+      "host": "source.audit.test:8443",
+      "local_address": "10.244.106.10",
+      "query_marker": false,
+      "authorization": false,
+      "cookie": false,
+      "admin_key": false,
+      "tls": true,
+      "time": 1795522827.033559
+    },
+    {
+      "case": "invalid_yaml",
+      "path": "/case/invalid_yaml",
+      "host": "source.audit.test:8443",
+      "local_address": "10.244.106.10",
+      "query_marker": false,
+      "authorization": false,
+      "cookie": false,
+      "admin_key": false,
+      "tls": true,
+      "time": 1795522827.055094
+    },
+    {
+      "case": "invalid_json",
+      "path": "/case/invalid_json",
+      "host": "source.audit.test:8443",
+      "local_address": "10.244.106.10",
+      "query_marker": false,
+      "authorization": false,
+      "cookie": false,
+      "admin_key": false,
+      "tls": true,
+      "time": 1795522827.0769937
+    },
+    {
+      "case": "empty",
+      "path": "/case/empty",
+      "host": "source.audit.test:8443",
+      "local_address": "10.244.106.10",
+      "query_marker": false,
+      "authorization": false,
+      "cookie": false,
+      "admin_key": false,
+      "tls": true,
+      "time": 1795522827.0971022
+    },
+    {
+      "case": "yaml_uri_fallback",
+      "path": "/case/yaml_uri_fallback",
+      "host": "source.audit.test:8443",
+      "local_address": "10.244.106.10",
+      "query_marker": false,
+      "authorization": false,
+      "cookie": false,
+      "admin_key": false,
+      "tls": true,
+      "time": 1795522827.1176226
+    },
+    {
+      "case": "auth401",
+      "path": "/case/auth401",
+      "host": "source.audit.test:8443",
+      "local_address": "10.244.106.10",
+      "query_marker": false,
+      "authorization": false,
+      "cookie": false,
+      "admin_key": false,
+      "tls": true,
+      "time": 1795522827.1392426
+    },
+    {
+      "case": "auth403",
+      "path": "/case/auth403",
+      "host": "source.audit.test:8443",
+      "local_address": "10.244.106.10",
+      "query_marker": false,
+      "authorization": false,
+      "cookie": false,
+      "admin_key": false,
+      "tls": true,
+      "time": 1795522827.1600888
+    },
+    {
+      "case": "raw_exact",
+      "path": "/case/raw_exact",
+      "host": "source.audit.test:8443",
+      "local_address": "10.244.106.10",
+      "query_marker": false,
+      "authorization": false,
+      "cookie": false,
+      "admin_key": false,
+      "tls": true,
+      "time": 1795522827.1831546
+    },
+    {
+      "case": "raw_large",
+      "path": "/case/raw_large",
+      "host": "source.audit.test:8443",
+      "local_address": "10.244.106.10",
+      "query_marker": false,
+      "authorization": false,
+      "cookie": false,
+      "admin_key": false,
+      "tls": true,
+      "time": 1795522827.492359
+    },
+    {
+      "case": "gzip_valid",
+      "path": "/case/gzip_valid",
+      "host": "source.audit.test:8443",
+      "local_address": "10.244.106.10",
+      "query_marker": false,
+      "authorization": false,
+      "cookie": false,
+      "admin_key": false,
+      "tls": true,
+      "time": 1795522827.5185347
+    },
+    {
+      "case": "deflate_valid",
+      "path": "/case/deflate_valid",
+      "host": "source.audit.test:8443",
+      "local_address": "10.244.106.10",
+      "query_marker": false,
+      "authorization": false,
+      "cookie": false,
+      "admin_key": false,
+      "tls": true,
+      "time": 1795522827.5414994
+    },
+    {
+      "case": "gzip_3m",
+      "path": "/case/gzip_3m",
+      "host": "source.audit.test:8443",
+      "local_address": "10.244.106.10",
+      "query_marker": false,
+      "authorization": false,
+      "cookie": false,
+      "admin_key": false,
+      "tls": true,
+      "time": 1795522827.563553
+    },
+    {
+      "case": "gzip_expansion",
+      "path": "/case/gzip_expansion",
+      "host": "source.audit.test:8443",
+      "local_address": "10.244.106.10",
+      "query_marker": false,
+      "authorization": false,
+      "cookie": false,
+      "admin_key": false,
+      "tls": true,
+      "time": 1795522828.01152
+    },
+    {
+      "case": "gzip_bad",
+      "path": "/case/gzip_bad",
+      "host": "source.audit.test:8443",
+      "local_address": "10.244.106.10",
+      "query_marker": false,
+      "authorization": false,
+      "cookie": false,
+      "admin_key": false,
+      "tls": true,
+      "time": 1795522828.2910297
+    },
+    {
+      "case": "unknown_encoding",
+      "path": "/case/unknown_encoding",
+      "host": "source.audit.test:8443",
+      "local_address": "10.244.106.10",
+      "query_marker": false,
+      "authorization": false,
+      "cookie": false,
+      "admin_key": false,
+      "tls": true,
+      "time": 1795522828.3126915
+    },
+    {
+      "case": "delay_success",
+      "path": "/case/delay_success",
+      "host": "source.audit.test:8443",
+      "local_address": "10.244.106.10",
+      "query_marker": false,
+      "authorization": false,
+      "cookie": false,
+      "admin_key": false,
+      "tls": true,
+      "time": 1795522828.3344924
+    },
+    {
+      "case": "redirect",
+      "path": "/case/redirect",
+      "host": "source.audit.test:8443",
+      "local_address": "10.244.106.10",
+      "query_marker": false,
+      "authorization": false,
+      "cookie": false,
+      "admin_key": false,
+      "tls": true,
+      "time": 1795522828.5582864
+    },
+    {
+      "case": "redirect",
+      "path": "/case/redirect",
+      "host": "source.audit.test:8443",
+      "local_address": "10.244.106.10",
+      "query_marker": false,
+      "authorization": false,
+      "cookie": false,
+      "admin_key": false,
+      "tls": true,
+      "time": 1795522828.565922
+    },
+    {
+      "case": "redirect",
+      "path": "/case/redirect",
+      "host": "source.audit.test:8443",
+      "local_address": "10.244.106.10",
+      "query_marker": false,
+      "authorization": false,
+      "cookie": false,
+      "admin_key": false,
+      "tls": true,
+      "time": 1795522828.5729566
+    },
+    {
+      "case": "good",
+      "path": "/case/good",
+      "host": "source.audit.test:8443",
+      "local_address": "10.244.106.10",
+      "query_marker": false,
+      "authorization": false,
+      "cookie": false,
+      "admin_key": false,
+      "tls": true,
+      "time": 1795522828.5796235
+    },
+    {
+      "case": "redirect",
+      "path": "/case/redirect",
+      "host": "source.audit.test:8443",
+      "local_address": "10.244.106.10",
+      "query_marker": false,
+      "authorization": false,
+      "cookie": false,
+      "admin_key": false,
+      "tls": true,
+      "time": 1795522828.601857
+    },
+    {
+      "case": "redirect",
+      "path": "/case/redirect",
+      "host": "source.audit.test:8443",
+      "local_address": "10.244.106.10",
+      "query_marker": false,
+      "authorization": false,
+      "cookie": false,
+      "admin_key": false,
+      "tls": true,
+      "time": 1795522828.6085768
+    },
+    {
+      "case": "redirect",
+      "path": "/case/redirect",
+      "host": "source.audit.test:8443",
+      "local_address": "10.244.106.10",
+      "query_marker": false,
+      "authorization": false,
+      "cookie": false,
+      "admin_key": false,
+      "tls": true,
+      "time": 1795522828.6156306
+    },
+    {
+      "case": "redirect",
+      "path": "/case/redirect",
+      "host": "source.audit.test:8443",
+      "local_address": "10.244.106.10",
+      "query_marker": false,
+      "authorization": false,
+      "cookie": false,
+      "admin_key": false,
+      "tls": true,
+      "time": 1795522828.6223047
+    },
+    {
+      "case": "redirect_loop",
+      "path": "/case/redirect_loop",
+      "host": "source.audit.test:8443",
+      "local_address": "10.244.106.10",
+      "query_marker": false,
+      "authorization": false,
+      "cookie": false,
+      "admin_key": false,
+      "tls": true,
+      "time": 1795522828.6446123
+    },
+    {
+      "case": "redirect_loop",
+      "path": "/case/redirect_loop",
+      "host": "source.audit.test:8443",
+      "local_address": "10.244.106.10",
+      "query_marker": false,
+      "authorization": false,
+      "cookie": false,
+      "admin_key": false,
+      "tls": true,
+      "time": 1795522828.6517496
+    },
+    {
+      "case": "redirect_loop",
+      "path": "/case/redirect_loop",
+      "host": "source.audit.test:8443",
+      "local_address": "10.244.106.10",
+      "query_marker": false,
+      "authorization": false,
+      "cookie": false,
+      "admin_key": false,
+      "tls": true,
+      "time": 1795522828.6583004
+    },
+    {
+      "case": "redirect_loop",
+      "path": "/case/redirect_loop",
+      "host": "source.audit.test:8443",
+      "local_address": "10.244.106.10",
+      "query_marker": false,
+      "authorization": false,
+      "cookie": false,
+      "admin_key": false,
+      "tls": true,
+      "time": 1795522828.665047
+    },
+    {
+      "case": "redirect_private",
+      "path": "/case/redirect_private",
+      "host": "source.audit.test:8443",
+      "local_address": "10.244.106.10",
+      "query_marker": false,
+      "authorization": false,
+      "cookie": false,
+      "admin_key": false,
+      "tls": true,
+      "time": 1795522828.6886132
+    },
+    {
+      "case": "private_sink",
+      "path": "/case/private_sink",
+      "host": "10.244.106.10:8443",
+      "local_address": "10.244.106.10",
+      "query_marker": false,
+      "authorization": false,
+      "cookie": false,
+      "admin_key": false,
+      "tls": true,
+      "time": 1795522828.6947703
+    },
+    {
+      "case": "redirect_cross",
+      "path": "/case/redirect_cross",
+      "host": "source.audit.test:8443",
+      "local_address": "10.244.106.10",
+      "query_marker": false,
+      "authorization": false,
+      "cookie": false,
+      "admin_key": false,
+      "tls": true,
+      "time": 1795522828.7166395
+    },
+    {
+      "case": "cross_sink",
+      "path": "/case/cross_sink",
+      "host": "target.audit.test:8443",
+      "local_address": "10.244.106.10",
+      "query_marker": false,
+      "authorization": false,
+      "cookie": false,
+      "admin_key": false,
+      "tls": true,
+      "time": 1795522828.7236936
+    },
+    {
+      "case": "redirect_http_denied",
+      "path": "/case/redirect_http_denied",
+      "host": "source.audit.test:8443",
+      "local_address": "10.244.106.10",
+      "query_marker": false,
+      "authorization": false,
+      "cookie": false,
+      "admin_key": false,
+      "tls": true,
+      "time": 1795522828.744861
+    },
+    {
+      "case": "redirect_ftp",
+      "path": "/case/redirect_ftp",
+      "host": "source.audit.test:8443",
+      "local_address": "10.244.106.10",
+      "query_marker": false,
+      "authorization": false,
+      "cookie": false,
+      "admin_key": false,
+      "tls": true,
+      "time": 1795522828.7677722
+    },
+    {
+      "case": "provider_http",
+      "path": "/case/provider_http",
+      "host": "source.audit.test:8443",
+      "local_address": "10.244.106.10",
+      "query_marker": false,
+      "authorization": false,
+      "cookie": false,
+      "admin_key": false,
+      "tls": true,
+      "time": 1795522828.7905884
+    },
+    {
+      "case": "provider_child",
+      "path": "/case/provider_child",
+      "host": "source.audit.test:8443",
+      "local_address": "10.244.106.10",
+      "query_marker": false,
+      "authorization": false,
+      "cookie": false,
+      "admin_key": false,
+      "tls": true,
+      "time": 1795522828.7974997
+    },
+    {
+      "case": "provider_file",
+      "path": "/case/provider_file",
+      "host": "source.audit.test:8443",
+      "local_address": "10.244.106.10",
+      "query_marker": false,
+      "authorization": false,
+      "cookie": false,
+      "admin_key": false,
+      "tls": true,
+      "time": 1795522828.819941
+    },
+    {
+      "case": "provider_inline",
+      "path": "/case/provider_inline",
+      "host": "source.audit.test:8443",
+      "local_address": "10.244.106.10",
+      "query_marker": false,
+      "authorization": false,
+      "cookie": false,
+      "admin_key": false,
+      "tls": true,
+      "time": 1795522828.841157
+    },
+    {
+      "case": "provider_bad_shape",
+      "path": "/case/provider_bad_shape",
+      "host": "source.audit.test:8443",
+      "local_address": "10.244.106.10",
+      "query_marker": false,
+      "authorization": false,
+      "cookie": false,
+      "admin_key": false,
+      "tls": true,
+      "time": 1795522828.8629851
+    },
+    {
+      "case": "provider_missing_url",
+      "path": "/case/provider_missing_url",
+      "host": "source.audit.test:8443",
+      "local_address": "10.244.106.10",
+      "query_marker": false,
+      "authorization": false,
+      "cookie": false,
+      "admin_key": false,
+      "tls": true,
+      "time": 1795522828.885502
+    },
+    {
+      "case": "provider_mixed",
+      "path": "/case/provider_mixed",
+      "host": "source.audit.test:8443",
+      "local_address": "10.244.106.10",
+      "query_marker": false,
+      "authorization": false,
+      "cookie": false,
+      "admin_key": false,
+      "tls": true,
+      "time": 1795522828.9075863
+    },
+    {
+      "case": "provider_child",
+      "path": "/case/provider_child",
+      "host": "source.audit.test:8443",
+      "local_address": "10.244.106.10",
+      "query_marker": false,
+      "authorization": false,
+      "cookie": false,
+      "admin_key": false,
+      "tls": true,
+      "time": 1795522828.914386
+    },
+    {
+      "case": "auth401",
+      "path": "/case/auth401",
+      "host": "source.audit.test:8443",
+      "local_address": "10.244.106.10",
+      "query_marker": false,
+      "authorization": false,
+      "cookie": false,
+      "admin_key": false,
+      "tls": true,
+      "time": 1795522828.9208143
+    },
+    {
+      "case": "provider_nested",
+      "path": "/case/provider_nested",
+      "host": "source.audit.test:8443",
+      "local_address": "10.244.106.10",
+      "query_marker": false,
+      "authorization": false,
+      "cookie": false,
+      "admin_key": false,
+      "tls": true,
+      "time": 1795522828.9420278
+    },
+    {
+      "case": "provider_nested_child",
+      "path": "/case/provider_nested_child",
+      "host": "source.audit.test:8443",
+      "local_address": "10.244.106.10",
+      "query_marker": false,
+      "authorization": false,
+      "cookie": false,
+      "admin_key": false,
+      "tls": true,
+      "time": 1795522828.9490342
+    },
+    {
+      "case": "provider_recursive",
+      "path": "/case/provider_recursive",
+      "host": "source.audit.test:8443",
+      "local_address": "10.244.106.10",
+      "query_marker": false,
+      "authorization": false,
+      "cookie": false,
+      "admin_key": false,
+      "tls": true,
+      "time": 1795522828.97297
+    },
+    {
+      "case": "provider_recursive",
+      "path": "/case/provider_recursive",
+      "host": "source.audit.test:8443",
+      "local_address": "10.244.106.10",
+      "query_marker": false,
+      "authorization": false,
+      "cookie": false,
+      "admin_key": false,
+      "tls": true,
+      "time": 1795522828.9800947
+    },
+    {
+      "case": "provider_count",
+      "path": "/case/provider_count",
+      "host": "source.audit.test:8443",
+      "local_address": "10.244.106.10",
+      "query_marker": false,
+      "authorization": false,
+      "cookie": false,
+      "admin_key": false,
+      "tls": true,
+      "time": 1795522829.0015225
+    },
+    {
+      "case": "provider_child",
+      "path": "/case/provider_child",
+      "host": "source.audit.test:8443",
+      "local_address": "10.244.106.10",
+      "query_marker": false,
+      "authorization": false,
+      "cookie": false,
+      "admin_key": false,
+      "tls": true,
+      "time": 1795522829.0107856
+    },
+    {
+      "case": "provider_child",
+      "path": "/case/provider_child",
+      "host": "source.audit.test:8443",
+      "local_address": "10.244.106.10",
+      "query_marker": false,
+      "authorization": false,
+      "cookie": false,
+      "admin_key": false,
+      "tls": true,
+      "time": 1795522829.0175698
+    },
+    {
+      "case": "provider_child",
+      "path": "/case/provider_child",
+      "host": "source.audit.test:8443",
+      "local_address": "10.244.106.10",
+      "query_marker": false,
+      "authorization": false,
+      "cookie": false,
+      "admin_key": false,
+      "tls": true,
+      "time": 1795522829.0240867
+    },
+    {
+      "case": "provider_child",
+      "path": "/case/provider_child",
+      "host": "source.audit.test:8443",
+      "local_address": "10.244.106.10",
+      "query_marker": false,
+      "authorization": false,
+      "cookie": false,
+      "admin_key": false,
+      "tls": true,
+      "time": 1795522829.0304928
+    },
+    {
+      "case": "provider_child",
+      "path": "/case/provider_child",
+      "host": "source.audit.test:8443",
+      "local_address": "10.244.106.10",
+      "query_marker": false,
+      "authorization": false,
+      "cookie": false,
+      "admin_key": false,
+      "tls": true,
+      "time": 1795522829.03764
+    },
+    {
+      "case": "provider_child",
+      "path": "/case/provider_child",
+      "host": "source.audit.test:8443",
+      "local_address": "10.244.106.10",
+      "query_marker": false,
+      "authorization": false,
+      "cookie": false,
+      "admin_key": false,
+      "tls": true,
+      "time": 1795522829.0439885
+    },
+    {
+      "case": "provider_child",
+      "path": "/case/provider_child",
+      "host": "source.audit.test:8443",
+      "local_address": "10.244.106.10",
+      "query_marker": false,
+      "authorization": false,
+      "cookie": false,
+      "admin_key": false,
+      "tls": true,
+      "time": 1795522829.0507863
+    },
+    {
+      "case": "provider_child",
+      "path": "/case/provider_child",
+      "host": "source.audit.test:8443",
+      "local_address": "10.244.106.10",
+      "query_marker": false,
+      "authorization": false,
+      "cookie": false,
+      "admin_key": false,
+      "tls": true,
+      "time": 1795522829.057553
+    },
+    {
+      "case": "provider_child",
+      "path": "/case/provider_child",
+      "host": "source.audit.test:8443",
+      "local_address": "10.244.106.10",
+      "query_marker": false,
+      "authorization": false,
+      "cookie": false,
+      "admin_key": false,
+      "tls": true,
+      "time": 1795522829.0640702
+    },
+    {
+      "case": "provider_child",
+      "path": "/case/provider_child",
+      "host": "source.audit.test:8443",
+      "local_address": "10.244.106.10",
+      "query_marker": false,
+      "authorization": false,
+      "cookie": false,
+      "admin_key": false,
+      "tls": true,
+      "time": 1795522829.0706463
+    },
+    {
+      "case": "provider_child",
+      "path": "/case/provider_child",
+      "host": "source.audit.test:8443",
+      "local_address": "10.244.106.10",
+      "query_marker": false,
+      "authorization": false,
+      "cookie": false,
+      "admin_key": false,
+      "tls": true,
+      "time": 1795522829.0773919
+    },
+    {
+      "case": "provider_child",
+      "path": "/case/provider_child",
+      "host": "source.audit.test:8443",
+      "local_address": "10.244.106.10",
+      "query_marker": false,
+      "authorization": false,
+      "cookie": false,
+      "admin_key": false,
+      "tls": true,
+      "time": 1795522829.0839598
+    },
+    {
+      "case": "provider_child",
+      "path": "/case/provider_child",
+      "host": "source.audit.test:8443",
+      "local_address": "10.244.106.10",
+      "query_marker": false,
+      "authorization": false,
+      "cookie": false,
+      "admin_key": false,
+      "tls": true,
+      "time": 1795522829.0903978
+    },
+    {
+      "case": "provider_child",
+      "path": "/case/provider_child",
+      "host": "source.audit.test:8443",
+      "local_address": "10.244.106.10",
+      "query_marker": false,
+      "authorization": false,
+      "cookie": false,
+      "admin_key": false,
+      "tls": true,
+      "time": 1795522829.096857
+    },
+    {
+      "case": "provider_child",
+      "path": "/case/provider_child",
+      "host": "source.audit.test:8443",
+      "local_address": "10.244.106.10",
+      "query_marker": false,
+      "authorization": false,
+      "cookie": false,
+      "admin_key": false,
+      "tls": true,
+      "time": 1795522829.103176
+    },
+    {
+      "case": "provider_child",
+      "path": "/case/provider_child",
+      "host": "source.audit.test:8443",
+      "local_address": "10.244.106.10",
+      "query_marker": false,
+      "authorization": false,
+      "cookie": false,
+      "admin_key": false,
+      "tls": true,
+      "time": 1795522829.109514
+    },
+    {
+      "case": "provider_child",
+      "path": "/case/provider_child",
+      "host": "source.audit.test:8443",
+      "local_address": "10.244.106.10",
+      "query_marker": false,
+      "authorization": false,
+      "cookie": false,
+      "admin_key": false,
+      "tls": true,
+      "time": 1795522829.1159716
+    },
+    {
+      "case": "provider_child",
+      "path": "/case/provider_child",
+      "host": "source.audit.test:8443",
+      "local_address": "10.244.106.10",
+      "query_marker": false,
+      "authorization": false,
+      "cookie": false,
+      "admin_key": false,
+      "tls": true,
+      "time": 1795522829.122408
+    },
+    {
+      "case": "provider_child",
+      "path": "/case/provider_child",
+      "host": "source.audit.test:8443",
+      "local_address": "10.244.106.10",
+      "query_marker": false,
+      "authorization": false,
+      "cookie": false,
+      "admin_key": false,
+      "tls": true,
+      "time": 1795522829.1287324
+    },
+    {
+      "case": "provider_child",
+      "path": "/case/provider_child",
+      "host": "source.audit.test:8443",
+      "local_address": "10.244.106.10",
+      "query_marker": false,
+      "authorization": false,
+      "cookie": false,
+      "admin_key": false,
+      "tls": true,
+      "time": 1795522829.1349897
+    },
+    {
+      "case": "provider_child",
+      "path": "/case/provider_child",
+      "host": "source.audit.test:8443",
+      "local_address": "10.244.106.10",
+      "query_marker": false,
+      "authorization": false,
+      "cookie": false,
+      "admin_key": false,
+      "tls": true,
+      "time": 1795522829.1411521
+    },
+    {
+      "case": "provider_child",
+      "path": "/case/provider_child",
+      "host": "source.audit.test:8443",
+      "local_address": "10.244.106.10",
+      "query_marker": false,
+      "authorization": false,
+      "cookie": false,
+      "admin_key": false,
+      "tls": true,
+      "time": 1795522829.1476364
+    },
+    {
+      "case": "provider_child",
+      "path": "/case/provider_child",
+      "host": "source.audit.test:8443",
+      "local_address": "10.244.106.10",
+      "query_marker": false,
+      "authorization": false,
+      "cookie": false,
+      "admin_key": false,
+      "tls": true,
+      "time": 1795522829.1539083
+    },
+    {
+      "case": "provider_child",
+      "path": "/case/provider_child",
+      "host": "source.audit.test:8443",
+      "local_address": "10.244.106.10",
+      "query_marker": false,
+      "authorization": false,
+      "cookie": false,
+      "admin_key": false,
+      "tls": true,
+      "time": 1795522829.160729
+    },
+    {
+      "case": "provider_child",
+      "path": "/case/provider_child",
+      "host": "source.audit.test:8443",
+      "local_address": "10.244.106.10",
+      "query_marker": false,
+      "authorization": false,
+      "cookie": false,
+      "admin_key": false,
+      "tls": true,
+      "time": 1795522829.1673658
+    },
+    {
+      "case": "provider_child",
+      "path": "/case/provider_child",
+      "host": "source.audit.test:8443",
+      "local_address": "10.244.106.10",
+      "query_marker": false,
+      "authorization": false,
+      "cookie": false,
+      "admin_key": false,
+      "tls": true,
+      "time": 1795522829.174613
+    },
+    {
+      "case": "provider_child",
+      "path": "/case/provider_child",
+      "host": "source.audit.test:8443",
+      "local_address": "10.244.106.10",
+      "query_marker": false,
+      "authorization": false,
+      "cookie": false,
+      "admin_key": false,
+      "tls": true,
+      "time": 1795522829.1812737
+    },
+    {
+      "case": "provider_child",
+      "path": "/case/provider_child",
+      "host": "source.audit.test:8443",
+      "local_address": "10.244.106.10",
+      "query_marker": false,
+      "authorization": false,
+      "cookie": false,
+      "admin_key": false,
+      "tls": true,
+      "time": 1795522829.1880095
+    },
+    {
+      "case": "provider_child",
+      "path": "/case/provider_child",
+      "host": "source.audit.test:8443",
+      "local_address": "10.244.106.10",
+      "query_marker": false,
+      "authorization": false,
+      "cookie": false,
+      "admin_key": false,
+      "tls": true,
+      "time": 1795522829.1941323
+    },
+    {
+      "case": "provider_child",
+      "path": "/case/provider_child",
+      "host": "source.audit.test:8443",
+      "local_address": "10.244.106.10",
+      "query_marker": false,
+      "authorization": false,
+      "cookie": false,
+      "admin_key": false,
+      "tls": true,
+      "time": 1795522829.2006083
+    },
+    {
+      "case": "provider_child",
+      "path": "/case/provider_child",
+      "host": "source.audit.test:8443",
+      "local_address": "10.244.106.10",
+      "query_marker": false,
+      "authorization": false,
+      "cookie": false,
+      "admin_key": false,
+      "tls": true,
+      "time": 1795522829.2069173
+    },
+    {
+      "case": "provider_child",
+      "path": "/case/provider_child",
+      "host": "source.audit.test:8443",
+      "local_address": "10.244.106.10",
+      "query_marker": false,
+      "authorization": false,
+      "cookie": false,
+      "admin_key": false,
+      "tls": true,
+      "time": 1795522829.2140296
+    },
+    {
+      "case": "provider_redirect",
+      "path": "/case/provider_redirect",
+      "host": "source.audit.test:8443",
+      "local_address": "10.244.106.10",
+      "query_marker": false,
+      "authorization": false,
+      "cookie": false,
+      "admin_key": false,
+      "tls": true,
+      "time": 1795522829.242382
+    },
+    {
+      "case": "redirect",
+      "path": "/case/redirect",
+      "host": "source.audit.test:8443",
+      "local_address": "10.244.106.10",
+      "query_marker": false,
+      "authorization": false,
+      "cookie": false,
+      "admin_key": false,
+      "tls": true,
+      "time": 1795522829.2491753
+    },
+    {
+      "case": "redirect",
+      "path": "/case/redirect",
+      "host": "source.audit.test:8443",
+      "local_address": "10.244.106.10",
+      "query_marker": false,
+      "authorization": false,
+      "cookie": false,
+      "admin_key": false,
+      "tls": true,
+      "time": 1795522829.255766
+    },
+    {
+      "case": "redirect",
+      "path": "/case/redirect",
+      "host": "source.audit.test:8443",
+      "local_address": "10.244.106.10",
+      "query_marker": false,
+      "authorization": false,
+      "cookie": false,
+      "admin_key": false,
+      "tls": true,
+      "time": 1795522829.262101
+    },
+    {
+      "case": "redirect",
+      "path": "/case/redirect",
+      "host": "source.audit.test:8443",
+      "local_address": "10.244.106.10",
+      "query_marker": false,
+      "authorization": false,
+      "cookie": false,
+      "admin_key": false,
+      "tls": true,
+      "time": 1795522829.2693546
+    },
+    {
+      "case": "provider_expansion",
+      "path": "/case/provider_expansion",
+      "host": "source.audit.test:8443",
+      "local_address": "10.244.106.10",
+      "query_marker": false,
+      "authorization": false,
+      "cookie": false,
+      "admin_key": false,
+      "tls": true,
+      "time": 1795522829.2923768
+    },
+    {
+      "case": "gzip_expansion",
+      "path": "/case/gzip_expansion",
+      "host": "source.audit.test:8443",
+      "local_address": "10.244.106.10",
+      "query_marker": false,
+      "authorization": false,
+      "cookie": false,
+      "admin_key": false,
+      "tls": true,
+      "time": 1795522829.2995474
+    },
+    {
+      "case": "pure_config",
+      "path": "/case/pure_config",
+      "host": "source.audit.test:8443",
+      "local_address": "10.244.106.10",
+      "query_marker": false,
+      "authorization": false,
+      "cookie": false,
+      "admin_key": false,
+      "tls": true,
+      "time": 1795522829.5734043
+    },
+    {
+      "case": "provider_child",
+      "path": "/case/provider_child",
+      "host": "source.audit.test:8443",
+      "local_address": "10.244.106.10",
+      "query_marker": false,
+      "authorization": false,
+      "cookie": false,
+      "admin_key": false,
+      "tls": true,
+      "time": 1795522829.5818796
+    },
+    {
+      "case": "slow_headers",
+      "path": "/case/slow_headers",
+      "host": "source.audit.test:8443",
+      "local_address": "10.244.106.10",
+      "query_marker": false,
+      "authorization": false,
+      "cookie": false,
+      "admin_key": false,
+      "tls": true,
+      "time": 1795522829.6041055
+    },
+    {
+      "case": "slow_body",
+      "path": "/case/slow_body",
+      "host": "source.audit.test:8443",
+      "local_address": "10.244.106.10",
+      "query_marker": false,
+      "authorization": false,
+      "cookie": false,
+      "admin_key": false,
+      "tls": true,
+      "time": 1795522839.6287198
+    },
+    {
+      "case": "provider_slow",
+      "path": "/case/provider_slow",
+      "host": "source.audit.test:8443",
+      "local_address": "10.244.106.10",
+      "query_marker": false,
+      "authorization": false,
+      "cookie": false,
+      "admin_key": false,
+      "tls": true,
+      "time": 1795522849.6439745
+    },
+    {
+      "case": "slow_headers",
+      "path": "/case/slow_headers",
+      "host": "source.audit.test:8443",
+      "local_address": "10.244.106.10",
+      "query_marker": false,
+      "authorization": false,
+      "cookie": false,
+      "admin_key": false,
+      "tls": true,
+      "time": 1795522849.6519308
+    },
+    {
+      "case": "private_direct",
+      "path": "/case/private_direct",
+      "host": "10.244.106.10:8443",
+      "local_address": "10.244.106.10",
+      "query_marker": false,
+      "authorization": false,
+      "cookie": false,
+      "admin_key": false,
+      "tls": true,
+      "time": 1795522859.6602547
+    },
+    {
+      "case": "redirect_cross",
+      "path": "/case/redirect_cross",
+      "host": "source.audit.test:8443",
+      "local_address": "10.244.106.10",
+      "query_marker": false,
+      "authorization": false,
+      "cookie": false,
+      "admin_key": false,
+      "tls": true,
+      "time": 1795522859.6783304
+    },
+    {
+      "case": "cross_sink",
+      "path": "/case/cross_sink",
+      "host": "target.audit.test:8443",
+      "local_address": "10.244.106.10",
+      "query_marker": false,
+      "authorization": false,
+      "cookie": false,
+      "admin_key": false,
+      "tls": true,
+      "time": 1795522859.685223
+    },
+    {
+      "case": "good",
+      "path": "/case/good",
+      "host": "source.audit.test:8443",
+      "local_address": "10.244.106.10",
+      "query_marker": true,
+      "authorization": false,
+      "cookie": false,
+      "admin_key": false,
+      "tls": true,
+      "time": 1795522859.7036703
+    },
+    {
+      "case": "good",
+      "path": "/case/good",
+      "host": "source.audit.test:8443",
+      "local_address": "10.244.106.10",
+      "query_marker": false,
+      "authorization": false,
+      "cookie": false,
+      "admin_key": false,
+      "tls": true,
+      "time": 1795523570.669585
+    },
+    {
+      "case": "invalid_utf8",
+      "path": "/case/invalid_utf8",
+      "host": "source.audit.test:8443",
+      "local_address": "10.244.106.10",
+      "query_marker": false,
+      "authorization": false,
+      "cookie": false,
+      "admin_key": false,
+      "tls": true,
+      "time": 1795523570.6937246
+    },
+    {
+      "case": "auth401",
+      "path": "/case/auth401",
+      "host": "source.audit.test:8443",
+      "local_address": "10.244.106.10",
+      "query_marker": false,
+      "authorization": false,
+      "cookie": false,
+      "admin_key": false,
+      "tls": true,
+      "time": 1795523570.7122626
+    },
+    {
+      "case": "raw_large",
+      "path": "/case/raw_large",
+      "host": "source.audit.test:8443",
+      "local_address": "10.244.106.10",
+      "query_marker": false,
+      "authorization": false,
+      "cookie": false,
+      "admin_key": false,
+      "tls": true,
+      "time": 1795523570.7361326
+    },
+    {
+      "case": "provider_mixed",
+      "path": "/case/provider_mixed",
+      "host": "source.audit.test:8443",
+      "local_address": "10.244.106.10",
+      "query_marker": false,
+      "authorization": false,
+      "cookie": false,
+      "admin_key": false,
+      "tls": true,
+      "time": 1795523570.7610269
+    },
+    {
+      "case": "provider_child",
+      "path": "/case/provider_child",
+      "host": "source.audit.test:8443",
+      "local_address": "10.244.106.10",
+      "query_marker": false,
+      "authorization": false,
+      "cookie": false,
+      "admin_key": false,
+      "tls": true,
+      "time": 1795523570.7687593
+    },
+    {
+      "case": "auth401",
+      "path": "/case/auth401",
+      "host": "source.audit.test:8443",
+      "local_address": "10.244.106.10",
+      "query_marker": false,
+      "authorization": false,
+      "cookie": false,
+      "admin_key": false,
+      "tls": true,
+      "time": 1795523570.7759433
+    },
+    {
+      "case": "pure_config",
+      "path": "/case/pure_config",
+      "host": "source.audit.test:8443",
+      "local_address": "10.244.106.10",
+      "query_marker": false,
+      "authorization": false,
+      "cookie": false,
+      "admin_key": false,
+      "tls": true,
+      "time": 1795523570.7966368
+    },
+    {
+      "case": "provider_child",
+      "path": "/case/provider_child",
+      "host": "source.audit.test:8443",
+      "local_address": "10.244.106.10",
+      "query_marker": false,
+      "authorization": false,
+      "cookie": false,
+      "admin_key": false,
+      "tls": true,
+      "time": 1795523570.8056378
+    },
+    {
+      "case": "provider_file",
+      "path": "/case/provider_file",
+      "host": "source.audit.test:8443",
+      "local_address": "10.244.106.10",
+      "query_marker": false,
+      "authorization": false,
+      "cookie": false,
+      "admin_key": false,
+      "tls": true,
+      "time": 1795523570.828501
+    },
+    {
+      "case": "provider_mixed",
+      "path": "/case/provider_mixed",
+      "host": "source.audit.test:8443",
+      "local_address": "10.244.106.10",
+      "query_marker": false,
+      "authorization": false,
+      "cookie": false,
+      "admin_key": false,
+      "tls": true,
+      "time": 1795523583.4934902
+    },
+    {
+      "case": "provider_child",
+      "path": "/case/provider_child",
+      "host": "source.audit.test:8443",
+      "local_address": "10.244.106.10",
+      "query_marker": false,
+      "authorization": false,
+      "cookie": false,
+      "admin_key": false,
+      "tls": true,
+      "time": 1795523583.5009334
+    },
+    {
+      "case": "auth401",
+      "path": "/case/auth401",
+      "host": "source.audit.test:8443",
+      "local_address": "10.244.106.10",
+      "query_marker": false,
+      "authorization": false,
+      "cookie": false,
+      "admin_key": false,
+      "tls": true,
+      "time": 1795523583.5078173
+    },
+    {
+      "case": "invalid_utf8",
+      "path": "/case/invalid_utf8",
+      "host": "source.audit.test:8443",
+      "local_address": "10.244.106.10",
+      "query_marker": false,
+      "authorization": false,
+      "cookie": false,
+      "admin_key": false,
+      "tls": true,
+      "time": 1795523583.983291
+    },
+    {
+      "case": "good",
+      "path": "/case/good",
+      "host": "source.audit.test:8443",
+      "local_address": "10.244.106.10",
+      "query_marker": false,
+      "authorization": false,
+      "cookie": false,
+      "admin_key": false,
+      "tls": true,
+      "time": 1795523584.2463117
+    },
+    {
+      "case": "response_amplification",
+      "path": "/case/response_amplification",
+      "host": "source.audit.test:8443",
+      "local_address": "10.244.106.10",
+      "query_marker": false,
+      "authorization": false,
+      "cookie": false,
+      "admin_key": false,
+      "tls": true,
+      "time": 1795524039.6136537
+    },
+    {
+      "case": "raw_chunked",
+      "path": "/case/raw_chunked",
+      "host": "source.audit.test:8443",
+      "local_address": "10.244.106.10",
+      "query_marker": false,
+      "authorization": false,
+      "cookie": false,
+      "admin_key": false,
+      "tls": true,
+      "time": 1795524223.5336769
+    },
+    {
+      "case": "gzip_exact8m",
+      "path": "/case/gzip_exact8m",
+      "host": "source.audit.test:8443",
+      "local_address": "10.244.106.10",
+      "query_marker": false,
+      "authorization": false,
+      "cookie": false,
+      "admin_key": false,
+      "tls": true,
+      "time": 1795524223.6005583
+    },
+    {
+      "case": "provider_raw_large",
+      "path": "/case/provider_raw_large",
+      "host": "source.audit.test:8443",
+      "local_address": "10.244.106.10",
+      "query_marker": false,
+      "authorization": false,
+      "cookie": false,
+      "admin_key": false,
+      "tls": true,
+      "time": 1795524224.8808897
+    },
+    {
+      "case": "raw_large",
+      "path": "/case/raw_large",
+      "host": "source.audit.test:8443",
+      "local_address": "10.244.106.10",
+      "query_marker": false,
+      "authorization": false,
+      "cookie": false,
+      "admin_key": false,
+      "tls": true,
+      "time": 1795524224.8880222
+    },
+    {
+      "case": "provider_private",
+      "path": "/case/provider_private",
+      "host": "source.audit.test:8443",
+      "local_address": "10.244.106.10",
+      "query_marker": false,
+      "authorization": false,
+      "cookie": false,
+      "admin_key": false,
+      "tls": true,
+      "time": 1795524224.908565
+    },
+    {
+      "case": "private_provider_sink",
+      "path": "/case/private_provider_sink",
+      "host": "10.244.106.10:8443",
+      "local_address": "10.244.106.10",
+      "query_marker": false,
+      "authorization": false,
+      "cookie": false,
+      "admin_key": false,
+      "tls": true,
+      "time": 1795524224.9147007
+    },
+    {
+      "case": "good",
+      "path": "/case/good",
+      "host": "source.audit.test:8000",
+      "local_address": "10.244.106.10",
+      "query_marker": false,
+      "authorization": false,
+      "cookie": false,
+      "admin_key": false,
+      "tls": false,
+      "time": 1795524224.9293697
+    },
+    {
+      "case": "large_b64",
+      "path": "/case/large_b64",
+      "host": "source.audit.test:8443",
+      "local_address": "10.244.106.10",
+      "query_marker": false,
+      "authorization": false,
+      "cookie": false,
+      "admin_key": false,
+      "tls": true,
+      "time": 1795524224.9601986
+    },
+    {
+      "case": "response_amplification",
+      "path": "/case/response_amplification",
+      "host": "source.audit.test:8443",
+      "local_address": "10.244.106.10",
+      "query_marker": false,
+      "authorization": false,
+      "cookie": false,
+      "admin_key": false,
+      "tls": true,
+      "time": 1795524227.9122088
+    },
+    {
+      "case": "response_amplification",
+      "path": "/case/response_amplification",
+      "host": "source.audit.test:8443",
+      "local_address": "10.244.106.10",
+      "query_marker": false,
+      "authorization": false,
+      "cookie": false,
+      "admin_key": false,
+      "tls": true,
+      "time": 1795524233.4458108
+    }
+  ],
+  "observations": {
+    "credential_header_hits": 0,
+    "external_rule_or_ui_or_deep_provider_hits": 0,
+    "private_target_requests": [
+      {
+        "case": "private_sink",
+        "path": "/case/private_sink",
+        "host": "10.244.106.10:8443",
+        "local_address": "10.244.106.10",
+        "query_marker": false,
+        "authorization": false,
+        "cookie": false,
+        "admin_key": false,
+        "tls": true,
+        "time": 1795522828.6947703
+      },
+      {
+        "case": "private_direct",
+        "path": "/case/private_direct",
+        "host": "10.244.106.10:8443",
+        "local_address": "10.244.106.10",
+        "query_marker": false,
+        "authorization": false,
+        "cookie": false,
+        "admin_key": false,
+        "tls": true,
+        "time": 1795522859.6602547
+      },
+      {
+        "case": "private_provider_sink",
+        "path": "/case/private_provider_sink",
+        "host": "10.244.106.10:8443",
+        "local_address": "10.244.106.10",
+        "query_marker": false,
+        "authorization": false,
+        "cookie": false,
+        "admin_key": false,
+        "tls": true,
+        "time": 1795524224.9147007
+      }
+    ],
+    "post_request_idle_observed_s": 217.6,
+    "application_listen_ports": [
+      8080
+    ],
+    "requested_runtime_ports_absent": [
+      45678,
+      45679
+    ]
+  },
+  "limits": [
+    "DNS answer rebinding during a request and real internet targets excluded; hostname resolving to an internal address was exercised",
+    "Future Mihomo and durable subscription save/publish flows belong to later tasks",
+    "Retained development verification images reused; no fresh release-image build",
+    "No current Rust/Go suite rerun; results here are live API/browser audit cases",
+    "Two child review attempts ended before returning results; conclusions and reproductions are by lead"
+  ]
+}

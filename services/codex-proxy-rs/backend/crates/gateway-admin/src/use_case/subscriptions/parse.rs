@@ -1,19 +1,22 @@
-//! 订阅正文的格式判定与逐节点解析
+//! 订阅正文的格式识别、节点连接参数校验与 provider 声明读取
 //!
-//! 解析只读取节点展示名与协议；脚本、规则、监听、文件路径与 controller 配置一律跳过，
-//! 解析器读取调用方已下载的正文，不接触本地文件系统
+//! 解析只消费正文中的节点事实，规则、脚本、监听和文件字段保持静态输入
+
+use std::net::IpAddr;
 
 use base64::Engine as _;
 use percent_encoding::percent_decode_str;
 use serde_json::{Map, Value};
+use url::Url;
 use yaml_rust2::{Yaml, YamlLoader};
 
 use crate::model::subscriptions::{
-    DiagnosticCode, MAX_DOCUMENT_BYTES, MAX_NODE_NAME_CHARS, MAX_PROVIDERS, NodeCandidate,
-    NodeProtocol, PreviewDiagnostic, SubscriptionFormat,
+    DiagnosticCode, MAX_DECOMPRESSED_BYTES, MAX_NODE_NAME_CHARS, MAX_PREVIEW_CANDIDATES,
+    MAX_PREVIEW_DIAGNOSTICS, MAX_PROVIDERS, NodeCandidate, NodeProtocol, PreviewDiagnostic,
+    SubscriptionFormat, SubscriptionPreviewError,
 };
 
-/// 一份文档的解析结果
+/// 单份文档的节点、诊断和待下载来源
 pub(super) struct ParsedDocument {
     pub(super) format: SubscriptionFormat,
     pub(super) candidates: Vec<NodeCandidate>,
@@ -21,53 +24,37 @@ pub(super) struct ParsedDocument {
     pub(super) providers: Vec<ProviderReference>,
 }
 
-/// 待受控拉取的 HTTP 型 provider
+/// 由下载边界统一处理的 HTTP provider
 pub(super) struct ProviderReference {
     pub(super) name: String,
     pub(super) url: String,
 }
 
-/// 文档整体不可读；逐节点问题走诊断，不进入这里
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub(super) struct UnreadableDocument;
-
-/// 解析一份文档；Base64 整体包装解出内层后再按内层格式解析
-pub(super) fn parse_document(body: &[u8]) -> Result<ParsedDocument, UnreadableDocument> {
-    let text = std::str::from_utf8(body).map_err(|_| UnreadableDocument)?;
-    let text = text.trim_start_matches('\u{feff}');
-    let trimmed = text.trim();
-    if trimmed.is_empty() {
-        return Err(UnreadableDocument);
+pub(super) fn parse_document(body: &[u8]) -> Result<ParsedDocument, SubscriptionPreviewError> {
+    if body.len() > MAX_DECOMPRESSED_BYTES {
+        return Err(SubscriptionPreviewError::TooLarge);
     }
-    if let Some(decoded) = decode_wrapped_base64(trimmed) {
-        let mut document = parse_plain(&decoded)?;
-        // 包装层决定 wire 上的格式，内层格式只影响解析路径
-        document.format = SubscriptionFormat::Base64Document;
-        return Ok(document);
+    let text = std::str::from_utf8(body).map_err(|_| SubscriptionPreviewError::Unreadable)?;
+    let text = text.trim_start_matches('\u{feff}').trim();
+    if text.is_empty() {
+        return Err(SubscriptionPreviewError::Unreadable);
     }
-    parse_plain(trimmed)
-}
-
-/// 判定整段正文是否为 Base64 包装：正文全部落在 Base64 字母表内才算包装
-fn decode_wrapped_base64(text: &str) -> Option<String> {
     let compact: String = text
         .chars()
         .filter(|value| !value.is_ascii_whitespace())
         .collect();
-    if compact.len() < 32 || compact.len() > MAX_DOCUMENT_BYTES {
-        return None;
-    }
-    let looks_wrapped = compact
+    if compact
         .chars()
-        .all(|value| value.is_ascii_alphanumeric() || matches!(value, '+' | '/' | '-' | '_' | '='));
-    if !looks_wrapped {
-        return None;
+        .all(|value| value.is_ascii_alphanumeric() || matches!(value, '+' | '/' | '-' | '_' | '='))
+    {
+        let decoded = decode_base64(&compact).ok_or(SubscriptionPreviewError::Unreadable)?;
+        let decoded =
+            std::str::from_utf8(&decoded).map_err(|_| SubscriptionPreviewError::Unreadable)?;
+        let mut parsed = parse_plain(decoded.trim_start_matches('\u{feff}').trim())?;
+        parsed.format = SubscriptionFormat::Base64Document;
+        return Ok(parsed);
     }
-    let decoded = String::from_utf8(decode_base64(&compact)?).ok()?;
-    if decoded.trim().is_empty() {
-        return None;
-    }
-    Some(decoded)
+    parse_plain(text)
 }
 
 fn decode_base64(value: &str) -> Option<Vec<u8>> {
@@ -80,37 +67,51 @@ fn decode_base64(value: &str) -> Option<Vec<u8>> {
         .or_else(|| URL_SAFE_NO_PAD.decode(value).ok())
 }
 
-fn parse_plain(text: &str) -> Result<ParsedDocument, UnreadableDocument> {
-    let trimmed = text.trim();
-    // JSON 先于 YAML：YAML 是 JSON 的超集，先按 JSON 读可保留 clash_json 的格式事实
-    if let Some(value) = json_document(trimmed) {
-        return document_from_root(&value, SubscriptionFormat::ClashJson);
+fn parse_plain(text: &str) -> Result<ParsedDocument, SubscriptionPreviewError> {
+    if text.starts_with('{') || text.starts_with('[') {
+        if let Ok(root) = serde_json::from_str::<Value>(text) {
+            return document_from_root(&root, SubscriptionFormat::ClashJson);
+        }
+        return parse_yaml_document(text);
     }
-    if let Some(root) = yaml_clash_root(trimmed) {
-        return document_from_clash_root(&root, SubscriptionFormat::ClashYaml);
+    // 结构化声明先确定格式，URI 列表的逐行错误仍由列表解析器保留
+    let lines = text
+        .lines()
+        .map(str::trim)
+        .filter(|line| !line.is_empty() && !line.starts_with('#') && !line.starts_with("//"))
+        .collect::<Vec<_>>();
+    let structured = lines.iter().any(|line| {
+        line.split_once(':').is_some_and(|(key, _)| {
+            matches!(
+                key.trim().trim_matches(['\"', '\'']),
+                "proxies" | "proxy-providers"
+            )
+        })
+    });
+    if !structured
+        && lines.iter().any(|line| {
+            line.split_once("://")
+                .is_some_and(|(scheme, _)| valid_scheme(scheme))
+        })
+    {
+        return parse_uri_list(text);
     }
-    parse_uri_list(trimmed)
+    parse_yaml_document(text)
 }
 
-fn json_document(text: &str) -> Option<Value> {
-    let looks_like_json = text.starts_with('{') || text.starts_with('[');
-    looks_like_json
-        .then(|| serde_json::from_str::<Value>(text).ok())
-        .flatten()
+fn parse_yaml_document(text: &str) -> Result<ParsedDocument, SubscriptionPreviewError> {
+    let documents =
+        YamlLoader::load_from_str(text).map_err(|_| SubscriptionPreviewError::Unreadable)?;
+    if documents.len() != 1 {
+        return Err(SubscriptionPreviewError::Unreadable);
+    }
+    let root = documents
+        .first()
+        .and_then(yaml_to_json)
+        .ok_or(SubscriptionPreviewError::Unreadable)?;
+    document_from_root(&root, SubscriptionFormat::ClashYaml)
 }
 
-fn yaml_clash_root(text: &str) -> Option<Map<String, Value>> {
-    let root = yaml_root(text)?;
-    let has_nodes = root.contains_key("proxies") || root.contains_key("proxy-providers");
-    has_nodes.then_some(root)
-}
-
-fn yaml_root(text: &str) -> Option<Map<String, Value>> {
-    let documents = YamlLoader::load_from_str(text).ok()?;
-    yaml_to_json(documents.first()?)?.as_object().cloned()
-}
-
-/// YAML 值转换为等价 JSON 值：节点读取只保留一条通用路径
 fn yaml_to_json(value: &Yaml) -> Option<Value> {
     match value {
         Yaml::Real(raw) => Some(
@@ -134,7 +135,6 @@ fn yaml_to_json(value: &Yaml) -> Option<Value> {
                     Yaml::Boolean(flag) => flag.to_string(),
                     _ => continue,
                 };
-                // 重复键保留首次出现，与文档作者的书写顺序一致
                 object
                     .entry(key)
                     .or_insert_with(|| yaml_to_json(value).unwrap_or(Value::Null));
@@ -148,26 +148,96 @@ fn yaml_to_json(value: &Yaml) -> Option<Value> {
 fn document_from_root(
     value: &Value,
     format: SubscriptionFormat,
-) -> Result<ParsedDocument, UnreadableDocument> {
-    let root = value.as_object().ok_or(UnreadableDocument)?;
+) -> Result<ParsedDocument, SubscriptionPreviewError> {
+    let root = value
+        .as_object()
+        .ok_or(SubscriptionPreviewError::Unreadable)?;
     if !root.contains_key("proxies") && !root.contains_key("proxy-providers") {
-        return Err(UnreadableDocument);
+        return Err(SubscriptionPreviewError::Unreadable);
     }
-    document_from_clash_root(root, format)
-}
-
-fn document_from_clash_root(
-    root: &Map<String, Value>,
-    format: SubscriptionFormat,
-) -> Result<ParsedDocument, UnreadableDocument> {
     let proxies: &[Value] = match root.get("proxies") {
-        Some(value) => value.as_array().ok_or(UnreadableDocument)?,
+        Some(value) => value
+            .as_array()
+            .ok_or(SubscriptionPreviewError::Unreadable)?,
         None => &[],
     };
-    // 主文档也可能只带 provider 声明，此时节点全部来自 provider
-    let (candidates, mut diagnostics) = collect_nodes(proxies);
-    let (providers, provider_diagnostics) = collect_providers(root);
-    diagnostics.extend(provider_diagnostics);
+    if proxies.len() > MAX_PREVIEW_CANDIDATES {
+        return Err(SubscriptionPreviewError::PreviewTooLarge);
+    }
+    let mut candidates = Vec::with_capacity(proxies.len());
+    let mut diagnostics = Vec::new();
+    for entry in proxies {
+        let mut name = entry
+            .get("name")
+            .and_then(Value::as_str)
+            .map(sanitize_name)
+            .unwrap_or_default();
+        if name.is_empty() && entry.is_object() {
+            name = "name".to_owned();
+        }
+        let protocol = entry
+            .get("type")
+            .and_then(Value::as_str)
+            .map_or(NodeProtocol::Unknown, clash_protocol);
+        let issue = validate_clash_node(entry, protocol);
+        push_node(&mut candidates, &mut diagnostics, name, protocol, issue)?;
+    }
+    let mut providers = Vec::new();
+    if let Some(entries) = root.get("proxy-providers") {
+        if let Some(entries) = entries.as_object() {
+            for (name, entry) in entries {
+                let name = sanitize_name(name);
+                let kind = entry.get("type").and_then(Value::as_str);
+                let diagnostic = match kind {
+                    Some(kind) if kind.eq_ignore_ascii_case("http") => {
+                        let url = entry
+                            .get("url")
+                            .and_then(Value::as_str)
+                            .map(str::trim)
+                            .filter(|v| !v.is_empty());
+                        match url {
+                            Some(url) if providers.len() < MAX_PROVIDERS => {
+                                providers.push(ProviderReference {
+                                    name,
+                                    url: url.to_owned(),
+                                });
+                                continue;
+                            }
+                            Some(_) => PreviewDiagnostic::new(
+                                DiagnosticCode::ProviderFetchFailed,
+                                "The document holds more proxy providers than this gateway downloads.",
+                                name,
+                            ),
+                            None => PreviewDiagnostic::new(
+                                DiagnosticCode::ProviderParseError,
+                                "The HTTP proxy provider requires a download URL.",
+                                name,
+                            ),
+                        }
+                    }
+                    Some(_) => PreviewDiagnostic::new(
+                        DiagnosticCode::ProviderUnsupported,
+                        "Only HTTP proxy providers are expanded for preview.",
+                        name,
+                    ),
+                    None => PreviewDiagnostic::new(
+                        DiagnosticCode::ProviderParseError,
+                        "The proxy provider requires a mapping with a readable type.",
+                        name,
+                    ),
+                };
+                diagnostics.push(diagnostic);
+                check_counts(candidates.len(), diagnostics.len())?;
+            }
+        } else {
+            diagnostics.push(PreviewDiagnostic::new(
+                DiagnosticCode::ProviderParseError,
+                "The proxy-providers field requires a mapping.",
+                "proxy-providers",
+            ));
+        }
+    }
+    check_counts(candidates.len(), diagnostics.len())?;
     Ok(ParsedDocument {
         format,
         candidates,
@@ -176,142 +246,145 @@ fn document_from_clash_root(
     })
 }
 
-fn collect_nodes(proxies: &[Value]) -> (Vec<NodeCandidate>, Vec<PreviewDiagnostic>) {
-    let mut candidates = Vec::with_capacity(proxies.len());
-    let mut diagnostics = Vec::new();
-    for entry in proxies {
-        match node_from_entry(entry) {
-            Ok(candidate) => {
-                if !candidate.supported {
-                    diagnostics.push(PreviewDiagnostic::new(
-                        DiagnosticCode::UnsupportedProtocol,
-                        unsupported_message(candidate.protocol),
-                        candidate.name.clone(),
-                    ));
-                }
-                candidates.push(candidate);
-            }
-            Err((message, subject)) => {
-                diagnostics.push(PreviewDiagnostic::new(
-                    DiagnosticCode::NodeParseError,
-                    message,
-                    subject.clone(),
-                ));
-                // 识别失败的条目同样进入候选，保持 accepted 与 rejected 之和等于候选数量
-                candidates.push(NodeCandidate {
-                    name: subject,
-                    protocol: NodeProtocol::Unknown,
-                    supported: false,
-                });
-            }
-        }
+/// 数量预算同时约束单份正文和整次 provider 合并
+pub(super) fn check_counts(
+    candidates: usize,
+    diagnostics: usize,
+) -> Result<(), SubscriptionPreviewError> {
+    if candidates > MAX_PREVIEW_CANDIDATES || diagnostics > MAX_PREVIEW_DIAGNOSTICS {
+        return Err(SubscriptionPreviewError::PreviewTooLarge);
     }
-    (candidates, diagnostics)
+    Ok(())
 }
 
-fn node_from_entry(entry: &Value) -> Result<NodeCandidate, (&'static str, String)> {
+fn push_node(
+    candidates: &mut Vec<NodeCandidate>,
+    diagnostics: &mut Vec<PreviewDiagnostic>,
+    name: String,
+    protocol: NodeProtocol,
+    issue: Option<&'static str>,
+) -> Result<(), SubscriptionPreviewError> {
+    let mut candidate = NodeCandidate::new(name, protocol);
+    if let Some(message) = issue {
+        candidate.parse_valid = false;
+        candidate.supported = false;
+        diagnostics.push(PreviewDiagnostic::new(
+            DiagnosticCode::NodeParseError,
+            message,
+            candidate.name.clone(),
+        ));
+    } else if !candidate.supported {
+        diagnostics.push(PreviewDiagnostic::new(
+            DiagnosticCode::UnsupportedProtocol,
+            unsupported_message(protocol),
+            candidate.name.clone(),
+        ));
+    }
+    candidates.push(candidate);
+    check_counts(candidates.len(), diagnostics.len())
+}
+
+fn validate_clash_node(entry: &Value, protocol: NodeProtocol) -> Option<&'static str> {
     let Some(object) = entry.as_object() else {
-        return Err(("The node entry is not a mapping.", String::new()));
+        return Some("The node entry requires a mapping.");
     };
-    let name = object
+    if object
         .get("name")
         .and_then(Value::as_str)
         .map(sanitize_name)
-        .unwrap_or_default();
-    if name.is_empty() {
-        return Err(("The node entry has no readable name.", "name".to_owned()));
+        .is_none_or(|v| v.is_empty())
+    {
+        return Some("The node entry requires a readable name.");
     }
-    let Some(kind) = object.get("type").and_then(Value::as_str) else {
-        return Err(("The node entry has no readable type.", name));
-    };
-    Ok(NodeCandidate::new(name, clash_protocol(kind)))
+    if object
+        .get("type")
+        .and_then(Value::as_str)
+        .is_none_or(|v| v.trim().is_empty())
+    {
+        return Some("The node entry requires a readable type.");
+    }
+    // 额外协议只保留识别诊断，连接有效性由已实现的协议校验决定
+    if protocol == NodeProtocol::Unknown {
+        return None;
+    }
+    if object
+        .get("server")
+        .and_then(Value::as_str)
+        .is_none_or(|v| !valid_server(v))
+    {
+        return Some("The node requires a valid server address.");
+    }
+    if object.get("port").and_then(node_port).is_none() {
+        return Some("The node requires a port from 1 to 65535.");
+    }
+    match protocol {
+        NodeProtocol::Ss if !text_field(object, "cipher") || !text_field(object, "password") => {
+            Some("The Shadowsocks node requires a cipher and password.")
+        }
+        NodeProtocol::Vmess | NodeProtocol::Vless if !uuid_field(object, "uuid") => {
+            Some("The node requires a valid UUID.")
+        }
+        NodeProtocol::Trojan | NodeProtocol::Hysteria2 if !text_field(object, "password") => {
+            Some("The node requires a password.")
+        }
+        NodeProtocol::Tuic if !uuid_field(object, "uuid") || !text_field(object, "password") => {
+            Some("The TUIC node requires a UUID and password.")
+        }
+        _ => None,
+    }
 }
 
-fn collect_providers(
-    root: &Map<String, Value>,
-) -> (Vec<ProviderReference>, Vec<PreviewDiagnostic>) {
-    let mut providers = Vec::new();
-    let mut diagnostics = Vec::new();
-    let Some(entries) = root.get("proxy-providers").and_then(Value::as_object) else {
-        return (providers, diagnostics);
-    };
-    for (name, entry) in entries {
-        let name = sanitize_name(name);
-        // 文件型 provider 依赖本地路径，整段跳过
-        let is_http = entry
-            .get("type")
-            .and_then(Value::as_str)
-            .is_some_and(|kind| kind.eq_ignore_ascii_case("http"));
-        if !is_http {
-            continue;
-        }
-        let url = entry
-            .get("url")
-            .and_then(Value::as_str)
-            .map(str::trim)
-            .filter(|value| !value.is_empty());
-        let Some(url) = url else {
-            diagnostics.push(PreviewDiagnostic::new(
-                DiagnosticCode::ProviderFetchFailed,
-                "The proxy provider entry holds no download URL.",
-                name,
-            ));
-            continue;
-        };
-        if providers.len() >= MAX_PROVIDERS {
-            diagnostics.push(PreviewDiagnostic::new(
-                DiagnosticCode::ProviderFetchFailed,
-                "The document holds more proxy providers than this gateway downloads.",
-                name,
-            ));
-            continue;
-        }
-        providers.push(ProviderReference {
-            name,
-            url: url.to_owned(),
-        });
-    }
-    (providers, diagnostics)
+fn text_field(object: &Map<String, Value>, key: &str) -> bool {
+    object
+        .get(key)
+        .and_then(Value::as_str)
+        .is_some_and(|v| !v.is_empty() && !v.chars().any(char::is_control))
+}
+fn uuid_field(object: &Map<String, Value>, key: &str) -> bool {
+    object
+        .get(key)
+        .and_then(Value::as_str)
+        .is_some_and(|v| uuid::Uuid::parse_str(v).is_ok())
+}
+fn node_port(value: &Value) -> Option<u16> {
+    let port = value
+        .as_u64()
+        .and_then(|v| u16::try_from(v).ok())
+        .or_else(|| value.as_str()?.parse::<u16>().ok())?;
+    (port > 0).then_some(port)
+}
+fn valid_server(value: &str) -> bool {
+    !value.is_empty()
+        && !value.chars().any(|v| v.is_whitespace() || v.is_control())
+        && (value.parse::<IpAddr>().is_ok() || url::Host::parse(value).is_ok())
 }
 
-fn parse_uri_list(text: &str) -> Result<ParsedDocument, UnreadableDocument> {
+fn parse_uri_list(text: &str) -> Result<ParsedDocument, SubscriptionPreviewError> {
     let mut candidates = Vec::new();
     let mut diagnostics = Vec::new();
     let mut recognized = false;
-    for line in text.lines() {
-        let line = line.trim();
+    for line in text.lines().map(str::trim) {
         if line.is_empty() || line.starts_with('#') || line.starts_with("//") {
             continue;
         }
-        let Some((scheme, rest)) = line
-            .split_once("://")
-            .filter(|(scheme, _)| valid_scheme(scheme))
-        else {
-            diagnostics.push(PreviewDiagnostic::new(
-                DiagnosticCode::NodeParseError,
-                "The line holds no readable node scheme.",
-                "",
-            ));
-            candidates.push(NodeCandidate {
-                name: String::new(),
-                protocol: NodeProtocol::Unknown,
-                supported: false,
-            });
+        let Some((scheme, rest)) = line.split_once("://").filter(|(s, _)| valid_scheme(s)) else {
+            push_node(
+                &mut candidates,
+                &mut diagnostics,
+                String::new(),
+                NodeProtocol::Unknown,
+                Some("The line requires a readable node scheme."),
+            )?;
             continue;
         };
         recognized = true;
-        let candidate = NodeCandidate::new(uri_name(line, scheme, rest), scheme_protocol(scheme));
-        if !candidate.supported {
-            diagnostics.push(PreviewDiagnostic::new(
-                DiagnosticCode::UnsupportedProtocol,
-                unsupported_message(candidate.protocol),
-                candidate.name.clone(),
-            ));
-        }
-        candidates.push(candidate);
+        let protocol = scheme_protocol(scheme);
+        let name = uri_name(line, scheme, rest);
+        let issue = validate_uri(line, rest, protocol);
+        push_node(&mut candidates, &mut diagnostics, name, protocol, issue)?;
     }
     if !recognized {
-        return Err(UnreadableDocument);
+        return Err(SubscriptionPreviewError::Unreadable);
     }
     Ok(ParsedDocument {
         format: SubscriptionFormat::UriList,
@@ -323,43 +396,137 @@ fn parse_uri_list(text: &str) -> Result<ParsedDocument, UnreadableDocument> {
 
 fn valid_scheme(scheme: &str) -> bool {
     (1..=24).contains(&scheme.len())
-        && scheme.starts_with(|value: char| value.is_ascii_alphabetic())
+        && scheme.starts_with(|v: char| v.is_ascii_alphabetic())
         && scheme
             .chars()
-            .all(|value| value.is_ascii_alphanumeric() || matches!(value, '+' | '-' | '.'))
+            .all(|v| v.is_ascii_alphanumeric() || matches!(v, '+' | '-' | '.'))
 }
 
-fn uri_name(line: &str, scheme: &str, rest: &str) -> String {
-    let fragment = line
-        .split_once('#')
-        .map(|(_, fragment)| {
-            percent_decode_str(fragment)
-                .decode_utf8_lossy()
-                .into_owned()
-        })
-        .unwrap_or_default();
-    let name = sanitize_name(&fragment);
-    if !name.is_empty() {
-        return name;
+fn validate_uri(line: &str, rest: &str, protocol: NodeProtocol) -> Option<&'static str> {
+    if protocol == NodeProtocol::Unknown {
+        return None;
     }
-    // v2rayN 导出的 vmess 链接把展示名放在 Base64 JSON 的 ps 字段
-    if scheme.eq_ignore_ascii_case("vmess") {
+    if protocol == NodeProtocol::Vmess {
         let payload = rest
             .split('#')
             .next()
             .unwrap_or_default()
             .trim_end_matches('/');
-        let name = decode_base64(payload)
-            .and_then(|bytes| serde_json::from_slice::<Value>(&bytes).ok())
-            .and_then(|value| value.get("ps").and_then(Value::as_str).map(sanitize_name))
-            .unwrap_or_default();
-        if !name.is_empty() {
-            return name;
+        let Some(value) =
+            decode_base64(payload).and_then(|v| serde_json::from_slice::<Value>(&v).ok())
+        else {
+            return Some("The VMess URI requires a Base64 JSON payload.");
+        };
+        let Some(object) = value.as_object() else {
+            return Some("The VMess payload requires a mapping.");
+        };
+        if object
+            .get("add")
+            .and_then(Value::as_str)
+            .is_none_or(|v| !valid_server(v))
+            || object.get("port").and_then(node_port).is_none()
+            || !uuid_field(object, "id")
+        {
+            return Some("The VMess payload requires a server, port and valid UUID.");
         }
+        return None;
+    }
+    if protocol == NodeProtocol::Ss {
+        let payload = rest.split('#').next().unwrap_or_default();
+        let encoded = payload.split('?').next().unwrap_or_default();
+        let parsed = if let Some((userinfo, endpoint)) = encoded.rsplit_once('@') {
+            let Ok(decoded) = percent_decode_str(userinfo).decode_utf8() else {
+                return Some("The Shadowsocks URI requires UTF-8 credentials.");
+            };
+            let credentials = if decoded.contains(':') {
+                decoded.into_owned()
+            } else {
+                decode_base64(&decoded)
+                    .and_then(|v| String::from_utf8(v).ok())
+                    .unwrap_or_default()
+            };
+            (credentials, endpoint.to_owned())
+        } else {
+            let Some(decoded) = decode_base64(encoded).and_then(|v| String::from_utf8(v).ok())
+            else {
+                return Some("The Shadowsocks URI requires encoded credentials and a server.");
+            };
+            let Some((credentials, endpoint)) = decoded.rsplit_once('@') else {
+                return Some("The Shadowsocks URI requires credentials and a server.");
+            };
+            (credentials.to_owned(), endpoint.to_owned())
+        };
+        let credentials_valid = parsed
+            .0
+            .split_once(':')
+            .is_some_and(|(cipher, password)| !cipher.is_empty() && !password.is_empty());
+        let endpoint_valid = Url::parse(&format!("ss://{}", parsed.1))
+            .ok()
+            .is_some_and(|u| u.host_str().is_some() && u.port().is_some_and(|p| p > 0));
+        return (!credentials_valid || !endpoint_valid)
+            .then_some("The Shadowsocks URI requires a cipher, password, server and port.");
+    }
+    let Ok(url) = Url::parse(line) else {
+        return Some("The node URI has an invalid address or port.");
+    };
+    if url.host_str().is_none_or(|v| !valid_server(v)) {
+        return Some("The node URI requires a server address.");
+    }
+    let port = url.port_or_known_default().or(match protocol {
+        NodeProtocol::Trojan | NodeProtocol::Hysteria2 | NodeProtocol::Tuic => Some(443),
+        _ => None,
+    });
+    if port.is_none_or(|v| v == 0) {
+        return Some("The node URI requires a port from 1 to 65535.");
+    }
+    let user = percent_decode_str(url.username()).decode_utf8().ok();
+    match protocol {
+        NodeProtocol::Vless
+            if user
+                .as_ref()
+                .is_none_or(|v| uuid::Uuid::parse_str(v).is_err()) =>
+        {
+            Some("The VLESS URI requires a valid UUID.")
+        }
+        NodeProtocol::Trojan | NodeProtocol::Hysteria2
+            if user.as_ref().is_none_or(|v| v.is_empty()) =>
+        {
+            Some("The node URI requires a password.")
+        }
+        NodeProtocol::Tuic
+            if user
+                .as_ref()
+                .is_none_or(|v| uuid::Uuid::parse_str(v).is_err())
+                || url.password().is_none_or(str::is_empty) =>
+        {
+            Some("The TUIC URI requires a UUID and password.")
+        }
+        _ => None,
+    }
+}
+
+fn uri_name(line: &str, scheme: &str, rest: &str) -> String {
+    let name = line
+        .split_once('#')
+        .and_then(|(_, v)| percent_decode_str(v).decode_utf8().ok())
+        .map(|v| sanitize_name(&v))
+        .unwrap_or_default();
+    if !name.is_empty() {
+        return name;
+    }
+    if scheme.eq_ignore_ascii_case("vmess") {
+        return decode_base64(
+            rest.split('#')
+                .next()
+                .unwrap_or_default()
+                .trim_end_matches('/'),
+        )
+        .and_then(|bytes| serde_json::from_slice::<Value>(&bytes).ok())
+        .and_then(|v| v.get("ps").and_then(Value::as_str).map(sanitize_name))
+        .unwrap_or_default();
     }
     String::new()
 }
-
 fn clash_protocol(kind: &str) -> NodeProtocol {
     match kind.trim().to_ascii_lowercase().as_str() {
         "ss" => NodeProtocol::Ss,
@@ -373,21 +540,13 @@ fn clash_protocol(kind: &str) -> NodeProtocol {
         _ => NodeProtocol::Unknown,
     }
 }
-
 fn scheme_protocol(scheme: &str) -> NodeProtocol {
     match scheme.to_ascii_lowercase().as_str() {
-        "ss" => NodeProtocol::Ss,
-        "vmess" => NodeProtocol::Vmess,
-        "vless" => NodeProtocol::Vless,
-        "trojan" => NodeProtocol::Trojan,
-        "hysteria2" | "hy2" => NodeProtocol::Hysteria2,
-        "tuic" => NodeProtocol::Tuic,
-        "socks5" | "socks" => NodeProtocol::Socks5,
-        "http" | "https" => NodeProtocol::Http,
-        _ => NodeProtocol::Unknown,
+        "socks" | "socks5h" => NodeProtocol::Socks5,
+        "https" => NodeProtocol::Http,
+        other => clash_protocol(other),
     }
 }
-
 fn unsupported_message(protocol: NodeProtocol) -> String {
     match protocol {
         NodeProtocol::Unknown => {
@@ -400,11 +559,9 @@ fn unsupported_message(protocol: NodeProtocol) -> String {
         ),
     }
 }
-
-/// 展示名去掉控制字符与首尾空白，并限制长度
 fn sanitize_name(raw: &str) -> String {
     raw.chars()
-        .filter(|value| !value.is_control())
+        .filter(|v| !v.is_control())
         .collect::<String>()
         .trim()
         .chars()

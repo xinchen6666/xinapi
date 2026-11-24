@@ -22,7 +22,10 @@ import { useTranslation } from 'react-i18next'
 
 import { DataTablePage, useDataTable } from '@/components/data-table'
 
-import { buildDiagnosticRows } from '../lib/subscription-preview'
+import {
+  buildDiagnosticRows,
+  diagnosticMessage,
+} from '../lib/subscription-preview'
 import type { DiagnosticRow, SubscriptionPreviewDiagnostic } from '../types'
 
 type DiagnosticsTableProps = {
@@ -60,7 +63,7 @@ export function DiagnosticsTable(props: DiagnosticsTableProps) {
         header: t('Message'),
         cell: ({ row }) => (
           <span className='break-words whitespace-normal'>
-            {row.original.message}
+            {diagnosticMessage(row.original, t)}
           </span>
         ),
       },

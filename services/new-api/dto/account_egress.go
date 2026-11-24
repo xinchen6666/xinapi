@@ -35,11 +35,12 @@ type AccountEgressSubscriptionPreview struct {
 	Diagnostics  []AccountEgressSubscriptionDiagnostic `json:"diagnostics"`
 }
 
-// AccountEgressSubscriptionCandidate 描述单个订阅节点及其可用状态。
+// AccountEgressSubscriptionCandidate 分别描述解析有效性与原生传输能力。
 type AccountEgressSubscriptionCandidate struct {
-	Name      string `json:"name"`
-	Protocol  string `json:"protocol"`
-	Supported bool   `json:"supported"`
+	Name       string `json:"name"`
+	Protocol   string `json:"protocol"`
+	ParseValid bool   `json:"parse_valid"`
+	Supported  bool   `json:"supported"`
 }
 
 // AccountEgressSubscriptionDiagnostic 描述逐项解析说明，Subject 指向节点或字段。

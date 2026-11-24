@@ -206,25 +206,14 @@ async fn fetch_rejects_redirect_targets_outside_the_policy() {
             .await;
     }
 
-    // 首跳使用测试源策略，跳转目标不满足 https 与允许列表时立即收敛
-    for route in ["/to-file", "/to-other-host"] {
+    // 首跳使用精确测试源，逐跳目标同时应用协议与实际地址策略
+    for route in ["/to-file", "/to-other-host", "/to-https"] {
         let error = source()
             .fetch(&format!("{}{route}", server.uri()), &local_policy(), BUDGET)
             .await
             .expect_err("rejected redirect");
         assert_eq!(error, SubscriptionFetchError::TargetRejected, "{route}");
     }
-
-    // https 目标通过策略复核后因本机端口拒绝连接收敛为下载失败
-    let error = source()
-        .fetch(
-            &format!("{}/to-https", server.uri()),
-            &local_policy(),
-            BUDGET,
-        )
-        .await
-        .expect_err("unreachable https target");
-    assert_eq!(error, SubscriptionFetchError::Failed);
 }
 
 #[tokio::test]
@@ -282,5 +271,23 @@ async fn fetch_reports_http_failures_as_download_failures() {
             .await
             .expect_err("http failure");
         assert_eq!(error, SubscriptionFetchError::Failed, "{status}");
+    }
+}
+
+#[tokio::test]
+async fn fetch_rejects_private_https_addresses_before_connecting() {
+    for url in [
+        "https://127.0.0.1:1/sub.yaml",
+        "https://10.0.0.1:1/sub.yaml",
+        "https://169.254.169.254/sub.yaml",
+        "https://[::1]:1/sub.yaml",
+        "https://[::ffff:127.0.0.1]:1/sub.yaml",
+        "https://localhost:1/sub.yaml",
+    ] {
+        let error = source()
+            .fetch(url, &local_policy(), BUDGET)
+            .await
+            .expect_err("private HTTPS target");
+        assert_eq!(error, SubscriptionFetchError::TargetRejected, "{url}");
     }
 }

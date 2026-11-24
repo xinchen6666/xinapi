@@ -158,6 +158,7 @@ var subscriptionPreviewReasonMessages = map[string]string{
 	"subscription_target_not_allowed": "The subscription link target is disabled for this deployment",
 	"subscription_unreadable":         "The subscription document could not be read",
 	"subscription_too_large":          "The subscription document is larger than the preview limit",
+	"subscription_preview_too_large":  "The subscription preview exceeds the result limit",
 	"subscription_timeout":            "The subscription download timed out",
 	"subscription_too_many_redirects": "The subscription link redirects too many times",
 	"subscription_fetch_failed":       "The subscription document could not be downloaded",

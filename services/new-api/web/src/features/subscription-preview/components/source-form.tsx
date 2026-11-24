@@ -90,7 +90,7 @@ export function SourceForm(props: SourceFormProps) {
         </InputGroup>
         <FieldDescription id='subscription-source-hint'>
           {t(
-            'The link is downloaded and parsed for review. Saving starts in the next step.'
+            'Preview confirmation applies only to this page. Accounts and runtime configuration stay unchanged.'
           )}
         </FieldDescription>
         {props.error ? <FieldError>{props.error}</FieldError> : null}

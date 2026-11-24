@@ -9,7 +9,7 @@
 | X03 | done | lead；CPR版本修订复核完成 | [PR #2](https://github.com/xinchen6666/xinapi/pull/2)包含R1修订；本机及[新CI](https://github.com/xinchen6666/xinapi/actions/runs/45120537811)实际版本输出3.54.2，全部作业成功；47项原工具回归通过，见[E015](VALIDATION.md#e015-x03cpr-发行版本修订)。X04待启动 |
 | X04 | done | lead；修订已交付 | [PR #3](https://github.com/xinchen6666/xinapi/pull/3)已同步真实就绪启动与原卷补全修订，远端代码及文案读回通过，复验见 E018；保持 open，base 为 X03 |
 | X05 | done | lead；Draft 已交付 | [PR #4](https://github.com/xinchen6666/xinapi/pull/4)已推送并读回，base 为 X04；构建、真实 CPR、七语浏览器验证及 authz 全量回归通过，见 [E019](VALIDATION.md#e019-x05管理员只读入口) |
-| X06 | done | lead；解析预览与表单 | 自造订阅预览、真实接口矩阵与七语页面通过，见 [E020](VALIDATION.md#e020-x06订阅粘贴与预览)；[Draft PR #5](https://github.com/xinchen6666/xinapi/pull/5)已读回 |
+| X06 | in_progress | lead；审核修复本地复验 passed，待远端同步 | R1–R6 与部分接受确认完成；72 项真实接口场景、浏览器确认和相关回归通过，见 [E022](VALIDATION.md#e022-x06审核修复复验)与[修复报告](worklog/X06-fix.md)。原 [Draft PR #5](https://github.com/xinchen6666/xinapi/pull/5)保持 |
 | X07 | pending | CPR Store／Admin | 快照、节点身份、刷新差异与迁移 |
 | X08 | pending | CPR Host／Mihomo | 引擎监督、稳定入口和资源观测 |
 | X09 | pending | CPR 路由／连接池 | 确认版本、换路与在途连接边界 |
@@ -23,6 +23,6 @@
 | X17 | pending | 备份与升级 | 隔离恢复、回退和维护窗口 |
 | X18 | pending | 版本发布 | 候选标签、接手试用、实际覆盖说明 |
 
-`pending` 尚未开工；`in_progress` 正在做；`blocked` 已开始但有具体障碍；`done` 验收证据及该步 GitHub 交付已核对。工作分支已同步不等于已合入 `main`，更不等于已发布到服务器。V01–V20 仍均未运行。已完成的 D01–D05 是前期研究，证据见[验证记录](VALIDATION.md)，不计为任何 X 业务开发成果。
+`pending` 表示排队；`in_progress` 表示正在实施或交付；`blocked` 表示存在具体障碍；`done` 表示功能目标与该步 GitHub 交付均已核对。工作分支同步、合入 `main`、服务器部署分别记录。V01–V03 的最新覆盖见 E022，其余场景以各证据条目为准。已完成的 D01–D05 属于前期研究，证据见[验证记录](VALIDATION.md)，X 业务开发成果按本表记录。
 
 定义与依赖见[开发计划](PLAN.md)，接手动作见[交接单](HANDOFF.md)。

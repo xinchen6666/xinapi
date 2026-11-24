@@ -28,6 +28,13 @@ pub const MAX_SOURCE_URL_BYTES: usize = 2048;
 /// HTTP 型 provider 允许的最大数量，避免一份文档放大下载次数
 pub const MAX_PROVIDERS: usize = 32;
 
+/// 整次预览的节点与诊断预算，合并 provider 时沿用同一上限
+pub const MAX_PREVIEW_CANDIDATES: usize = 4096;
+pub const MAX_PREVIEW_DIAGNOSTICS: usize = 4096;
+
+/// 与管理适配层接收能力一致的完整 JSON 响应预算
+pub const MAX_PREVIEW_RESPONSE_BYTES: usize = 8 * 1024 * 1024;
+
 /// 订阅正文的实际格式
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SubscriptionFormat {
@@ -98,6 +105,8 @@ pub enum DiagnosticCode {
     NodeParseError,
     ProviderFetchFailed,
     ProviderDepthLimit,
+    ProviderUnsupported,
+    ProviderParseError,
 }
 
 impl DiagnosticCode {
@@ -109,6 +118,8 @@ impl DiagnosticCode {
             Self::NodeParseError => "node_parse_error",
             Self::ProviderFetchFailed => "provider_fetch_failed",
             Self::ProviderDepthLimit => "provider_depth_limit",
+            Self::ProviderUnsupported => "provider_unsupported",
+            Self::ProviderParseError => "provider_parse_error",
         }
     }
 }
@@ -141,6 +152,7 @@ impl PreviewDiagnostic {
 pub struct NodeCandidate {
     pub name: String,
     pub protocol: NodeProtocol,
+    pub parse_valid: bool,
     pub supported: bool,
 }
 
@@ -150,6 +162,7 @@ impl NodeCandidate {
         Self {
             name: name.into(),
             protocol,
+            parse_valid: protocol != NodeProtocol::Unknown,
             supported: protocol.is_materializable(),
         }
     }
@@ -178,6 +191,8 @@ pub enum SubscriptionPreviewError {
     Unreadable,
     #[error("The subscription document exceeds the size limit.")]
     TooLarge,
+    #[error("The subscription preview exceeds the result capacity.")]
+    PreviewTooLarge,
     #[error("The subscription download exceeded the time limit.")]
     Timeout,
     #[error("The subscription download exceeded the redirect limit.")]
@@ -195,6 +210,7 @@ impl SubscriptionPreviewError {
             Self::TargetRejected => "subscription_target_not_allowed",
             Self::Unreadable => "subscription_unreadable",
             Self::TooLarge => "subscription_too_large",
+            Self::PreviewTooLarge => "subscription_preview_too_large",
             Self::Timeout => "subscription_timeout",
             Self::TooManyRedirects => "subscription_too_many_redirects",
             Self::FetchFailed => "subscription_fetch_failed",
@@ -207,7 +223,9 @@ impl SubscriptionPreviewError {
         let message = self.to_string();
         match self {
             Self::TargetRejected => crate::model::AdminError::bad_request(message),
-            Self::Unreadable | Self::TooLarge => crate::model::AdminError::invalid(message),
+            Self::Unreadable | Self::TooLarge | Self::PreviewTooLarge => {
+                crate::model::AdminError::invalid(message)
+            }
             Self::Timeout | Self::TooManyRedirects | Self::FetchFailed => {
                 crate::model::AdminError::bad_gateway(message)
             }
