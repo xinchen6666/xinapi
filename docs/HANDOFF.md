@@ -4,6 +4,8 @@
 
 用户已授权修复，R1–R6 和部分接受显式确认均已落实。当前复验为 passed：72 项真实接口场景、桌面/移动确认、账号与配置状态对比通过；Rust 完整回归 399 / 680 / 218 项、架构 16 项、严格 Clippy、Go 与前端检查均通过。详见 [修复报告](worklog/X06-fix.md)、[脱敏证据](evidence/X06-fix.json)和 [E022](VALIDATION.md#e022-x06审核修复复验)。
 
+GitHub [整轮 CI](https://github.com/xinchen6666/xinapi/actions/runs/45440635026) 已成功，质量、New API 镜像、CPR 镜像及汇总均通过。
+
 新合同：候选新增 parse_valid，supported 继续表示原生 HTTP/SOCKS 支持；下载目标逐跳校验全部地址并固定连接；HTTP 测试名单仅在明文 HTTP 开放本地例外。结果预算为 4096 候选、4096 诊断、完整 JSON 8 MiB，超额返回 subscription_preview_too_large。部分结果由管理员选择解析有效节点并确认范围，页面确认只保存在当前预览。
 
 工作分支为 task/X06-subscription-preview，[Draft PR #5](https://github.com/xinchen6666/xinapi/pull/5)保持 open，base 为 task/X05-admin-readonly。网络恢复后已核对远端与修复前代码，差异仅为先前四张截图；保留双方历史完成常规合并，已验证的源码与证据内容保持原值，随后普通推送成功。PR 标题、正文和附件已更新。X06 为 done，下一动作是按 PR 复审修复，再安排 X07。
