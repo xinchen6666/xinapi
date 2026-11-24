@@ -95,6 +95,7 @@ mod errors;
 mod observability;
 mod proxies;
 mod settings;
+mod subscriptions;
 mod system;
 mod wire;
 
@@ -123,6 +124,7 @@ pub(super) struct AdminTestFixture {
     pub provider_models: Arc<Mutex<Option<ProviderModels>>>,
     pub account: Arc<Mutex<Option<AccountPageItem>>>,
     pub account_usage: Arc<Mutex<Vec<AccountUsage>>>,
+    pub subscription_source: Arc<subscriptions::TestSubscriptionSource>,
 }
 
 impl AdminTestFixture {
@@ -178,6 +180,7 @@ impl AdminTestFixture {
             account_usage: Arc::clone(&account_usage),
         });
         let plugin_ports = Arc::new(plugins::TestPluginPorts::default());
+        let subscription_source = Arc::new(subscriptions::TestSubscriptionSource::default());
         let published_snapshot = gateway_core::runtime::RuntimeSnapshotHandle::default();
         let stores = AdminStorePorts::new(
             AdminAccountStorePorts::new(
@@ -241,6 +244,10 @@ impl AdminTestFixture {
                 snapshot: Arc::new(NoopSnapshot),
                 account_probe: Arc::new(NoopProbe),
                 proxy_probe: Arc::new(proxies::SuccessfulProbe),
+                subscriptions: gateway_admin::ports::subscription::SubscriptionRuntime {
+                    source: subscription_source.clone(),
+                    policy: gateway_admin::model::subscriptions::SubscriptionFetchPolicy::default(),
+                },
                 client_distribution: Arc::new(StaticClientDistribution),
                 system,
                 client_key_verifier: verifier.unwrap_or_else(|| Arc::new(UnusedClientKeyVerifier)),
@@ -268,6 +275,7 @@ impl AdminTestFixture {
             provider_models,
             account,
             account_usage,
+            subscription_source,
         }
     }
 

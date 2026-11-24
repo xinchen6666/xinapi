@@ -9,6 +9,7 @@
 | 账号与授权范围 | [账号](#5-账号) · [代理](#独立代理管理--managed-proxies) · [分组](#6-账号分组) · [Client Key](#7-client-key) |
 | 系统与运维 | [健康检查](#2-健康检查) · [运行设置](#8-运行设置) · [备份](#9-备份) · [统计与诊断](#10-dashboard用量与错误) · [版本与更新](#11-版本更新与重启) |
 | 插件 | [安装包与来源](#安装包与来源) · [运行实例](#121-运行实例) · [管理扩展](#122-管理扩展页面与原始-api) |
+| 订阅预览 | [订阅预览](#13-订阅预览) |
 
 ## 1. 鉴权与公共约定
 
@@ -145,6 +146,9 @@ HTTPS 来源以及缺失、`null` 或非法来源保留 `Secure`。`HttpOnly`、
 
 未知 `/api/admin/*` 路径使用 `40401`，不会落入 SPA；已存在路径使用错误 method 时返回 `405`、
 `40001`，并保留标准 `Allow` header。request ID 继续通过配置的响应 header 返回
+
+需要细分同一业务码的错误正文追加可选 `reason` 字段，取值为稳定英文小写下划线码，供调用方按语义分流；
+未设置时该键省略。`message` 仍是一句可安全展示的说明，判定以 `reason` 与 HTTP 状态为准
 
 `50201`、`50202` 和 `50301` 的 `message` 提供可安全展示的具体原因；缺少安全消息时使用通用提示。
 认证错误和未知内部错误使用固定文案，不公开 Provider 内部 message、原始响应或凭据
@@ -3524,3 +3528,48 @@ GET/HEAD 不接受正文。响应状态码为 200–599，内容类型元数据�
 并发重复或已消费票据均拒绝。宿主在执行前原子消费票据，因此超时或插件失败后不能重放。
 公开调用使用 `public_management` 阶段，插件可以使用宿主回调；票据仍用于关联和消费一次登录流程。
 票据用于受控接收第三方返回结果，不代替敏感管理操作的身份校验
+
+## 13. 订阅预览
+
+| 方法 | 路由 | 鉴权 | 说明 |
+| --- | --- | --- | --- |
+| `POST` | `/api/admin/subscriptions/preview` | 管理端 | 一次性下载并解析订阅源，返回节点数量、协议与诊断，写入任何状态 |
+
+请求正文为 `{ "source_url": "<绝对订阅地址>" }`，未知字段按 `40001` 拒绝。响应 `data` 字段：
+
+| 字段 | 说明 |
+| --- | --- |
+| `source_url` | 提交值原样回显 |
+| `format` | `clash_yaml`、`clash_json`、`uri_list`、`base64_document`，按正文内容判定 |
+| `fetched_bytes` | 主文档解压后字节数，provider 文档单独计入自身解析 |
+| `accepted` | `candidates` 中 `supported` 为真的节点数 |
+| `rejected` | `candidates` 中 `supported` 为假的节点数，两项之和等于 `candidates` 长度 |
+| `candidates` | 逐节点 `{name, protocol, supported}`，协议取 `ss`、`vmess`、`vless`、`trojan`、`hysteria2`、`tuic`、`socks5`、`http`、`unknown` |
+| `diagnostics` | `{code, message, subject}`，`subject` 为节点名或字段名，取不到时为空字符串 |
+
+`supported` 表示网关当前有物化路径：账号出站代理接受 `http` 与 `socks5`，其余协议等待 Mihomo 引擎接入。
+`diagnostics.code` 取 `unsupported_protocol`、`node_parse_error`、`provider_fetch_failed`、`provider_depth_limit`。
+单条节点识别失败只进诊断，其余节点照常返回 `200`；整篇正文不可读才返回错误。
+
+下载边界：默认只接受 `https`；明文 `http` 仅向 `subscriptions.insecure_test_hosts` 列出的测试源主机开放，
+部署模板保持空列表。主文档正文最多 2 MiB，解压后最多 8 MiB，整次预览总时限 10 秒，跳转最多 3 次，
+每一跳都按同一规则复核 scheme 与主机。请求不带任何凭据与 Cookie，地址内的用户信息在发起请求前丢弃。
+正文只做解析：脚本、规则、监听、文件路径与 controller 配置一律跳过，解析器读取已下载的正文。
+
+Clash 文档中的 `proxy-providers` 按同一套边界受控拉取，成功时节点并入 `candidates`，失败时记
+`provider_fetch_failed` 诊断并保留主文档结果。provider 深度为一层，provider 文档内的 provider 记
+`provider_depth_limit`。文件型 provider 依赖本地路径，整段跳过。
+
+响应只含上表字段；主机、端口、凭据、UUID 与路径参数留在服务端。
+
+| HTTP | `code` | `reason` | 场景 |
+| ---: | ---: | --- | --- |
+| 400 | `40001` | `subscription_source_invalid` | 源地址为空、超长、含控制字符或缺少主机 |
+| 400 | `40001` | `subscription_target_not_allowed` | scheme 或主机被下载策略拒绝，含跳转目标 |
+| 422 | `40001` | `subscription_unreadable` | 正文为空、Base64 解码失败、YAML／JSON 语法错误或结构无法识别 |
+| 422 | `40001` | `subscription_too_large` | 正文超 2 MiB 或解压后超 8 MiB |
+| 502 | `50201` | `subscription_timeout` | 整次预览 10 秒预算耗尽 |
+| 502 | `50201` | `subscription_too_many_redirects` | 跳转超过 3 次 |
+| 502 | `50201` | `subscription_fetch_failed` | 连接、TLS、非 2xx 或读取失败 |
+
+错误正文沿用管理端信封并附带 `reason`，`message` 为英文脱敏句，不含上游正文、响应头、异常堆栈与目标 IP。

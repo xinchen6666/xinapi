@@ -17,6 +17,7 @@ pub mod plugin_resources;
 pub mod plugins;
 pub mod proxies;
 pub mod settings;
+pub mod subscriptions;
 pub mod system;
 pub(crate) mod system_preflight;
 pub mod usage_data;

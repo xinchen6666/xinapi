@@ -25,6 +25,7 @@ mod plugins;
 pub mod presenter;
 pub mod proxies;
 pub mod settings;
+pub mod subscriptions;
 pub mod system;
 pub mod wire;
 
@@ -53,6 +54,7 @@ where
         .merge(client_keys::router::<S>())
         .merge(observability::router::<S>())
         .merge(settings::router::<S>())
+        .merge(subscriptions::router::<S>())
         .merge(system::router::<S>())
         .method_not_allowed_fallback(method_not_allowed)
         .route("/api/admin", any(admin_not_found))

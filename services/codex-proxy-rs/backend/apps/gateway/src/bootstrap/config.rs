@@ -18,6 +18,8 @@ pub struct GatewayConfig {
     pub(super) api: gateway_api::ApiConfig,
     #[serde(default)]
     pub(super) openai: provider_openai::OpenAiConfig,
+    #[serde(default)]
+    pub(super) subscriptions: gateway_admin::SubscriptionConfig,
 }
 
 impl LoadableConfig for GatewayConfig {
@@ -45,6 +47,9 @@ impl LoadableConfig for GatewayConfig {
         self.openai
             .resolve_and_validate(&runtime_data_dir)
             .map_err(|_| ConfigError::InvalidField("openai"))?;
+        self.subscriptions
+            .resolve_and_validate()
+            .map_err(|_| ConfigError::InvalidField("subscriptions"))?;
         Ok(())
     }
 }

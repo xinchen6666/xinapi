@@ -115,11 +115,15 @@ impl AdminErrorCode {
 }
 
 /// 管理端错误响应正文
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+///
+/// reason 是可选稳定机器码，供调用方按语义分流；未设置时正文省略该键
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AdminErrorBody {
     code: AdminErrorCode,
     message: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    reason: Option<&'static str>,
     data: (),
 }
 
@@ -130,8 +134,15 @@ impl AdminErrorBody {
         Self {
             code,
             message: message.into(),
+            reason: None,
             data: (),
         }
+    }
+
+    /// 稳定机器码；缺省表示该错误分类已足够表达语义
+    #[must_use]
+    pub const fn reason(&self) -> Option<&'static str> {
+        self.reason
     }
 
     /// 稳定业务错误码
@@ -331,6 +342,20 @@ impl AdminError {
 
     pub fn service_unavailable() -> Self {
         Self::from_spec(SERVICE_UNAVAILABLE)
+    }
+
+    /// 覆盖 HTTP 状态，业务码保持不变；用于同一业务码承载更精确的状态语义
+    #[must_use]
+    pub fn with_status(mut self, status: StatusCode) -> Self {
+        self.status = status;
+        self
+    }
+
+    /// 附加稳定机器码，供调用方按语义分流
+    #[must_use]
+    pub fn with_reason(mut self, reason: &'static str) -> Self {
+        self.body.reason = Some(reason);
+        self
     }
 
     #[must_use]

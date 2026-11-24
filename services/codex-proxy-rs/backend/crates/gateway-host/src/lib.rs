@@ -13,6 +13,7 @@ pub mod process;
 pub mod proxy_probe;
 pub mod retention;
 pub mod serve;
+pub mod subscription_fetch;
 pub mod system_update;
 pub mod workers;
 
@@ -60,6 +61,7 @@ pub enum ConfigError {
 use self::client_distribution::RgAdguardClientDistribution;
 use self::logging::{LogGuard, initialize_logging};
 use self::serve::{ConnectionTracker, serve_router};
+use self::subscription_fetch::HttpSubscriptionSource;
 use self::system_update::ProcessSystemOperations;
 use self::workers::WorkerSupervisor;
 
@@ -72,6 +74,7 @@ pub struct HostBundle {
     workers: WorkerSupervisor,
     system: Arc<ProcessSystemOperations>,
     client_distribution: Arc<RgAdguardClientDistribution>,
+    subscription_source: Arc<HttpSubscriptionSource>,
     official_plugins: Arc<official_plugins::FileOfficialPluginRelease>,
     command_signal: Option<command_line::SignalGuard>,
 }
@@ -95,6 +98,10 @@ pub async fn initialize(config: HostConfig) -> Result<HostBundle, HostError> {
         config.system_update.clone(),
     ));
     let client_distribution = Arc::new(RgAdguardClientDistribution::new());
+    let subscription_source = Arc::new(
+        subscription_fetch::HttpSubscriptionSource::new()
+            .map_err(|_| HostError::SubscriptionSource)?,
+    );
     Ok(HostBundle {
         config,
         log_guard,
@@ -103,6 +110,7 @@ pub async fn initialize(config: HostConfig) -> Result<HostBundle, HostError> {
         workers,
         system,
         client_distribution,
+        subscription_source,
         official_plugins,
         command_signal: None,
     })
@@ -164,6 +172,14 @@ impl HostBundle {
         + 'static,
     ) -> Arc<dyn gateway_admin::ports::proxy::ProxyProbe> {
         Arc::new(proxy_probe::HttpProxyProbe::default().with_client_builder(build_client))
+    }
+
+    /// 订阅预览使用的受控下载能力；网络请求只在管理 API 调用时发生
+    #[must_use]
+    pub fn subscription_source(
+        &self,
+    ) -> Arc<dyn gateway_admin::ports::subscription::SubscriptionDocumentSource> {
+        self.subscription_source.clone()
     }
 
     #[must_use]
@@ -238,4 +254,6 @@ pub enum HostError {
     Serve(#[from] serve::ServeError),
     #[error("官方插件发行目录不可用")]
     OfficialPluginRelease,
+    #[error("订阅下载客户端初始化失败")]
+    SubscriptionSource,
 }

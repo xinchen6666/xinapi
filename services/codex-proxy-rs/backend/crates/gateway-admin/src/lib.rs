@@ -24,6 +24,8 @@ pub use use_case::plugins::{PluginDistributionPorts, PluginManagementService, Pl
 pub use use_case::key_usage::KeyUsageService;
 pub use use_case::peer_link::{PeerLinkError, PeerLinkService};
 
+pub use model::subscriptions::SubscriptionConfig;
+
 pub use use_case::{
     account_groups::AccountGroupService,
     accounts::AccountsService,
@@ -36,6 +38,7 @@ pub use use_case::{
     observability::{ObservabilityService, ProviderUsageBillingProjector},
     proxies::ProxiesService,
     settings::SettingsService,
+    subscriptions::SubscriptionsService,
     system::SystemService,
     usage_data::UsageDataService,
 };
@@ -204,6 +207,7 @@ pub struct AdminServices {
     plugins: Arc<PluginsService>,
     plugin_management: Arc<PluginManagementService>,
     proxies: Arc<dyn ProxiesService>,
+    subscriptions: Arc<dyn SubscriptionsService>,
     auth: Arc<dyn AuthService>,
     key_usage: Arc<dyn KeyUsageService>,
     peer_link: Arc<dyn PeerLinkService>,
@@ -260,6 +264,11 @@ impl AdminServices {
     #[must_use]
     pub fn proxies(&self) -> &dyn ProxiesService {
         self.proxies.as_ref()
+    }
+
+    #[must_use]
+    pub fn subscriptions(&self) -> &dyn SubscriptionsService {
+        self.subscriptions.as_ref()
     }
 
     #[must_use]
@@ -354,6 +363,7 @@ pub struct AdminRuntimePorts {
     pub snapshot: Arc<dyn SnapshotControl>,
     pub account_probe: Arc<dyn AccountProbe>,
     pub proxy_probe: Arc<dyn ports::proxy::ProxyProbe>,
+    pub subscriptions: ports::subscription::SubscriptionRuntime,
     pub client_distribution: Arc<dyn ClientDistributionResolver>,
     pub system: Arc<dyn SystemOperations>,
     pub client_key_verifier: Arc<dyn ClientKeyVerifier>,

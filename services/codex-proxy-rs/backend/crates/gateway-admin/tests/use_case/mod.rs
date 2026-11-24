@@ -14,6 +14,7 @@ mod peer_link;
 mod plugins;
 mod proxies;
 mod settings;
+mod subscriptions;
 mod system;
 mod system_preflight;
 mod usage_data;
@@ -114,6 +115,7 @@ pub(super) struct AdminHarness {
     client_key_verifier: Arc<dyn ClientKeyVerifier>,
     upstream_info: Option<Arc<dyn gateway_admin::ports::peer::PeerUpstreamService>>,
     service_middleware: gateway_admin::public_service::PlanSource,
+    subscription_source: Arc<dyn gateway_admin::ports::subscription::SubscriptionDocumentSource>,
 }
 
 impl AdminHarness {
@@ -145,7 +147,16 @@ impl AdminHarness {
             client_key_verifier: Arc::new(UnavailableClientKeyVerifier),
             upstream_info: None,
             service_middleware: Arc::new(|| None),
+            subscription_source: Arc::new(UnavailableSubscriptionSource),
         }
+    }
+
+    pub(super) fn subscriptions(
+        mut self,
+        source: Arc<dyn gateway_admin::ports::subscription::SubscriptionDocumentSource>,
+    ) -> Self {
+        self.subscription_source = source;
+        self
     }
 
     pub(super) fn default_password(mut self, password: &str) -> Self {
@@ -313,6 +324,14 @@ impl AdminHarness {
                 snapshot: self.snapshot,
                 account_probe: self.probe,
                 proxy_probe: self.proxy_probe,
+                subscriptions: gateway_admin::ports::subscription::SubscriptionRuntime {
+                    source: self.subscription_source,
+                    // 测试源主机覆盖明文 http，与部署配置同源的策略也要能被用例覆盖
+                    policy: gateway_admin::model::subscriptions::SubscriptionFetchPolicy::new([
+                        "127.0.0.1".to_owned(),
+                        "localhost".to_owned(),
+                    ]),
+                },
                 client_distribution: Arc::new(NoopClientDistribution),
                 system: self.system,
                 client_key_verifier: self.client_key_verifier,
@@ -320,6 +339,26 @@ impl AdminHarness {
         )
         .await
         .expect("initialize admin test harness")
+    }
+}
+
+/// 未注入订阅下载能力时的占位实现
+pub(super) struct UnavailableSubscriptionSource;
+
+#[async_trait]
+impl gateway_admin::ports::subscription::SubscriptionDocumentSource
+    for UnavailableSubscriptionSource
+{
+    async fn fetch(
+        &self,
+        _: &str,
+        _: &gateway_admin::model::subscriptions::SubscriptionFetchPolicy,
+        _: std::time::Duration,
+    ) -> Result<
+        gateway_admin::ports::subscription::FetchedDocument,
+        gateway_admin::ports::subscription::SubscriptionFetchError,
+    > {
+        Err(gateway_admin::ports::subscription::SubscriptionFetchError::Failed)
     }
 }
 
