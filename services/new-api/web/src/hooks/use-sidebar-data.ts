@@ -21,6 +21,7 @@ import {
   Box,
   ClipboardList,
   CreditCard,
+  Eye,
   FileText,
   FlaskConical,
   Key,
@@ -75,6 +76,12 @@ export function useSidebarData(badges: SidebarBadges = {}): SidebarData {
             title: t('Accounts and Egress'),
             url: '/account-egress',
             icon: ServerCog,
+            requiredRole: ROLE.ADMIN,
+          },
+          {
+            title: t('Subscription Preview'),
+            url: '/subscription-preview',
+            icon: Eye,
             requiredRole: ROLE.ADMIN,
           },
         ]
