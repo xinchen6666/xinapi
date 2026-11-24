@@ -187,6 +187,14 @@ E001–E006 是 X01 之前的历史证据，仅支持当时的工作与版本；
 - [Draft PR #4](https://github.com/xinchen6666/xinapi/pull/4)已交付，base 为 X04；远端功能代码、证据及 PR 文案和状态读回通过。结果 `passed`（2026-11-24 UTC 更新）：`TestSetUserPermissionsStoresOnlyOverrides` 的两处完整资源对象期望经用户授权加入 `account_egress:read`，`gofmt`、`go vet` 与 `go test ./service/authz/ ./middleware/ ./router/ -count=1` 三个包全部通过。源码、页面与真实权限结果分别记录，失败与修复过程见 [X05 日志](worklog/X05.md#实际验证)。
 - 真实上游账号、外部代理、OAuth 与模型流量为后续任务覆盖。管理接口、权限模型、字段或镜像变化后复验对应结果。
 
+### E020 X06：订阅粘贴与预览
+
+- 2026-11-24 UTC，lead；CPR 侧实现与测试由 cpr-preview 执行，New API 侧由 newapi-preview 执行，运行期矩阵与页面截图由 lead 复核。范围、命令与结果见 [X06 日志](worklog/X06.md)。
+- CPR：`cargo fmt`、`cargo clippy --workspace --all-targets --all-features -- -D warnings` 与三个 crate 的 `cargo test`（393 / 680 / 217 项）通过，架构测试 16 项通过；解析覆盖 Clash YAML、Clash JSON、URI 列表与 Base64 文档，`proxy-providers` 物化一层。
+- New API：`go build ./...`、`go vet` 与 `go test ./service/authz/ ./middleware/ ./router/` 通过；页面 `bun run typecheck`、`bun run build` 与改动文件 lint 通过。
+- 运行期：五服务 compose 内以同源代码替换镜像重建，经 New API 接口调用真实 CPR 预览矩阵，覆盖格式、限额、目标策略、权限与参数校验；响应只含白名单字段。截图见 [X06 日志](worklog/X06.md#实际验证)，结构化结果见 [X06 脱敏证据](evidence/X06.json)。
+- 缺口：正式镜像经现有 Dockerfile 从源码构建、真实订阅源与多跳重定向的运行期实测留到 X08、X16 与获授权的验收任务。
+
 ## 未来记录模板
 
 每个run使用唯一证据ID，写：任务ID；checked_at（时区ISO时间）；执行者；证据种类；真实提交/工作区摘要；脱敏环境；实际命令/步骤；预期；实际；`passed/failed/partial/skipped/not_run`；本地持久证据路径；缺口；失效条件。未执行的命令只放计划，不放实际记录。
