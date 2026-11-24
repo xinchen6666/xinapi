@@ -15,5 +15,6 @@ pub mod proxy;
 pub mod reset_credit_automation;
 pub mod retention;
 pub mod store;
+pub mod subscription;
 pub mod system;
 pub mod usage_data;

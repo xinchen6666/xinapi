@@ -19,6 +19,15 @@ For commercial licensing, please contact support@quantumnous.com
 // Static translation keys that don't get picked up by the t('...') regex.
 // These cover dynamic labels (e.g. constants, configs) that are passed into t at runtime.
 export const STATIC_I18N_KEYS = [
+  'The subscription link must be at most {{max}} characters',
+  'The subscription link must be an http or https address',
+  'The subscription link target is disabled for this deployment',
+  'The subscription document could not be read',
+  'The subscription document is larger than the preview limit',
+  'The subscription download timed out',
+  'The subscription link redirects too many times',
+  'The subscription document could not be downloaded',
+  'The subscription preview could not be completed',
   'Accounts and Egress',
   'Read accounts and egress',
   'View account and egress lists without credentials.',

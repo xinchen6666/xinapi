@@ -12,6 +12,7 @@ mod process;
 mod proxy_probe;
 mod retention;
 mod serve;
+mod subscription_fetch;
 mod support;
 mod system_update;
 mod workers;

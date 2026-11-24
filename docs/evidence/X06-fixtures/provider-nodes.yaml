@@ -1,0 +1,12 @@
+# X06 自造样本：provider 文档，仅含 proxies
+proxies:
+  - name: 演示-提供者-01
+    type: vless
+    server: 192.0.2.31
+    port: 443
+    uuid: 66666666-7777-8888-9999-000000000000
+    tls: true
+  - name: 演示-提供者-02
+    type: socks5
+    server: 192.0.2.32
+    port: 1080

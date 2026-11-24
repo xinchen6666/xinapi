@@ -668,6 +668,10 @@ impl Environment {
                 snapshot: core.snapshot_control(),
                 account_probe: core.account_probe(),
                 proxy_probe: unavailable.clone(),
+                subscriptions: gateway_admin::ports::subscription::SubscriptionRuntime {
+                    source: Arc::new(UnavailableSubscriptionSource),
+                    policy: gateway_admin::model::subscriptions::SubscriptionFetchPolicy::default(),
+                },
                 client_distribution: unavailable.clone(),
                 system: unavailable,
                 client_key_verifier: core.client_key_verifier(),
@@ -904,6 +908,26 @@ impl Environment {
         })
         .await
         .unwrap()
+    }
+}
+
+/// 插件集成测试不下载订阅文档：预览请求在此直接收敛为下载失败
+struct UnavailableSubscriptionSource;
+
+#[async_trait]
+impl gateway_admin::ports::subscription::SubscriptionDocumentSource
+    for UnavailableSubscriptionSource
+{
+    async fn fetch(
+        &self,
+        _: &str,
+        _: &gateway_admin::model::subscriptions::SubscriptionFetchPolicy,
+        _: std::time::Duration,
+    ) -> Result<
+        gateway_admin::ports::subscription::FetchedDocument,
+        gateway_admin::ports::subscription::SubscriptionFetchError,
+    > {
+        Err(gateway_admin::ports::subscription::SubscriptionFetchError::Failed)
     }
 }
 

@@ -1,0 +1,7 @@
+{
+  "proxies": [
+    {"name": "演示-JSON-01", "type": "ss", "server": "192.0.2.41", "port": 8388, "cipher": "aes-128-gcm", "password": "demo-password-41"},
+    {"name": "演示-JSON-02", "type": "trojan", "server": "192.0.2.42", "port": 443, "password": "demo-password-42"},
+    {"name": "演示-JSON-03", "type": "socks5", "server": "192.0.2.43", "port": 1080}
+  ]
+}

@@ -1,0 +1,39 @@
+{
+  "task": "X06",
+  "checked_at": "2026-11-24T15:40:00+08:00",
+  "executor": "lead",
+  "environment": {
+    "compose_project": "xinapi-x04-review",
+    "cpr": "本分支后端二进制替换镜像（前端产物沿用 X03 构建）",
+    "new_api": "本分支 Go 二进制与 web 产物替换镜像",
+    "fixture_source": "同 compose 网关网络内的静态 HTTP 服务，样本来自 docs/evidence/X06-fixtures",
+    "data": "自造订阅样本，节点地址取 192.0.2.0/24 文档网段"
+  },
+  "format_cases": [
+    {"case": "clash_yaml", "status": 200, "format": "clash_yaml", "candidates": 7, "accepted": 2, "rejected": 5, "diagnostics": 5},
+    {"case": "clash_json", "status": 200, "format": "clash_json", "candidates": 3, "accepted": 1, "rejected": 2},
+    {"case": "uri_list", "status": 200, "format": "uri_list", "candidates": 3, "accepted": 0, "rejected": 3},
+    {"case": "base64_document", "status": 200, "format": "base64_document", "candidates": 3, "accepted": 0, "rejected": 3},
+    {"case": "proxy_provider", "status": 200, "format": "clash_yaml", "candidates": 3, "accepted": 1, "rejected": 2, "diagnostics": 2},
+    {"case": "unreadable_document", "status": 422, "code": "subscription_unreadable"},
+    {"case": "too_large", "status": 422, "code": "subscription_too_large"},
+    {"case": "target_not_allowed", "status": 422, "code": "subscription_target_not_allowed"},
+    {"case": "scheme_rejected_at_bff", "status": 400, "code": "subscription_source_invalid"}
+  ],
+  "permission_cases": [
+    {"actor": "anonymous", "status": 401, "code": "AUTH_UNAUTHORIZED"},
+    {"actor": "member", "status": 403, "code": "AUTH_INSUFFICIENT_PRIVILEGE"},
+    {"actor": "reader_admin", "status": 200}
+  ],
+  "validation_cases": [
+    {"case": "empty", "status": 400, "code": "subscription_source_required"},
+    {"case": "missing_field", "status": 400, "code": "subscription_source_required"},
+    {"case": "too_long", "status": 400, "code": "subscription_source_too_long"}
+  ],
+  "response_fields": ["source_url", "format", "fetched_bytes", "accepted", "rejected", "candidates", "diagnostics"],
+  "screenshots": ["X06-preview-empty.png", "X06-preview-result.png", "X06-preview-diagnostics.png", "X06-preview-mobile.png"],
+  "gaps": [
+    "重定向上限、响应头超时与逐跳复核由 crate 内单元测试覆盖，运行期实测聚焦格式与限额路径",
+    "正式镜像经现有 Dockerfile 从源码构建留待 X08/X16；本轮运行证据来自同源代码的替换镜像"
+  ]
+}

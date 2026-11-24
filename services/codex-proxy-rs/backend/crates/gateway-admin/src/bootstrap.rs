@@ -73,6 +73,7 @@ async fn initialize_inner(
         snapshot,
         account_probe: probe,
         proxy_probe,
+        subscriptions,
         client_distribution,
         system,
         client_key_verifier,
@@ -187,6 +188,10 @@ async fn initialize_inner(
             store.plugin_state(),
         )),
         key_usage,
+        subscriptions: Arc::new(use_case::subscriptions::DefaultSubscriptionsService::new(
+            subscriptions.source,
+            subscriptions.policy,
+        )),
         proxies: Arc::new(use_case::proxies::DefaultProxiesService::new(
             store.proxies(),
             proxy_probe,

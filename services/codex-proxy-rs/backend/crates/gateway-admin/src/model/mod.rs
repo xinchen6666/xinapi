@@ -27,6 +27,7 @@ pub mod quota_history;
 pub mod reset_credit_automation;
 pub mod retention;
 pub mod settings;
+pub mod subscriptions;
 pub mod system;
 pub mod upstream_info;
 pub mod usage_data;

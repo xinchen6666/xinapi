@@ -23,6 +23,32 @@ type AccountEgressAccount struct {
 	OutboundProxyID *string `json:"outboundProxyId"`
 }
 
+// AccountEgressSubscriptionPreview 只保留订阅预览的展示字段，CPR 返回的其余字段丢弃。
+// 字段名与订阅预览接口的既有合同一致，源码串沿用 snake_case。
+type AccountEgressSubscriptionPreview struct {
+	SourceURL    string                                `json:"source_url"`
+	Format       string                                `json:"format"`
+	FetchedBytes int                                   `json:"fetched_bytes"`
+	Accepted     int                                   `json:"accepted"`
+	Rejected     int                                   `json:"rejected"`
+	Candidates   []AccountEgressSubscriptionCandidate  `json:"candidates"`
+	Diagnostics  []AccountEgressSubscriptionDiagnostic `json:"diagnostics"`
+}
+
+// AccountEgressSubscriptionCandidate 描述单个订阅节点及其可用状态。
+type AccountEgressSubscriptionCandidate struct {
+	Name      string `json:"name"`
+	Protocol  string `json:"protocol"`
+	Supported bool   `json:"supported"`
+}
+
+// AccountEgressSubscriptionDiagnostic 描述逐项解析说明，Subject 指向节点或字段。
+type AccountEgressSubscriptionDiagnostic struct {
+	Code    string `json:"code"`
+	Message string `json:"message"`
+	Subject string `json:"subject"`
+}
+
 type AccountEgressProxy struct {
 	ID                string `json:"id"`
 	Name              string `json:"name"`

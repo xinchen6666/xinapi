@@ -1,0 +1,25 @@
+# X06 自造样本：主文档只声明 provider，节点由 provider 文档物化
+mixed-port: 7890
+mode: rule
+proxies:
+  - name: 演示-本地-01
+    type: ss
+    server: 192.0.2.21
+    port: 8388
+    cipher: aes-128-gcm
+    password: demo-password-21
+proxy-providers:
+  demo-provider:
+    type: http
+    url: http://127.0.0.1:18086/provider-nodes.yaml
+    interval: 3600
+    path: ./providers/demo.yaml
+rule-providers:
+  demo-rules:
+    type: http
+    behavior: domain
+    url: http://127.0.0.1:18086/rules.yaml
+    path: ./rules/demo.yaml
+rules:
+  - RULE-SET,demo-rules,DIRECT
+  - MATCH,演示-本地-01

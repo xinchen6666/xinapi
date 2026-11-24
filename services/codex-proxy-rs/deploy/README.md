@@ -25,6 +25,9 @@
 配置加载会忽略未知字段，并在启动控制台提示字段名；不输出对应值。缺少必填字段时会指出缺项并停止启动，
 已知字段的类型和取值仍需合法；可选字段省略时使用默认值
 
+`subscriptions.insecure_test_hosts` 默认为空，订阅预览只下载 https 源。联调自造订阅样本时可填写测试源主机名
+（例如 `127.0.0.1`、`localhost`），这些主机名允许明文 http；主机名不带 scheme、端口与路径，生产部署保持空列表
+
 `store.pool.observability_timeout_seconds` 默认 120 秒，控制观测查询与统计 Worker 的操作预算，
 缓存等待和统计事务的 SQL 时限沿用该配置。修改后重启应用；连接排队仍受
 `store.pool.acquire_timeout_seconds` 约束，模型请求时限由 `api.request_timeout_seconds` 单独控制
