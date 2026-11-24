@@ -1,14 +1,18 @@
 # 当前交接
 
-## 当前：X04 修订已交付，X05 功能实测完成
+## 当前：X05 已关闭，下一步 X06 订阅预览
 
-X04 真实就绪与原卷补全修订已普通推送，现有 [PR #3](https://github.com/xinchen6666/xinapi/pull/3)的远端文件及文案读回通过，保持 open，base 为 X03。复验见 [E018](VALIDATION.md#e018-x04真实就绪与原卷补全修订)。
+X04 真实就绪与原卷补全修订已推送，现有 [PR #3](https://github.com/xinchen6666/xinapi/pull/3)的远端文件及文案读回通过，保持 open，base 为 X03。复验见 [E018](VALIDATION.md#e018-x04真实就绪与原卷补全修订)。
 
-X05 的「账号与出口」原生页面、固定后端接口、角色加操作权限、字段裁剪和私有 Key 文件消费已完成。最终镜像 `xinapi/new-api:x05-reviewed` 在真实五服务启动成功；账号空列表和自造认证代理成功。隔离夹具及浏览器验证覆盖权限拒绝、零管理调用、分页、加载、错误重试、权限撤销、七语和移动长 ID。详情见 [X05 日志](worklog/X05.md)和 [E019](VALIDATION.md#e019-x05管理员只读入口)。
+X05「账号与出口」只读入口已完成收尾：原生页面、固定后端接口、角色加操作权限、字段裁剪和私有 Key 文件消费在真实五服务验证通过；两处 authz 测试期望经用户授权加入 `ResourceAccountEgress: {ActionRead: true}`，随后 `gofmt`、`go vet ./service/authz/` 与 `go test ./service/authz/ ./middleware/ ./router/ -count=1` 三个包全部通过。页面、权限拒绝、零管理调用、分页、加载、错误重试、权限撤销、七语和移动长 ID 的实测见 [X05 日志](worklog/X05.md)和 [E019](VALIDATION.md#e019-x05管理员只读入口)。
 
-**待收尾：**X05 已以 [Draft PR #4](https://github.com/xinchen6666/xinapi/pull/4)交付，base 为 X04，远端功能文件、七语证据和 PR 状态均读回通过。原 `TestSetUserPermissionsStoresOnlyOverrides` 在两处完整对象期望中固定旧三类权限资源，新增资源后该项失败；用户明确授权测试文件维护后，在两处期望加入 `ResourceAccountEgress: {ActionRead: true}`，再运行完整 authz 测试。测试文件当前保持原状，X05 继续 in_progress。类型、lint、镜像、现有表格 7 项及其余 Go 权限相关回归已通过。
+交付状态：[Draft PR #4](https://github.com/xinchen6666/xinapi/pull/4)，base 为 `task/X04-compose`，保持 open。收尾提交 `17827ab` 经 GitHub 内容接口送达 `task/X05-admin-readonly`，远端提交的文件清单与统计和本地提交 `978ac25` 一致。
 
-本机 `xinapi-x04-review` 保持真实 CPR 五服务，New API 回环端口 19304；私有配置与 Key 留在原审核目录。原 `xinapi-x04-local` 回环端口 18304 保持运行。临时 CPR 夹具已移除，命名卷与原凭据保留。[协作入口](../AGENTS.md)及[当前规则](MEMORY.md)的用户编辑继续独立保留。
+网络边界与对齐动作：本机到 github.com 的 HTTPS 通道当前中断，`git push` 以超时结束；GitHub 内容接口与 api.github.com 可用，本轮经该接口完成送达。网络恢复后依次执行 `git fetch origin` 与 `git reset --hard origin/task/X05-admin-readonly`，本地工作树内容与远端一致，历史随即可对齐。
+
+下一步 X06：按[计划](PLAN.md#x06)实现「粘贴订阅并预览」——Rust 下载与解析接口、管理预览 API、React 表单和自造订阅样本，先覆盖 V01–V03 的自造输入与脱敏错误。
+
+本机 `xinapi-x04-review` 保持真实 CPR 五服务，New API 回环端口 19304；私有配置与 Key 留在原审核目录。原 `xinapi-x04-local` 回环端口 18304 保持运行。临时 CPR 夹具已移除，命名卷与原凭据保留。Go 测试在 `golang:1.26.10-alpine` 容器内执行，使用卷 `xinapi-gomod` 与 `GOPROXY=https://goproxy.cn,direct`。[协作入口](../AGENTS.md)及[当前规则](MEMORY.md)的用户编辑继续独立保留。
 
 以下为 X03 历史交接材料。
 
