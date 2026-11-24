@@ -1,18 +1,16 @@
 # 当前交接
 
-## 当前：X05 已关闭，下一步 X06 订阅预览
+## 当前：X06 已关闭，下一步 X07 快照与刷新
 
-X04 真实就绪与原卷补全修订已推送，现有 [PR #3](https://github.com/xinchen6666/xinapi/pull/3)的远端文件及文案读回通过，保持 open，base 为 X03。复验见 [E018](VALIDATION.md#e018-x04真实就绪与原卷补全修订)。
+X06「订阅粘贴与预览」已完成：CPR 新增 `POST /api/admin/subscriptions/preview`（Clash YAML、Clash JSON、URI 列表与 Base64 文档，`proxy-providers` 受控物化一层，正文 2 MiB、解压后 8 MiB、10 秒预算、跳转上限 3 且逐跳复核，明文 http 仅对 `subscriptions.insecure_test_hosts` 内主机开放）；New API 新增 `POST /api/account-egress/subscription-preview`，沿用 AdminAuth 与 `account_egress:read`，响应只含白名单字段；前端新增 `/subscription-preview` 页面与七语文案。验证见 [X06 日志](worklog/X06.md)与 [E020](VALIDATION.md#e020-x06订阅粘贴与预览)。
 
-X05「账号与出口」只读入口已完成收尾：原生页面、固定后端接口、角色加操作权限、字段裁剪和私有 Key 文件消费在真实五服务验证通过；两处 authz 测试期望经用户授权加入 `ResourceAccountEgress: {ActionRead: true}`，随后 `gofmt`、`go vet ./service/authz/` 与 `go test ./service/authz/ ./middleware/ ./router/ -count=1` 三个包全部通过。页面、权限拒绝、零管理调用、分页、加载、错误重试、权限撤销、七语和移动长 ID 的实测见 [X05 日志](worklog/X05.md)和 [E019](VALIDATION.md#e019-x05管理员只读入口)。
+交付：本地提交 `3ad1ee5`；远端分支 `task/X06-subscription-preview` 经 GitHub 内容接口送达，读回的分支头与文件清单和本地提交一致；交付形态为 [Draft PR #5](https://github.com/xinchen6666/xinapi/pull/5)，base 为 `task/X05-admin-readonly`，保持 open。四张页面截图留在本地 `docs/evidence/`，随网络恢复后的普通推送进入远端。
 
-交付状态：[Draft PR #4](https://github.com/xinchen6666/xinapi/pull/4)，base 为 `task/X04-compose`，保持 open。收尾提交 `17827ab` 经 GitHub 内容接口送达 `task/X05-admin-readonly`，远端提交的文件清单与统计和本地提交 `978ac25` 一致。
+网络边界与对齐动作：本机到 github.com 的 HTTPS 通道当前中断，`git push` 以超时结束；GitHub 内容接口与 api.github.com 可用。网络恢复后依次执行 `git fetch origin` 与 `git reset --hard origin/task/X06-subscription-preview`，随后重跑 `git show --stat` 核对工作树与远端一致。
 
-网络边界与对齐动作：本机到 github.com 的 HTTPS 通道当前中断，`git push` 以超时结束；GitHub 内容接口与 api.github.com 可用，本轮经该接口完成送达。网络恢复后依次执行 `git fetch origin` 与 `git reset --hard origin/task/X05-admin-readonly`，本地工作树内容与远端一致，历史随即可对齐。
+下一步 X07：快照、刷新与迁移——在预览合同之上建立来源、成功快照、节点 UUID 与不可变连接版本，覆盖改名保持绑定、拉取失败保留上次成功配置与并发刷新不覆盖新批准值。
 
-下一步 X06：按[计划](PLAN.md#x06)实现「粘贴订阅并预览」——Rust 下载与解析接口、管理预览 API、React 表单和自造订阅样本，先覆盖 V01–V03 的自造输入与脱敏错误。
-
-本机 `xinapi-x04-review` 保持真实 CPR 五服务，New API 回环端口 19304；私有配置与 Key 留在原审核目录。原 `xinapi-x04-local` 回环端口 18304 保持运行。临时 CPR 夹具已移除，命名卷与原凭据保留。Go 测试在 `golang:1.26.10-alpine` 容器内执行，使用卷 `xinapi-gomod` 与 `GOPROXY=https://goproxy.cn,direct`。[协作入口](../AGENTS.md)及[当前规则](MEMORY.md)的用户编辑继续独立保留。
+运行环境：本机 `xinapi-x04-review` 保持真实 CPR 五服务，New API 回环端口 19304，镜像回到 `xinapi/new-api:x05-reviewed` 与 `xinapi/cpr:x03-version-fix`；测试用 `xinapi/new-api:x06-preview` 与 `xinapi/cpr:x06-preview` 保留在同名标签下供复跑。原 `xinapi-x04-local` 回环端口 18304 保持运行。Go 测试使用 `golang:1.26.10-alpine` 容器、卷 `xinapi-gomod` 与 `GOPROXY=https://goproxy.cn,direct`；Rust 构建使用 `rust:1.99.1-bookworm` 与卷 `xinapi-cargo`，磁盘在构建前留出 10 GB 以上余量。[协作入口](../AGENTS.md)及[当前规则](MEMORY.md)的用户编辑继续独立保留。
 
 以下为 X03 历史交接材料。
 
