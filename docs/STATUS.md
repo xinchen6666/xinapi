@@ -9,7 +9,7 @@
 | X03 | done | lead；CPR版本修订复核完成 | [PR #2](https://github.com/xinchen6666/xinapi/pull/2)包含R1修订；本机及[新CI](https://github.com/xinchen6666/xinapi/actions/runs/45120537811)实际版本输出3.54.2，全部作业成功；47项原工具回归通过，见[E015](VALIDATION.md#e015-x03cpr-发行版本修订)。X04待启动 |
 | X04 | done | lead；修订已交付 | [PR #3](https://github.com/xinchen6666/xinapi/pull/3)已同步真实就绪启动与原卷补全修订，远端代码及文案读回通过，复验见 E018；保持 open，base 为 X03 |
 | X05 | done | lead；Draft 已交付 | [PR #4](https://github.com/xinchen6666/xinapi/pull/4)已推送并读回，base 为 X04；构建、真实 CPR、七语浏览器验证及 authz 全量回归通过，见 [E019](VALIDATION.md#e019-x05管理员只读入口) |
-| X06 | in_progress | lead；解析预览与表单 | 自造订阅预览与真实接口矩阵通过，见 [E020](VALIDATION.md#e020-x06订阅粘贴与预览)；交付收尾进行中 |
+| X06 | done | lead；解析预览与表单 | 自造订阅预览、真实接口矩阵与七语页面通过，见 [E020](VALIDATION.md#e020-x06订阅粘贴与预览)；[Draft PR #5](https://github.com/xinchen6666/xinapi/pull/5)已读回 |
 | X07 | pending | CPR Store／Admin | 快照、节点身份、刷新差异与迁移 |
 | X08 | pending | CPR Host／Mihomo | 引擎监督、稳定入口和资源观测 |
 | X09 | pending | CPR 路由／连接池 | 确认版本、换路与在途连接边界 |
