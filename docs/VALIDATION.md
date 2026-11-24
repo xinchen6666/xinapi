@@ -184,7 +184,7 @@ E001–E006 是 X01 之前的历史证据，仅支持当时的工作与版本；
 - 真实五服务与自造业务数据：CPR 账号空列表及自造认证代理列表成功；私有 Key 错误／文件权限错误安全返回 503，原文件恢复后立即成功。原管理员和成员凭据保持。
 - 内部 CPR 夹具：匿名／模型 Key 为 401，成员／缺权管理员为 403，八次拒绝的管理调用为零；两类响应严格限七／五字段。账号第二页为 3 项；原始邮箱、地址、凭据和错误细节均排除，邮箱派生名称使用稳定 ID。
 - 浏览器：加载、分页、错误重试、模拟权限撤销、三种路由拒绝及 390px 移动长 ID 显示成功，管理秘密泄漏与运行错误为零。截图入口见 [页面证据](worklog/X05.md#页面证据)。最终验证接回真实 CPR，临时夹具已回收。
-- [Draft PR #4](https://github.com/xinchen6666/xinapi/pull/4)已交付，base 为 X04；远端功能代码、证据及 PR 文案和状态读回通过。结果 `partial`：`TestSetUserPermissionsStoresOnlyOverrides` 的两处完整资源对象期望仍为旧三类资源；新资源使该项失败。测试文件按当前用户约定保持，后续专项授权后维护期望，再运行完整 authz 回归。源码、页面与真实权限结果分别记录。
+- [Draft PR #4](https://github.com/xinchen6666/xinapi/pull/4)已交付，base 为 X04；远端功能代码、证据及 PR 文案和状态读回通过。结果 `passed`（2026-11-24 UTC 更新）：`TestSetUserPermissionsStoresOnlyOverrides` 的两处完整资源对象期望经用户授权加入 `account_egress:read`，`gofmt`、`go vet` 与 `go test ./service/authz/ ./middleware/ ./router/ -count=1` 三个包全部通过。源码、页面与真实权限结果分别记录，失败与修复过程见 [X05 日志](worklog/X05.md#实际验证)。
 - 真实上游账号、外部代理、OAuth 与模型流量为后续任务覆盖。管理接口、权限模型、字段或镜像变化后复验对应结果。
 
 ## 未来记录模板
