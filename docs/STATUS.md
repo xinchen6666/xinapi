@@ -1,6 +1,6 @@
 # 项目进度
 
-目标：[xinchen6666/xinapi](https://github.com/xinchen6666/xinapi)，单机 Docker Compose。更新：2026-11-23 UTC。**本表是 X 任务的唯一进度来源**；不以已有上游源码、文档或工具看板推断集成产品完成。
+目标：[xinchen6666/xinapi](https://github.com/xinchen6666/xinapi)，单机 Docker Compose。更新：2026-11-24 UTC。**本表是 X 任务的唯一进度来源**；不以已有上游源码、文档或工具看板推断集成产品完成。
 
 | ID | 状态 | 负责人／工作域 | 最近事实或验收入口 |
 | --- | --- | --- | --- |
@@ -8,7 +8,7 @@
 | X02 | done | lead；x02-audit-code、x02-audit-scope 复核 | 固定源码基线已交付[PR #1](https://github.com/xinchen6666/xinapi/pull/1)；本次审查修复2项校验错误通过，16项测试通过，见[E013](VALIDATION.md#e013-x02审查修订)；未合并，X03现按用户继续指令推进 |
 | X03 | done | lead；CPR版本修订复核完成 | [PR #2](https://github.com/xinchen6666/xinapi/pull/2)包含R1修订；本机及[新CI](https://github.com/xinchen6666/xinapi/actions/runs/45120537811)实际版本输出3.54.2，全部作业成功；47项原工具回归通过，见[E015](VALIDATION.md#e015-x03cpr-发行版本修订)。X04待启动 |
 | X04 | done | lead；修订已交付 | [PR #3](https://github.com/xinchen6666/xinapi/pull/3)已同步真实就绪启动与原卷补全修订，远端代码及文案读回通过，复验见 E018；保持 open，base 为 X03 |
-| X05 | in_progress | lead；Draft 已交付 | [PR #4](https://github.com/xinchen6666/xinapi/pull/4)已推送并读回，base 为 X04；构建、真实 CPR、七语浏览器验证通过，保留一项原 authz 测试期望维护事项，见 [E019](VALIDATION.md#e019-x05管理员只读入口) |
+| X05 | done | lead；Draft 已交付 | [PR #4](https://github.com/xinchen6666/xinapi/pull/4)已推送并读回，base 为 X04；构建、真实 CPR、七语浏览器验证及 authz 全量回归通过，见 [E019](VALIDATION.md#e019-x05管理员只读入口) |
 | X06 | pending | 订阅解析／管理表单 | 自造订阅预览，首次演示 |
 | X07 | pending | CPR Store／Admin | 快照、节点身份、刷新差异与迁移 |
 | X08 | pending | CPR Host／Mihomo | 引擎监督、稳定入口和资源观测 |
