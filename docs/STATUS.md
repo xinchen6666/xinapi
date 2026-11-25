@@ -11,7 +11,7 @@
 | X05 | done | lead；Draft 已交付 | [PR #4](https://github.com/xinchen6666/xinapi/pull/4)已推送并读回，base 为 X04；构建、真实 CPR、七语浏览器验证及 authz 全量回归通过，见 [E019](VALIDATION.md#e019-x05管理员只读入口) |
 | X06 | done | lead；审核修复已交付 | R1–R6 与部分接受确认完成，72 项接口及浏览器复验通过；源码与截图已普通推送至 [Draft PR #5](https://github.com/xinchen6666/xinapi/pull/5)，见 [E022](VALIDATION.md#e022-x06审核修复复验)和[修复报告](worklog/X06-fix.md) |
 | X07 | done | lead；专项复审修订已交付 | 来源密文、稳定节点ID、刷新差异及批准完成；复审三项修订通过 17+6+2 项、重启与真实页面复验，见 [E024](VALIDATION.md#e024-x07专项复审修订)；[Draft PR #6](https://github.com/xinchen6666/xinapi/pull/6) 已含修订 |
-| X08 | in_progress | lead；引擎监督已实现 | 受管 Mihomo 入口的启动、出口、隔离、停止、异常退出、容量与重启端口保持实测通过，见 [E025](VALIDATION.md#e025-x08受管引擎入口)；交付进行中 |
+| X08 | done | lead；引擎监督已交付 | 受管 Mihomo 入口的启动、出口、隔离、停止、异常退出、容量与重启端口保持实测通过，见 [E025](VALIDATION.md#e025-x08受管引擎入口)；[Draft PR #7](https://github.com/xinchen6666/xinapi/pull/7) 已推送 |
 | X09 | pending | CPR 路由／连接池 | 确认版本、换路与在途连接边界 |
 | X10 | pending | CPR 出站策略 | 故障与后台请求不直连 |
 | X11 | pending | OAuth／只读回执 | 授权归属、丢失响应与未知状态 |

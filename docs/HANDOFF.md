@@ -6,7 +6,7 @@
 
 实测：真实 Mihomo v1.19.33 冷启动 52ms、RSS 约 42MB；经入口的请求由自造节点代理转发（代理计数 2→3）；回环隔离 errno 111；并发启动得到唯一 PID；`kill -9` 后状态 failed 并记录信号、端口释放、重启复用原端口；端口占用返回 409 `engine_port_conflict`；第三个实例返回 429；CPR 重启后入口全部 stopped、端口保持。证据见 [E025](VALIDATION.md#e025-x08受管引擎入口)与 [X08 日志](worklog/X08.md)。
 
-分支 task/X08-engine-supervision 以 task/X07-subscription-snapshots 为 base，交付后 X08 置 done。下一动作：X09 把账号出口绑定到稳定入口，并验证换路时的连接代次与在途流边界；严格出口与故障停发由 X10 承担。
+分支 task/X08-engine-supervision 已推送，[Draft PR #7](https://github.com/xinchen6666/xinapi/pull/7) 以 task/X07-subscription-snapshots 为 base，[CI 45599508042](https://github.com/xinchen6666/xinapi/actions/runs/45599508042) 全部成功，X08 置 done。下一动作：X09 把账号出口绑定到稳定入口，并验证换路时的连接代次与在途流边界；严格出口与故障停发由 X10 承担。
 
 运行状态：xinapi-x07-dev 栈当前使用 xinapi/cpr:x08-engine 镜像并挂载本机 Mihomo 制品，入口进程已停止；自造节点代理容器已移除，验证脚本位于 .runtime/x08。x07-fresh 与 x07-upgrade 栈保留。
 
