@@ -26,7 +26,7 @@
 
 ### R1 · P1 · 保留已批准连接的 TLS 语义
 
-位置：[配置生成](../../services/codex-proxy-rs/backend/crates/gateway-host/src/engine/config.rs#L74)
+位置：[配置生成](https://github.com/xinchen6666/xinapi/blob/d06398d0d60ef9cdd5c701a420a4143d0be0a02c/services/codex-proxy-rs/backend/crates/gateway-host/src/engine/config.rs#L74)
 
 X07 将 HTTPS 归一化为 `protocol=http`，TLS 保存在私有连接字段中；生成器却只按协议字符串 `https` 决定 TLS，遗漏已批准的 `connection.tls`、SNI 等字段
 
@@ -36,7 +36,7 @@ X07 将 HTTPS 归一化为 `protocol=http`，TLS 保存在私有连接字段中�
 
 ### R2 · P1 · 保持端口登记的故障一致性
 
-位置：[登记读取](../../services/codex-proxy-rs/backend/crates/gateway-host/src/engine/entries.rs#L36)、[登记写入](../../services/codex-proxy-rs/backend/crates/gateway-host/src/engine/entries.rs#L82)
+位置：[登记读取](https://github.com/xinchen6666/xinapi/blob/d06398d0d60ef9cdd5c701a420a4143d0be0a02c/services/codex-proxy-rs/backend/crates/gateway-host/src/engine/entries.rs#L36)、[登记写入](https://github.com/xinchen6666/xinapi/blob/d06398d0d60ef9cdd5c701a420a4143d0be0a02c/services/codex-proxy-rs/backend/crates/gateway-host/src/engine/entries.rs#L82)
 
 已有登记文件读取或 JSON 解码错误会变为空集合。隔离实测：A 原端口 25100、B 原端口 25104；截断登记文件并重启后列表为空，再先启动 B 得到 25100。原稳定地址因此可以重新指向其他节点
 
@@ -46,7 +46,7 @@ X07 将 HTTPS 归一化为 `protocol=http`，TLS 保存在私有连接字段中�
 
 ### R3 · P1 · 补齐账号入口归属及独立认证
 
-位置：[启动请求合同](../../services/codex-proxy-rs/backend/crates/gateway-api/src/admin/engines.rs#L22)、[入口标识](../../services/codex-proxy-rs/backend/crates/gateway-admin/src/use_case/engines.rs#L40)、[监听配置](../../services/codex-proxy-rs/backend/crates/gateway-host/src/engine/config.rs#L105)
+位置：[启动请求合同](https://github.com/xinchen6666/xinapi/blob/d06398d0d60ef9cdd5c701a420a4143d0be0a02c/services/codex-proxy-rs/backend/crates/gateway-api/src/admin/engines.rs#L22)、[入口标识](https://github.com/xinchen6666/xinapi/blob/d06398d0d60ef9cdd5c701a420a4143d0be0a02c/services/codex-proxy-rs/backend/crates/gateway-admin/src/use_case/engines.rs#L40)、[监听配置](https://github.com/xinchen6666/xinapi/blob/d06398d0d60ef9cdd5c701a420a4143d0be0a02c/services/codex-proxy-rs/backend/crates/gateway-host/src/engine/config.rs#L105)
 
 当前入口只按来源和节点建立；附带 `account_id` 的启动请求返回 422。因此此次能实测同节点和两个节点，账号／授权预留项级生命周期仍缺实现
 
@@ -56,7 +56,7 @@ X07 将 HTTPS 归一化为 `protocol=http`，TLS 保存在私有连接字段中�
 
 ### R4 · P2 · 在执行前核验制品身份
 
-位置：[启动准入](../../services/codex-proxy-rs/backend/crates/gateway-host/src/engine/mod.rs#L217)
+位置：[启动准入](https://github.com/xinchen6666/xinapi/blob/d06398d0d60ef9cdd5c701a420a4143d0be0a02c/services/codex-proxy-rs/backend/crates/gateway-host/src/engine/mod.rs#L217)
 
 当前只检查 `is_file()` 后执行。上述真实 ELF 失配副本仍成功运行，版本文本相同也会通过
 
@@ -64,7 +64,7 @@ X07 将 HTTPS 归一化为 `protocol=http`，TLS 保存在私有连接字段中�
 
 ### R5 · P2 · 使用真实可用的正常关闭路径并主动回收退出进程
 
-位置：[正常停止](../../services/codex-proxy-rs/backend/crates/gateway-host/src/engine/mod.rs#L300)、[退出扫描](../../services/codex-proxy-rs/backend/crates/gateway-host/src/engine/mod.rs#L73)
+位置：[正常停止](https://github.com/xinchen6666/xinapi/blob/d06398d0d60ef9cdd5c701a420a4143d0be0a02c/services/codex-proxy-rs/backend/crates/gateway-host/src/engine/mod.rs#L300)、[退出扫描](https://github.com/xinchen6666/xinapi/blob/d06398d0d60ef9cdd5c701a420a4143d0be0a02c/services/codex-proxy-rs/backend/crates/gateway-host/src/engine/mod.rs#L73)
 
 运行镜像缺少 `/bin/kill` 与 `/usr/bin/kill`。API 停止依赖外部 `kill`，执行失败被忽略，实测等待 5.075 秒后完成回收；对应源码走五秒宽限后的强制终止。对真实引擎直接发送 SIGTERM 则正常退出，退出状态为 0
 
@@ -74,7 +74,7 @@ SIGKILL 后、发出下一次管理查询之前，真实 Mihomo 在 `/proc` 呈 
 
 ### R6 · P2 · 将慢启动等待限制在所属入口
 
-位置：[全局锁](../../services/codex-proxy-rs/backend/crates/gateway-host/src/engine/mod.rs#L179)、[停止路径](../../services/codex-proxy-rs/backend/crates/gateway-host/src/engine/mod.rs#L273)
+位置：[全局锁](https://github.com/xinchen6666/xinapi/blob/d06398d0d60ef9cdd5c701a420a4143d0be0a02c/services/codex-proxy-rs/backend/crates/gateway-host/src/engine/mod.rs#L179)、[停止路径](https://github.com/xinchen6666/xinapi/blob/d06398d0d60ef9cdd5c701a420a4143d0be0a02c/services/codex-proxy-rs/backend/crates/gateway-host/src/engine/mod.rs#L273)
 
 在真实 Mihomo exec 后发送 SIGSTOP，令其初始化暂停。审核环境配置 5,000ms 启动预算，启动约 5.064 秒后返回 504 并回收该 PID；同时请求另一个已运行入口的停止和列表，两者分别耗时 10.047 秒、10.049 秒
 
@@ -84,7 +84,7 @@ SIGKILL 后、发出下一次管理查询之前，真实 Mihomo 在 `/proc` 呈 
 
 ### R7 · P2 · 将控制端口身份纳入就绪判断
 
-位置：[端口检查](../../services/codex-proxy-rs/backend/crates/gateway-host/src/engine/mod.rs#L220)、[就绪判断](../../services/codex-proxy-rs/backend/crates/gateway-host/src/engine/mod.rs#L154)
+位置：[端口检查](https://github.com/xinchen6666/xinapi/blob/d06398d0d60ef9cdd5c701a420a4143d0be0a02c/services/codex-proxy-rs/backend/crates/gateway-host/src/engine/mod.rs#L220)、[就绪判断](https://github.com/xinchen6666/xinapi/blob/d06398d0d60ef9cdd5c701a420a4143d0be0a02c/services/codex-proxy-rs/backend/crates/gateway-host/src/engine/mod.rs#L154)
 
 已有入口重启只检查数据监听端口。实测只占用 controller 端口后启动，Mihomo 日志含 `address already in use`，API 仍返回 200／running。当前就绪判断仅做数据端口 TCP 连接
 
@@ -92,7 +92,7 @@ SIGKILL 后、发出下一次管理查询之前，真实 Mihomo 在 `/proc` 呈 
 
 ### R8 · P2 · 使用规范身份保持重复启动语义
 
-位置：[事实构造](../../services/codex-proxy-rs/backend/crates/gateway-admin/src/use_case/engines.rs#L77)
+位置：[事实构造](https://github.com/xinchen6666/xinapi/blob/d06398d0d60ef9cdd5c701a420a4143d0be0a02c/services/codex-proxy-rs/backend/crates/gateway-admin/src/use_case/engines.rs#L77)
 
 Store 可将来源 UUID 的大小写形式解析为同一行，Admin 却用请求原文生成入口标识。实测仅将来源 UUID 改为大写，固定同一 node_id，再次启动返回 200，产生第二个 PID 和端口，消耗额外容量
 
@@ -100,7 +100,7 @@ Store 可将来源 UUID 的大小写形式解析为同一行，Admin 却用请�
 
 ### R9 · P2 · 明确并落实资源边界
 
-位置：[Compose](../../compose.yaml#L74)、[引擎日志](../../services/codex-proxy-rs/backend/crates/gateway-host/src/engine/mod.rs#L226)
+位置：[Compose](https://github.com/xinchen6666/xinapi/blob/d06398d0d60ef9cdd5c701a420a4143d0be0a02c/compose.yaml#L74)、[引擎日志](https://github.com/xinchen6666/xinapi/blob/d06398d0d60ef9cdd5c701a420a4143d0be0a02c/services/codex-proxy-rs/backend/crates/gateway-host/src/engine/mod.rs#L226)
 
 现有运行栈和审核栈的 Docker 实际值均为 `Memory=0`、`NanoCpus=0`，只设置 `PidsLimit=256`。实例计数可限制同时运行数量，却缺少明确 CPU／内存硬上限。引擎日志直接向数据目录 append，Docker json-file 轮转覆盖的是容器标准输出，范围与该文件独立
 
@@ -151,7 +151,7 @@ Store 可将来源 UUID 的大小写形式解析为同一行，Admin 却用请�
 
 ## 静态补充与验证边界
 
-SOCKS `dns-mode` 在[连接配置生成](../../services/codex-proxy-rs/backend/crates/gateway-host/src/engine/config.rs#L74)中被跳过，`socks5` 与 `socks5h` 的执行配置存在折叠。此项为源码问题，SOCKS 目标地址类型的运行观测留待修订复验
+SOCKS `dns-mode` 在[连接配置生成](https://github.com/xinchen6666/xinapi/blob/d06398d0d60ef9cdd5c701a420a4143d0be0a02c/services/codex-proxy-rs/backend/crates/gateway-host/src/engine/config.rs#L74)中被跳过，`socks5` 与 `socks5h` 的执行配置存在折叠。此项为源码问题，SOCKS 目标地址类型的运行观测留待修订复验
 
 本轮使用真实 Mihomo 和真实 CPR，节点代理、目标站点与身份为自造。故障注入使用实际进程 SIGSTOP、实际端口占用、独立目录的文件错误和独立 ELF 副本。真实公网出口、业务账号流量、长期吞吐、启动／停止全部时序组合均留待后续验证
 
