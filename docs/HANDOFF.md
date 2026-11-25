@@ -1,12 +1,12 @@
 # 当前交接
 
-## 当前：X10 严格出口实现与复验完成，正在交付
+## 当前：X10 严格出口已交付，保留复审入口
 
 2026-11-26（Asia/Shanghai），X10追加0048托管要求迁移，Core明确Account／Reservation／Blocked，Store与Host逐次核对当前绑定和实际引擎。推理、OAuth服务端交换／刷新、额度、模型目录、资料及已建连接的新操作均接入当前准入，见[X10日志](worklog/X10.md)与[E029](VALIDATION.md#e029-x10严格出口与故障停发)。
 
 真实双Provider传输331次观测、12项网关场景、10项投影及清理检查通过；165次故障调用的上游／默认出口增量均为零。NO_PROXY=*、引擎强制退出、旧默认客户端与存量ResponseControl撤权均已验证；默认出口校准确有记录。相关严格Clippy、构建与124项既有回归通过，正式测试文件保持原状。
 
-当前分支task/X10-strict-egress，以X09为base准备Draft交付。私有验证材料位于 `.runtime/x10`，专用CPR、PG、Redis、双节点、默认出口记录器与目标服务已停止；原有运行栈保持。用户已有AGENTS.md及MEMORY.md工作树修改保持原状。
+分支task/X10-strict-egress已普通推送并读回，源码提交903203e；[Draft PR #9](https://github.com/xinchen6666/xinapi/pull/9)以X09为base，保留open与Draft供复审，CI以PR当前检查回执为准。私有验证材料位于 `.runtime/x10`，专用CPR、PG、Redis、双节点、默认出口记录器与目标服务已停止；原有运行栈保持。用户已有AGENTS.md及MEMORY.md工作树修改保持原状。
 
 下一动作：核对X10源码与交付后进入X11管理员OAuth归属／回执恢复。公共元数据预热沿用部署语义，首次无本地归属凭据导入与完整OAuth预留由X11承接；真实第三方账号、公网出口、长期负载保持待验证。每次发送观测与模拟业务解析分别记账。
 
