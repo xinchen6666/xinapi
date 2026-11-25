@@ -198,6 +198,7 @@ async fn initialize_inner(
         ),
         engines: Arc::new(use_case::engines::DefaultEnginesService::new(
             store.subscriptions(),
+            store.accounts(),
             engines,
         )),
         proxies: Arc::new(use_case::proxies::DefaultProxiesService::new(

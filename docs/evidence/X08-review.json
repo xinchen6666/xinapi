@@ -1,0 +1,487 @@
+{
+  "task": "X08-review",
+  "reviewed_branch": "task/X08-engine-supervision",
+  "reviewed_commit": "d06398d",
+  "checked_at": "2026-11-25T14:05:58.240148+00:00",
+  "overall": "requires_changes",
+  "scope": "V06/V07; real Mihomo, synthetic nodes and isolated PostgreSQL/Redis/CPR",
+  "source_changes": false,
+  "artifact": {
+    "checked_at": "2026-11-25T13:28:00.655361+00:00",
+    "asset": "mihomo-linux-amd64-compatible-v1.19.33.gz",
+    "declared_platform": "linux/amd64",
+    "official_url": "https://github.com/MetaCubeX/mihomo/releases/download/v1.19.33/mihomo-linux-amd64-compatible-v1.19.33.gz",
+    "expected_gzip_sha256": "386508bfb1c72c43b6a0eda73708ecdce82546581b0ebcb16366c53757c622b6",
+    "executed_local_sha256": "817f50b3ac6a8b1c4360c5cf2961906057f3a883d970ebbcb0028a01632b620f",
+    "executed_local_bytes": 62079102,
+    "version": "Mihomo Meta v1.19.33 linux amd64 with go1.26.10 Wed Oct 21 16:44:56 UTC 2026\nUse tags: with_gvisor",
+    "official_attempt_error": "TimeoutError",
+    "download_transport": "gh-proxy.com HTTPS mirror",
+    "downloaded_gzip_sha256": "386508bfb1c72c43b6a0eda73708ecdce82546581b0ebcb16366c53757c622b6",
+    "gzip_matches_registered": true,
+    "downloaded_unpacked_sha256": "817f50b3ac6a8b1c4360c5cf2961906057f3a883d970ebbcb0028a01632b620f",
+    "local_matches_unpacked": true
+  },
+  "official_asset": {
+    "checked_at": "2026-11-25T13:48:59.721716+00:00",
+    "tag": "v1.19.33",
+    "asset_name": "mihomo-linux-amd64-compatible-v1.19.33.gz",
+    "asset_id": 663189170,
+    "size": 22893972,
+    "digest": "sha256:386508bfb1c72c43b6a0eda73708ecdce82546581b0ebcb16366c53757c622b6",
+    "official_download": "https://github.com/MetaCubeX/mihomo/releases/download/v1.19.33/mihomo-linux-amd64-compatible-v1.19.33.gz",
+    "release": "https://github.com/MetaCubeX/mihomo/releases/tag/v1.19.33"
+  },
+  "normal": [
+    {
+      "case": "same_node_parallel_start",
+      "statuses": [
+        200,
+        200
+      ],
+      "pids": [
+        215,
+        215
+      ]
+    },
+    {
+      "case": "proxy_auth",
+      "empty": {
+        "http": "200",
+        "exit": 0
+      },
+      "wrong": {
+        "http": "200",
+        "exit": 0
+      }
+    },
+    {
+      "case": "socks_no_auth",
+      "reply_hex": "0500"
+    },
+    {
+      "case": "controller_auth_empty",
+      "status": "401"
+    },
+    {
+      "case": "controller_auth_wrong",
+      "status": "401"
+    },
+    {
+      "case": "controller_auth_valid",
+      "status": "200"
+    },
+    {
+      "case": "source_id_spelling",
+      "status": 200,
+      "running": [
+        {
+          "entry_id": "c6746775-cd87-4b21-8734-c48e9a75bb9a:90424256-ac6a-4cb6-8ab2-c6cac08023a4",
+          "port": 25100,
+          "pid": 215
+        },
+        {
+          "entry_id": "C6746775-CD87-4B21-8734-C48E9A75BB9A:90424256-ac6a-4cb6-8ab2-c6cac08023a4",
+          "port": 25102,
+          "pid": 262
+        }
+      ]
+    },
+    {
+      "case": "resource_idle",
+      "one": {
+        "pid": 275,
+        "rss_bytes": 42926080,
+        "cpu_seconds": 0.05,
+        "cold_start_ms": 52,
+        "listen_port": 25100
+      },
+      "two": [
+        {
+          "pid": 275,
+          "rss_bytes": 42926080,
+          "cpu_seconds": 0.05,
+          "cold_start_ms": 52,
+          "listen_port": 25100
+        },
+        {
+          "pid": 286,
+          "rss_bytes": 42639360,
+          "cpu_seconds": 0.06,
+          "cold_start_ms": 52,
+          "listen_port": 25104
+        }
+      ]
+    },
+    {
+      "case": "capacity_two",
+      "third_status": 429
+    },
+    {
+      "case": "cross_entry_proxy_auth",
+      "a": {
+        "http": "200",
+        "exit": 0
+      },
+      "b": {
+        "http": "200",
+        "exit": 0
+      }
+    },
+    {
+      "case": "controller_cross_auth",
+      "status": "401",
+      "secrets_distinct": true
+    },
+    {
+      "case": "resource_ten_requests",
+      "wall_seconds": 1.141,
+      "samples": [
+        {
+          "pid": 275,
+          "rss_bytes": 45096960,
+          "cpu_seconds": 0.07,
+          "cold_start_ms": 52,
+          "listen_port": 25100
+        },
+        {
+          "pid": 286,
+          "rss_bytes": 44994560,
+          "cpu_seconds": 0.08,
+          "cold_start_ms": 52,
+          "listen_port": 25104
+        }
+      ],
+      "cpu_deltas": [
+        0.02,
+        0.02
+      ]
+    },
+    {
+      "case": "config_summary",
+      "rules": [
+        "MATCH,node"
+      ],
+      "listener": [
+        {
+          "name": "entry",
+          "type": "mixed",
+          "listen": "127.0.0.1",
+          "port": 25100
+        }
+      ],
+      "inbound_auth_present": false,
+      "tun": null,
+      "provider": null,
+      "root_mode": "0o700",
+      "entry_mode": "0o700",
+      "file_mode": "0o600"
+    },
+    {
+      "case": "normal_stop",
+      "status": 200,
+      "seconds": 5.075,
+      "external_kill_exists": false,
+      "pid_gone": true,
+      "ports_closed": true
+    },
+    {
+      "case": "node_bad-auth",
+      "start_status": 200,
+      "state_after": "running",
+      "tls_rendered": null,
+      "traffic": {
+        "http": "502",
+        "exit": 0
+      },
+      "last_events": [
+        {
+          "label": "a",
+          "method": "CONNECT",
+          "credential_valid": false,
+          "credential_present": true
+        },
+        {
+          "label": "a",
+          "method": "CONNECT",
+          "credential_valid": false,
+          "credential_present": true
+        }
+      ]
+    },
+    {
+      "case": "node_tls",
+      "start_status": 200,
+      "state_after": "running",
+      "tls_rendered": null,
+      "traffic": {
+        "http": "502",
+        "exit": 0
+      },
+      "last_events": [
+        {
+          "label": "a",
+          "method": "CONNECT",
+          "credential_valid": false,
+          "credential_present": true
+        },
+        {
+          "label": "a",
+          "method": "CONNECT",
+          "credential_valid": false,
+          "credential_present": true
+        }
+      ]
+    },
+    {
+      "case": "node_trap",
+      "start_status": 200,
+      "state_after": "running",
+      "tls_rendered": null,
+      "traffic": {
+        "http": "200",
+        "exit": 0
+      },
+      "last_events": [
+        {
+          "label": "a",
+          "method": "CONNECT",
+          "credential_valid": false,
+          "credential_present": true
+        },
+        {
+          "label": "plain-tls-trap",
+          "method": "CONNECT",
+          "credential_valid": true,
+          "credential_present": true
+        }
+      ]
+    },
+    {
+      "case": "admin_auth",
+      "status": 401
+    },
+    {
+      "case": "finished",
+      "entries_running": 0
+    }
+  ],
+  "faults": [
+    {
+      "case": "crash_before_list",
+      "raw_processes": "/proc/554 mihomo 554 (mihomo) Z 7 7 1 0 -1 4228108 4381 0 0 0 5 4 0 0 20 0 1 0 172950669 0 0 18446744073709551615 0 0 0 0 0 0 0 0 2143420159 1 0 0 17 2 0 0 0 0 0 0 0 0 0 0 0 0 9",
+      "listeners": [
+        44109
+      ]
+    },
+    {
+      "case": "crash_reaped",
+      "state": "failed",
+      "pid": null,
+      "reason": "engine process exited: signal: 9 (SIGKILL)"
+    },
+    {
+      "case": "automatic_restart",
+      "state": "failed"
+    },
+    {
+      "case": "direct_sigterm",
+      "state": "failed",
+      "reason": "engine process exited: exit status: 0"
+    },
+    {
+      "case": "conflict_listener",
+      "status": 409,
+      "reason": "engine_port_conflict",
+      "state": "failed",
+      "port_unchanged": true,
+      "controller_bind_error": false
+    },
+    {
+      "case": "conflict_controller",
+      "status": 200,
+      "reason": null,
+      "state": "running",
+      "port_unchanged": true,
+      "controller_bind_error": true
+    },
+    {
+      "case": "artifact_mismatch",
+      "original_sha256": "817f50b3ac6a8b1c4360c5cf2961906057f3a883d970ebbcb0028a01632b620f",
+      "changed_sha256": "c55b6ad10bfced4cafbba2b5fac67d4c631d555f9c456571d860892659d14d67",
+      "executed_sha256": "c55b6ad10bfced4cafbba2b5fac67d4c631d555f9c456571d860892659d14d67",
+      "version": "Mihomo Meta v1.19.33 linux amd64 with go1.26.10 Wed Oct 21 16:44:56 UTC 2026\nUse tags: with_gvisor",
+      "status": 200,
+      "state": "running"
+    },
+    {
+      "case": "paused_start_and_other_entry_management",
+      "paused_real_pid": 212,
+      "start_seconds": 5.064,
+      "start_status": 504,
+      "start_reason": "engine_start_timeout",
+      "list_seconds": 10.049,
+      "other_stop_seconds": 10.047,
+      "other_stop_status": 200,
+      "paused_pid_gone": true
+    },
+    {
+      "case": "client_disconnect_start_cancel",
+      "paused_real_pid": 233,
+      "alive_after_200ms": true,
+      "reap_seconds": 0.389,
+      "pid_gone": true,
+      "state": "failed",
+      "ports_after": [
+        37439
+      ],
+      "engine_ports_after": []
+    },
+    {
+      "case": "finished",
+      "processes": ""
+    }
+  ],
+  "restart": [
+    {
+      "case": "two_nodes_parallel_start",
+      "states": [
+        {
+          "pid": 321,
+          "port": 25100,
+          "state": "running"
+        },
+        {
+          "pid": 330,
+          "port": 25104,
+          "state": "running"
+        }
+      ]
+    },
+    {
+      "case": "host_restart",
+      "seconds": 3.191,
+      "states": [
+        "stopped",
+        "stopped"
+      ],
+      "ports_preserved": true,
+      "old_host_pids_gone": true,
+      "new_mihomo_processes": "",
+      "listeners": []
+    },
+    {
+      "case": "account_parameter",
+      "status": 422
+    },
+    {
+      "case": "container_boundary",
+      "user": "10001:10001",
+      "privileged": false,
+      "network_mode": "xinapi-x08-audit_cpr-data",
+      "devices": null,
+      "socket_mounts": [],
+      "pids_limit": 256,
+      "memory": 0,
+      "nano_cpus": 0,
+      "cap_drop": [
+        "ALL"
+      ],
+      "security_opt": [
+        "no-new-privileges:true"
+      ],
+      "init": true
+    },
+    {
+      "case": "loopback_boundary",
+      "sibling_connect_errno": "111"
+    },
+    {
+      "case": "corrupt_registry_load",
+      "list_after_restart": []
+    },
+    {
+      "case": "corrupt_registry_reassigned",
+      "start_status": 200,
+      "old_a_port": 25100,
+      "old_b_port": 25104,
+      "new_b_port": 25100,
+      "b_received_a_port": true
+    },
+    {
+      "case": "registry_write_retry",
+      "first_status": 503,
+      "first_reason": "engine_host_unavailable",
+      "retry_status": 200,
+      "retry_running": "running",
+      "entry_persisted": false
+    },
+    {
+      "case": "retry_then_restart",
+      "entry_survived": false
+    },
+    {
+      "case": "finished",
+      "processes": ""
+    }
+  ],
+  "environment": {
+    "checked_at": "2026-11-25T14:03:11.774251+00:00",
+    "xinapi-x07-dev-cpr-1": {
+      "status": "running",
+      "user": "10001:10001",
+      "memory": 0,
+      "nano_cpus": 0,
+      "pids_limit": 256,
+      "privileged": false,
+      "network": "xinapi-x07-dev_cpr-data",
+      "cap_drop": [
+        "ALL"
+      ],
+      "security_opt": [
+        "no-new-privileges:true"
+      ],
+      "init": true,
+      "devices": null,
+      "mount_destinations": [
+        "/etc/xinapi/start-cpr.sh",
+        "/etc/xinapi/cpr-template.yaml",
+        "/app/bin/mihomo",
+        "/app/.runtime/data",
+        "/app/.runtime/logs"
+      ]
+    },
+    "xinapi-x08-audit-cpr-1": {
+      "status": "running",
+      "user": "10001:10001",
+      "memory": 0,
+      "nano_cpus": 0,
+      "pids_limit": 256,
+      "privileged": false,
+      "network": "xinapi-x08-audit_cpr-data",
+      "cap_drop": [
+        "ALL"
+      ],
+      "security_opt": [
+        "no-new-privileges:true"
+      ],
+      "init": true,
+      "devices": null,
+      "mount_destinations": [
+        "/app/.runtime/data",
+        "/app/.runtime/logs",
+        "/etc/xinapi/start-cpr.sh",
+        "/etc/xinapi/cpr-template.yaml",
+        "/audit-bin"
+      ]
+    }
+  },
+  "cleanup": {
+    "audit_services": "stopped",
+    "audit_volumes": "retained",
+    "existing_services": "retained",
+    "engine_executables": "original restored in audit configuration",
+    "registry": "original restored",
+    "finished_at": "2026-11-25T14:06:08.797916+00:00"
+  }
+}

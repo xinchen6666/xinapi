@@ -1,6 +1,6 @@
-//! 受管引擎入口的管理端 HTTP 边界
+//! 受管引擎归属与生命周期操作的管理端 HTTP 边界
 //!
-//! 只发布入口地址、进程状态与资源观测；连接内容留在服务端配置目录
+//! 身份和公开观测经固定封套交付，入口认证材料留在 Host
 
 use axum::{
     Router,
@@ -11,7 +11,7 @@ use axum::{
 };
 use gateway_admin::model::{
     AdminErrorKind,
-    engines::{EngineServiceError, EngineView},
+    engines::{EngineOwner, EngineServiceError, EngineView},
 };
 use serde::{Deserialize, Serialize};
 
@@ -20,6 +20,7 @@ use super::{AdminAuth, AdminEnvelope, AdminError, AdminJson};
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
 struct StartEngine {
+    owner: EngineOwner,
     source_id: String,
     node_id: String,
 }
@@ -51,48 +52,102 @@ where
 }
 
 fn engine_error(error: EngineServiceError) -> AdminError {
-    let status = match error {
-        EngineServiceError::BinaryMissing
-        | EngineServiceError::Unavailable
-        | EngineServiceError::ProcessFailed
-        | EngineServiceError::Store => StatusCode::SERVICE_UNAVAILABLE,
-        EngineServiceError::StartTimeout => StatusCode::GATEWAY_TIMEOUT,
-        EngineServiceError::Capacity => StatusCode::TOO_MANY_REQUESTS,
-        EngineServiceError::PortConflict | EngineServiceError::NodeInactive => StatusCode::CONFLICT,
-        EngineServiceError::NodeUnsupported => StatusCode::UNPROCESSABLE_ENTITY,
-        EngineServiceError::SourceMissing
-        | EngineServiceError::NodeMissing
-        | EngineServiceError::UnknownEntry => StatusCode::NOT_FOUND,
-    };
-    let message = match error {
-        EngineServiceError::BinaryMissing => "引擎程序缺失，请核对部署镜像",
-        EngineServiceError::Capacity => "引擎实例达到上限，请先停用空闲入口",
-        EngineServiceError::PortConflict => "入口端口占用中，请释放端口后重试",
-        EngineServiceError::StartTimeout => "引擎启动超时，请查看引擎日志",
-        EngineServiceError::UnknownEntry => "引擎入口记录缺失",
-        EngineServiceError::Unavailable => "引擎服务异常",
-        EngineServiceError::SourceMissing => "订阅来源记录缺失",
-        EngineServiceError::NodeMissing => "订阅节点记录缺失",
-        EngineServiceError::NodeInactive => "该节点当前停用，请刷新来源后重试",
-        EngineServiceError::NodeUnsupported => "该节点协议仅支持 HTTP 与 SOCKS5 引擎入口",
-        EngineServiceError::ProcessFailed => "引擎进程退出，请查看引擎日志",
-        EngineServiceError::Store => "来源存储读取失败",
-    };
-    let kind = match error {
-        EngineServiceError::SourceMissing
-        | EngineServiceError::NodeMissing
-        | EngineServiceError::UnknownEntry => AdminErrorKind::NotFound,
-        EngineServiceError::PortConflict | EngineServiceError::NodeInactive => {
-            AdminErrorKind::Conflict
-        }
-        EngineServiceError::NodeUnsupported => AdminErrorKind::Invalid,
-        EngineServiceError::Capacity => AdminErrorKind::RateLimited,
-        EngineServiceError::StartTimeout | EngineServiceError::ProcessFailed => {
-            AdminErrorKind::BadGateway
-        }
-        EngineServiceError::BinaryMissing
-        | EngineServiceError::Unavailable
-        | EngineServiceError::Store => AdminErrorKind::Unavailable,
+    let (status, kind, message) = match error {
+        EngineServiceError::BinaryMissing => (
+            StatusCode::SERVICE_UNAVAILABLE,
+            AdminErrorKind::Unavailable,
+            "引擎程序缺失，请核对部署镜像",
+        ),
+        EngineServiceError::ArtifactIdentity => (
+            StatusCode::SERVICE_UNAVAILABLE,
+            AdminErrorKind::Unavailable,
+            "引擎制品身份校验失败，请核对部署文件",
+        ),
+        EngineServiceError::Capacity => (
+            StatusCode::TOO_MANY_REQUESTS,
+            AdminErrorKind::RateLimited,
+            "引擎实例或登记数量达到上限",
+        ),
+        EngineServiceError::PortConflict => (
+            StatusCode::CONFLICT,
+            AdminErrorKind::Conflict,
+            "入口端口占用中，请释放端口后重试",
+        ),
+        EngineServiceError::StartTimeout => (
+            StatusCode::GATEWAY_TIMEOUT,
+            AdminErrorKind::BadGateway,
+            "引擎启动超时",
+        ),
+        EngineServiceError::Cancelled => (
+            StatusCode::CONFLICT,
+            AdminErrorKind::Conflict,
+            "引擎操作已取消",
+        ),
+        EngineServiceError::ShuttingDown => (
+            StatusCode::SERVICE_UNAVAILABLE,
+            AdminErrorKind::Unavailable,
+            "引擎宿主正在关闭",
+        ),
+        EngineServiceError::BindingConflict => (
+            StatusCode::CONFLICT,
+            AdminErrorKind::Conflict,
+            "入口已绑定其他来源、节点或版本，请核对原绑定",
+        ),
+        EngineServiceError::UnknownEntry => (
+            StatusCode::NOT_FOUND,
+            AdminErrorKind::NotFound,
+            "引擎入口记录缺失",
+        ),
+        EngineServiceError::OwnerInvalid => (
+            StatusCode::UNPROCESSABLE_ENTITY,
+            AdminErrorKind::Invalid,
+            "入口归属标识校验失败，请使用有效账号 ID 或预留项 UUID",
+        ),
+        EngineServiceError::Registry => (
+            StatusCode::SERVICE_UNAVAILABLE,
+            AdminErrorKind::Unavailable,
+            "引擎登记读写失败，请核对持久目录与登记文件",
+        ),
+        EngineServiceError::Unavailable => (
+            StatusCode::SERVICE_UNAVAILABLE,
+            AdminErrorKind::Unavailable,
+            "引擎服务异常",
+        ),
+        EngineServiceError::SourceMissing => (
+            StatusCode::NOT_FOUND,
+            AdminErrorKind::NotFound,
+            "订阅来源记录缺失",
+        ),
+        EngineServiceError::NodeMissing => (
+            StatusCode::NOT_FOUND,
+            AdminErrorKind::NotFound,
+            "订阅节点记录缺失",
+        ),
+        EngineServiceError::NodeInactive => (
+            StatusCode::CONFLICT,
+            AdminErrorKind::Conflict,
+            "该节点当前停用，请核对来源批准状态",
+        ),
+        EngineServiceError::NodeUnsupported => (
+            StatusCode::UNPROCESSABLE_ENTITY,
+            AdminErrorKind::Invalid,
+            "引擎适配器尚待实现此节点协议或连接选项",
+        ),
+        EngineServiceError::ProcessFailed => (
+            StatusCode::SERVICE_UNAVAILABLE,
+            AdminErrorKind::BadGateway,
+            "引擎进程启动或退出异常",
+        ),
+        EngineServiceError::Store => (
+            StatusCode::SERVICE_UNAVAILABLE,
+            AdminErrorKind::Unavailable,
+            "来源或账号存储读取失败",
+        ),
+        EngineServiceError::Configuration => (
+            StatusCode::SERVICE_UNAVAILABLE,
+            AdminErrorKind::Unavailable,
+            "引擎部署配置校验失败",
+        ),
     };
     super::wire::map_admin_service_error(gateway_admin::model::AdminError::new(kind, message))
         .with_reason(error.reason())
@@ -132,7 +187,7 @@ where
     let engine = state
         .admin_services()
         .engines()
-        .start(&body.source_id, &body.node_id)
+        .start(body.owner, &body.source_id, &body.node_id)
         .await
         .map_err(engine_error)?;
     engine_response(EngineViewResponse { engine })

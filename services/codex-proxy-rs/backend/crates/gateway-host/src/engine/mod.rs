@@ -1,355 +1,282 @@
-//! 受管 Mihomo 引擎的启动、就绪探测、停止与资源观测
-//!
-//! 每个入口一个独立进程，监听在本机回环地址；进程随监督器释放而回收
+//! 入口登记与每入口监督任务的组合边界
 
+mod artifact;
 mod config;
 mod entries;
-
-use std::collections::BTreeMap;
-use std::os::unix::fs::PermissionsExt as _;
-use std::path::{Path, PathBuf};
-use std::sync::Arc;
-use std::time::{Instant, SystemTime, UNIX_EPOCH};
+mod observation;
+mod runtime;
 
 use async_trait::async_trait;
-use chrono::{DateTime, Utc};
-use gateway_admin::model::engines::{EngineFacts, EngineServiceError, EngineSnapshot, EngineState};
-use gateway_admin::ports::engine::EngineHost;
-use tokio::net::TcpStream;
-use tokio::process::{Child, Command};
-use tokio::sync::{Mutex, OwnedSemaphorePermit, Semaphore};
-
 use config::EngineSettings;
 use entries::{EntryRecord, EntryRegistry};
+use gateway_admin::{
+    model::engines::{EngineFacts, EngineServiceError as Error, EngineSnapshot, EngineState},
+    ports::engine::EngineHost,
+};
+use gateway_core::lifecycle::CancellationToken;
+use std::{
+    collections::BTreeMap,
+    path::{Path, PathBuf},
+    sync::Arc,
+    time::Duration,
+};
+use tokio::{
+    sync::{Mutex, Semaphore, oneshot, watch},
+    time::{Instant, timeout, timeout_at},
+};
 
-const STOP_GRACE: std::time::Duration = std::time::Duration::from_secs(5);
-const PROBE_INTERVAL: std::time::Duration = std::time::Duration::from_millis(50);
-const TICKS_PER_SECOND: f64 = 100.0;
-
-/// 单个入口的运行中进程
-struct Session {
-    child: Child,
-    _permit: OwnedSemaphorePermit,
-    pid: u32,
-    started_at: DateTime<Utc>,
-    cold_start_ms: u64,
+#[derive(Clone)]
+struct RunHandle {
+    cancel: CancellationToken,
+    status: watch::Receiver<EngineSnapshot>,
+    done: watch::Receiver<bool>,
 }
-
 struct Inner {
-    registry: EntryRegistry,
-    sessions: BTreeMap<String, Session>,
-    failures: BTreeMap<String, String>,
+    registry: Result<EntryRegistry, Error>,
+    runs: BTreeMap<String, RunHandle>,
 }
 
-/// 进程级监督器；配置来自部署环境，入口记录落在运行数据目录
-pub struct EngineSupervisor {
-    settings: EngineSettings,
+/// 全局锁只提交登记和任务句柄，进程等待属于每个入口的监督任务
+pub(super) struct EngineSupervisor {
+    settings: Result<Arc<EngineSettings>, Error>,
     root: PathBuf,
     inner: Mutex<Inner>,
     capacity: Arc<Semaphore>,
+    cancellation: CancellationToken,
 }
 
 impl EngineSupervisor {
-    #[must_use]
-    pub fn new(runtime_data_dir: &Path) -> Self {
-        let root = runtime_data_dir.join("engines");
-        if let Err(error) = std::fs::create_dir_all(&root) {
-            tracing::warn!(target: "gateway_engine", %error, "引擎数据目录创建失败");
-        }
-        let settings = EngineSettings::from_env();
+    pub(super) fn new(data: &Path, cancellation: CancellationToken) -> Self {
+        let root = data.join("engines");
+        let settings = EngineSettings::from_env().map(Arc::new);
+        let capacity = Arc::new(Semaphore::new(settings.as_ref().map_or(0, |s| s.capacity)));
         let registry = EntryRegistry::load(&root);
         Self {
-            capacity: Arc::new(Semaphore::new(settings.capacity)),
             settings,
             root,
             inner: Mutex::new(Inner {
                 registry,
-                sessions: BTreeMap::new(),
-                failures: BTreeMap::new(),
+                runs: BTreeMap::new(),
             }),
+            capacity,
+            cancellation,
         }
     }
-
-    /// 进程退出后回收槽位与观测事实；由每次入口操作先执行
-    fn sweep(inner: &mut Inner) {
-        let mut exited = Vec::new();
-        for (entry_id, session) in &mut inner.sessions {
-            if let Ok(Some(status)) = session.child.try_wait() {
-                exited.push((entry_id.clone(), status.to_string()));
+    pub(super) async fn shutdown(&self) {
+        self.cancellation.cancel();
+        let inner = self.inner.lock().await;
+        let completions = futures::future::join_all(inner.runs.values().map(|run| {
+            let done = run.done.clone();
+            async move {
+                let _ = wait_done(done).await;
             }
-        }
-        for (entry_id, status) in exited {
-            inner.sessions.remove(&entry_id);
-            inner
-                .failures
-                .insert(entry_id, format!("engine process exited: {status}"));
-        }
+        }));
+        drop(inner);
+        completions.await;
     }
-
-    fn snapshot(inner: &Inner, record: &EntryRecord) -> EngineSnapshot {
-        let session = inner.sessions.get(&record.entry_id);
-        let state = if session.is_some() {
-            EngineState::Running
-        } else if inner.failures.contains_key(&record.entry_id) {
-            EngineState::Failed
-        } else {
-            EngineState::Stopped
-        };
-        let pid = session.map(|item| item.pid);
-        let (rss_bytes, cpu_seconds) = pid.map_or((None, None), sample_process);
-        EngineSnapshot {
-            entry_id: record.entry_id.clone(),
-            source_id: record.source_id.clone(),
-            node_id: record.node_id.clone(),
-            node_name: record.node_name.clone(),
-            protocol: record.protocol.clone(),
-            listen_host: "127.0.0.1".to_owned(),
-            listen_port: record.listen_port,
-            state,
-            pid,
-            started_at: session.map(|item| item.started_at),
-            rss_bytes,
-            cpu_seconds,
-            cold_start_ms: session.map(|item| item.cold_start_ms),
-            last_error: inner.failures.get(&record.entry_id).cloned(),
-        }
+    fn settings(&self) -> Result<Arc<EngineSettings>, Error> {
+        self.settings.as_ref().cloned().map_err(|e| *e)
     }
-
-    fn entry_dir(&self, entry_id: &str) -> PathBuf {
-        let name: String = entry_id
-            .chars()
-            .map(|character| match character {
-                'a'..='z' | 'A'..='Z' | '0'..='9' | '-' => character,
-                _ => '_',
-            })
-            .collect();
-        self.root.join(name)
+}
+impl Drop for EngineSupervisor {
+    fn drop(&mut self) {
+        self.cancellation.cancel();
     }
+}
 
-    fn prepare_dir(&self, entry_id: &str) -> Result<PathBuf, EngineServiceError> {
-        let directory = self.entry_dir(entry_id);
-        std::fs::create_dir_all(&directory).map_err(|_| EngineServiceError::Unavailable)?;
-        std::fs::set_permissions(&directory, std::fs::Permissions::from_mode(0o700))
-            .map_err(|_| EngineServiceError::Unavailable)?;
-        Ok(directory)
-    }
-
-    fn write_config(
-        &self,
-        directory: &Path,
-        facts: &EngineFacts,
-        record: &EntryRecord,
-    ) -> Result<(), EngineServiceError> {
-        let secret = secret();
-        let document =
-            config::render_config(facts, record.listen_port, record.control_port, &secret)
-                .map_err(|_| EngineServiceError::NodeUnsupported)?;
-        let path = directory.join("config.yaml");
-        std::fs::write(&path, document).map_err(|_| EngineServiceError::Unavailable)?;
-        std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o600))
-            .map_err(|_| EngineServiceError::Unavailable)?;
-        Ok(())
-    }
-
-    async fn wait_ready(
-        child: &mut Child,
-        listen_port: u16,
-        timeout: std::time::Duration,
-    ) -> Result<(), EngineServiceError> {
-        let deadline = Instant::now() + timeout;
-        loop {
-            match child.try_wait() {
-                Ok(Some(_)) | Err(_) => return Err(EngineServiceError::ProcessFailed),
-                Ok(None) => {}
-            }
-            if TcpStream::connect(("127.0.0.1", listen_port)).await.is_ok() {
-                return Ok(());
-            }
-            if Instant::now() >= deadline {
-                return Err(EngineServiceError::StartTimeout);
-            }
-            tokio::time::sleep(PROBE_INTERVAL).await;
+/// 初始请求被取消时发信号，独立监督任务继续执行回收
+struct CancelOnDrop(Option<CancellationToken>);
+impl Drop for CancelOnDrop {
+    fn drop(&mut self) {
+        if let Some(token) = &self.0 {
+            token.cancel();
         }
     }
 }
 
 #[async_trait]
 impl EngineHost for EngineSupervisor {
-    async fn start(&self, facts: EngineFacts) -> Result<EngineSnapshot, EngineServiceError> {
-        let mut inner = self.inner.lock().await;
-        Self::sweep(&mut inner);
-        if inner.sessions.contains_key(&facts.entry_id) {
-            let record = inner
-                .registry
-                .find(&facts.entry_id)
-                .cloned()
-                .ok_or(EngineServiceError::UnknownEntry)?;
-            return Ok(Self::snapshot(&inner, &record));
-        }
-        let permit = self
-            .capacity
-            .clone()
-            .try_acquire_owned()
-            .map_err(|_| EngineServiceError::Capacity)?;
-        let record = match inner.registry.find(&facts.entry_id).cloned() {
-            Some(record) => record,
-            None => {
-                let (listen_port, control_port) = inner
-                    .registry
-                    .allocate(self.settings.port_base, self.settings.port_span)
-                    .map_err(|_| EngineServiceError::PortConflict)?;
-                let record = EntryRecord {
-                    entry_id: facts.entry_id.clone(),
-                    source_id: facts.source_id.clone(),
-                    node_id: facts.node_id.clone(),
-                    node_name: facts.node_name.clone(),
-                    protocol: facts.protocol.clone(),
-                    listen_port,
-                    control_port,
+    async fn start(&self, facts: EngineFacts) -> Result<EngineSnapshot, Error> {
+        let settings = self.settings()?;
+        config::validate_connection(&facts)?;
+        let deadline = Instant::now() + settings.start_timeout;
+        let (run, receiver) = {
+            let mut inner = timeout_at(deadline, self.inner.lock())
+                .await
+                .map_err(|_| Error::StartTimeout)?;
+            if self.cancellation.is_cancelled() {
+                return Err(Error::ShuttingDown);
+            }
+            let active = inner
+                .runs
+                .get(&facts.entry_id)
+                .filter(|r| !(*r.done.borrow()))
+                .cloned();
+            let permit = if active.is_some() {
+                None
+            } else {
+                Some(
+                    self.capacity
+                        .clone()
+                        .try_acquire_owned()
+                        .map_err(|_| Error::Capacity)?,
+                )
+            };
+            let registry = inner.registry.as_mut().map_err(|e| *e)?;
+            let record = registry.reserve(&facts, settings.port_base, settings.port_span)?;
+            if let Some(existing) = active {
+                (existing, None)
+            } else {
+                let permit = permit.ok_or(Error::Capacity)?;
+                let mut initial = stopped(&record);
+                initial.state = EngineState::Starting;
+                let (status, observe) = watch::channel(initial);
+                let (done, completed) = watch::channel(false);
+                let cancel = self.cancellation.child_token();
+                let run = RunHandle {
+                    cancel: cancel.clone(),
+                    status: observe,
+                    done: completed,
                 };
-                inner
-                    .registry
-                    .insert(record.clone())
-                    .map_err(|_| EngineServiceError::Unavailable)?;
-                record
+                let (send, receive) = oneshot::channel();
+                tokio::spawn(runtime::supervise(runtime::Launch {
+                    facts,
+                    record: record.clone(),
+                    settings: settings.clone(),
+                    root: self.root.clone(),
+                    status,
+                    cancel,
+                    deadline,
+                    permit,
+                    ready: send,
+                    done,
+                }));
+                inner.runs.insert(record.entry_id, run.clone());
+                (run, Some(receive))
             }
         };
-        if !self.settings.binary.is_file() {
-            return Err(EngineServiceError::BinaryMissing);
+        if let Some(receiver) = receiver {
+            let mut guard = CancelOnDrop(Some(run.cancel.clone()));
+            let result = match timeout_at(deadline, receiver).await {
+                Ok(Ok(result)) => result,
+                Ok(Err(_)) => Err(Error::ProcessFailed),
+                Err(_) => {
+                    run.cancel.cancel();
+                    let _ = timeout(
+                        runtime::STOP_GRACE + Duration::from_secs(2),
+                        wait_done(run.done.clone()),
+                    )
+                    .await;
+                    Err(Error::StartTimeout)
+                }
+            };
+            guard.0 = None;
+            result.map(sample)
+        } else {
+            // 等待同一入口的既有操作，副本请求只观察共享结果
+            let mut status = run.status.clone();
+            loop {
+                if run.cancel.is_cancelled() {
+                    return Err(Error::Cancelled);
+                }
+                let observed = status.borrow().clone();
+                match observed.state {
+                    EngineState::Running => return Ok(sample(observed)),
+                    EngineState::Starting => {}
+                    EngineState::Stopped => return Err(Error::Cancelled),
+                    EngineState::Failed => return Err(Error::ProcessFailed),
+                }
+                timeout_at(deadline, status.changed())
+                    .await
+                    .map_err(|_| Error::StartTimeout)?
+                    .map_err(|_| Error::ProcessFailed)?;
+                if self.cancellation.is_cancelled() {
+                    return Err(Error::ShuttingDown);
+                }
+            }
         }
-        // 端口在生成配置前确认可用，占用时停发入口，避免静默换端口
-        if std::net::TcpListener::bind(("127.0.0.1", record.listen_port)).is_err() {
-            return Err(EngineServiceError::PortConflict);
-        }
-        let directory = self.prepare_dir(&facts.entry_id)?;
-        self.write_config(&directory, &facts, &record)?;
-        let log = std::fs::OpenOptions::new()
-            .create(true)
-            .append(true)
-            .open(directory.join("engine.log"))
-            .map_err(|_| EngineServiceError::Unavailable)?;
-        let stderr = log
-            .try_clone()
-            .map_err(|_| EngineServiceError::Unavailable)?;
-        let started = Instant::now();
-        let mut child = Command::new(&self.settings.binary)
-            .arg("-d")
-            .arg(&directory)
-            .arg("-f")
-            .arg(directory.join("config.yaml"))
-            .stdin(std::process::Stdio::null())
-            .stdout(std::process::Stdio::from(log))
-            .stderr(std::process::Stdio::from(stderr))
-            .kill_on_drop(true)
-            .spawn()
-            .map_err(|_| EngineServiceError::ProcessFailed)?;
-        let pid = child.id().ok_or(EngineServiceError::ProcessFailed)?;
-        if let Err(error) =
-            Self::wait_ready(&mut child, record.listen_port, self.settings.start_timeout).await
-        {
-            let _ = child.start_kill();
-            let _ = child.wait().await;
-            inner.failures.insert(
-                facts.entry_id.clone(),
-                format!("engine start failed: {}", error.reason()),
-            );
-            return Err(error);
-        }
-        let cold_start_ms = u64::try_from(started.elapsed().as_millis()).unwrap_or(u64::MAX);
-        inner.failures.remove(&facts.entry_id);
-        inner.sessions.insert(
-            facts.entry_id.clone(),
-            Session {
-                child,
-                _permit: permit,
-                pid,
-                started_at: Utc::now(),
-                cold_start_ms,
-            },
-        );
-        Ok(Self::snapshot(&inner, &record))
     }
-
-    async fn stop(&self, entry_id: &str) -> Result<EngineSnapshot, EngineServiceError> {
-        let mut inner = self.inner.lock().await;
-        Self::sweep(&mut inner);
-        let record = inner
-            .registry
-            .find(entry_id)
-            .cloned()
-            .ok_or(EngineServiceError::UnknownEntry)?;
-        if let Some(mut session) = inner.sessions.remove(entry_id) {
-            terminate(&mut session.child, session.pid).await;
+    async fn stop(&self, entry_id: &str) -> Result<EngineSnapshot, Error> {
+        let (record, run) = {
+            let inner = self.inner.lock().await;
+            let registry = inner.registry.as_ref().map_err(|e| *e)?;
+            let record = registry
+                .records()
+                .iter()
+                .find(|r| r.entry_id == entry_id)
+                .cloned()
+                .ok_or(Error::UnknownEntry)?;
+            (record, inner.runs.get(entry_id).cloned())
+        };
+        if let Some(run) = run {
+            run.cancel.cancel();
+            timeout(
+                runtime::STOP_GRACE + Duration::from_secs(2),
+                wait_done(run.done.clone()),
+            )
+            .await
+            .map_err(|_| Error::Unavailable)??;
+            let mut inner = self.inner.lock().await;
+            if inner
+                .runs
+                .get(entry_id)
+                .is_some_and(|current| current.done.same_channel(&run.done))
+            {
+                inner.runs.remove(entry_id);
+            }
+            Ok(stopped(&record))
+        } else {
+            Ok(stopped(&record))
         }
-        inner.failures.remove(entry_id);
-        Ok(Self::snapshot(&inner, &record))
     }
-
-    async fn list(&self) -> Result<Vec<EngineSnapshot>, EngineServiceError> {
-        let mut inner = self.inner.lock().await;
-        Self::sweep(&mut inner);
-        let records = inner.registry.records().to_vec();
-        Ok(records
+    async fn list(&self) -> Result<Vec<EngineSnapshot>, Error> {
+        let inner = self.inner.lock().await;
+        let registry = inner.registry.as_ref().map_err(|e| *e)?;
+        Ok(registry
+            .records()
             .iter()
-            .map(|record| Self::snapshot(&inner, record))
+            .map(|record| {
+                inner
+                    .runs
+                    .get(&record.entry_id)
+                    .map_or_else(|| stopped(record), |r| sample(r.status.borrow().clone()))
+            })
             .collect())
     }
 }
-
-/// 先请求正常退出，超过宽限期后强制回收
-async fn terminate(child: &mut Child, pid: u32) {
-    let _ = Command::new("kill")
-        .arg("-TERM")
-        .arg(pid.to_string())
-        .status()
-        .await;
-    let deadline = Instant::now() + STOP_GRACE;
+async fn wait_done(mut done: watch::Receiver<bool>) -> Result<(), Error> {
     loop {
-        match child.try_wait() {
-            Ok(Some(_)) | Err(_) => return,
-            Ok(None) => {}
+        if *done.borrow() {
+            return Ok(());
         }
-        if Instant::now() >= deadline {
-            break;
-        }
-        tokio::time::sleep(PROBE_INTERVAL).await;
+        done.changed().await.map_err(|_| Error::ProcessFailed)?;
     }
-    let _ = child.start_kill();
-    let _ = child.wait().await;
 }
-
-/// 从 /proc 读取常驻内存与累计 CPU 时间
-fn sample_process(pid: u32) -> (Option<u64>, Option<f64>) {
-    let status = std::fs::read_to_string(format!("/proc/{pid}/status")).ok();
-    let rss_bytes = status.as_deref().and_then(|text| {
-        text.lines()
-            .find_map(|line| line.strip_prefix("VmRSS:"))
-            .and_then(|value| value.trim().trim_end_matches(" kB").parse::<u64>().ok())
-            .map(|kilobytes| kilobytes * 1024)
-    });
-    let stat = std::fs::read_to_string(format!("/proc/{pid}/stat")).ok();
-    let cpu_seconds = stat.as_deref().and_then(|text| {
-        let tail = text.rsplit_once(')')?.1;
-        let fields: Vec<&str> = tail.split_whitespace().collect();
-        let user: f64 = fields.get(11)?.parse().ok()?;
-        let system: f64 = fields.get(12)?.parse().ok()?;
-        Some((user + system) / TICKS_PER_SECOND)
-    });
-    (rss_bytes, cpu_seconds)
-}
-
-/// 本机控制面密钥；只用于同进程启动的参数传递
-fn secret() -> String {
-    let mut bytes = [0_u8; 16];
-    if std::fs::File::open("/dev/urandom")
-        .and_then(|mut file| std::io::Read::read_exact(&mut file, &mut bytes))
-        .is_err()
-    {
-        let nanos = SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .map(|value| value.as_nanos())
-            .unwrap_or_default();
-        bytes.copy_from_slice(&nanos.to_le_bytes());
+fn sample(mut snapshot: EngineSnapshot) -> EngineSnapshot {
+    if let Some(pid) = snapshot.pid {
+        let (rss, cpu) = observation::sample(pid);
+        snapshot.rss_bytes = rss;
+        snapshot.cpu_seconds = cpu;
     }
-    bytes.iter().map(|byte| format!("{byte:02x}")).collect()
+    snapshot
+}
+fn stopped(record: &EntryRecord) -> EngineSnapshot {
+    EngineSnapshot {
+        entry_id: record.entry_id.clone(),
+        owner: record.owner.clone(),
+        source_id: record.source_id.clone(),
+        node_id: record.node_id.clone(),
+        version_id: record.version_id.clone(),
+        node_name: record.node_name.clone(),
+        protocol: record.protocol.clone(),
+        listen_host: "127.0.0.1".into(),
+        listen_port: record.listen_port,
+        state: EngineState::Stopped,
+        pid: None,
+        started_at: None,
+        rss_bytes: None,
+        cpu_seconds: None,
+        cold_start_ms: None,
+        last_error: None,
+    }
 }

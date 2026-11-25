@@ -3632,29 +3632,34 @@ URL、规范连接、待审核事实和批准历史整体加密保存在 Postgre
 
 ## 15. 受管引擎入口
 
-管理员可对已批准节点启动受管 Mihomo 入口，入口只监听 CPR 容器的回环地址。启动、停止与列表沿用管理端鉴权；
-入口记录保存在运行数据卷的 `engines/entries.json`，同一来源节点在重启后复用原端口。
+管理员为账号或授权预留项启动独立 Mihomo 入口，选择一个已批准节点及其当前连接版本。数据入口和controller只监听CPR容器回环，各入口认证材料独立。列表、启动和停止沿用管理端鉴权；私有认证材料仅供服务端消费，响应只发布公开观测。
 
 | 方法与 CPR 路径 | 请求 | 结果 |
 | --- | --- | --- |
 | `GET /api/admin/engines` | 空 | `{items: EngineView[]}` |
-| `POST /api/admin/engines/start` | `{source_id,node_id}` | `{engine: EngineView}` |
+| `POST /api/admin/engines/start` | `{owner:{kind,id},source_id,node_id}` | `{engine: EngineView}` |
 | `POST /api/admin/engines/stop` | `{entry_id}` | `{engine: EngineView}` |
 
-`EngineView` 包含 `entry_id,source_id,node_id,node_name,protocol,listen_host,listen_port,state,pid,started_at,rss_bytes,cpu_seconds,cold_start_ms,last_error`；
-`state` 取 `starting`、`running`、`stopped` 或 `failed`。重复启动同一入口复用运行中的进程。
+`owner.kind` 为 `account` 或 `reservation`。账号使用原生 `acct_…` ID并验证其存在；授权预留项使用规范UUID，可先于账号授权建立。来源／节点UUID从持久文档规范化，等价大小写写法命中同一入口。`entry_id` 为服务端生成的稳定标识，调用者按响应使用。
+
+`EngineView` 包含 `entry_id,owner,source_id,node_id,version_id,node_name,protocol,listen_host,listen_port,state,pid,started_at,rss_bytes,cpu_seconds,cold_start_ms,last_error`。状态取 `starting/running/stopped/failed`，CPU为累计秒数。v1节点登记升级后保留原端口占位，`owner=null`、`version_id`为空；新归属拥有独立入口。
+
+同owner重复启动复用存活实例。所属来源、节点或连接版本变化返回 `engine_binding_conflict`，显式换路由后续流程处理。停止可取消正在启动的实例，回执在该实例回收后完成；停止中的重复启动返回取消状态。不同入口的进程等待相互独立。Host关闭统一发送终止信号并等待回收，异常退出主动回收，重启后登记和入口凭据保持、进程状态为stopped。
 
 | HTTP | reason | 场景 |
 | ---: | --- | --- |
 | 404 | `engine_source_missing` / `engine_node_missing` / `engine_entry_unknown` | 来源、节点或入口记录缺失 |
-| 409 | `engine_port_conflict` | 入口端口占用；启动停发，端口保持 |
-| 409 | `engine_node_inactive` | 节点当前停用 |
-| 422 | `engine_node_unsupported` | 协议超出 HTTP 与 SOCKS5 入口范围 |
-| 429 | `engine_capacity_reached` | 实例达到 `CPR_ENGINE_MAX` |
-| 503 | `engine_binary_missing` / `engine_host_unavailable` / `engine_process_failed` / `engine_store_unavailable` | 部署、进程或存储故障 |
-| 504 | `engine_start_timeout` | 就绪探测超时 |
+| 409 | `engine_port_conflict` | 固定入口或controller端口占用，保留原端口 |
+| 409 | `engine_node_inactive` / `engine_binding_conflict` / `engine_cancelled` | 节点停用、绑定变化或操作取消 |
+| 422 | `engine_owner_invalid` / `engine_node_unsupported` | 归属校验失败或连接选项超出执行能力 |
+| 429 | `engine_capacity_reached` | 当前运行实例或登记容量达到上限 |
+| 503 | `engine_artifact_identity` / `engine_binary_missing` | 制品摘要、平台、身份或路径校验失败 |
+| 503 | `engine_registry_unavailable` / `engine_configuration_invalid` | 登记读写或部署参数错误 |
+| 503 | `engine_host_unavailable` / `engine_process_failed` / `engine_store_unavailable` / `engine_shutting_down` | 基础设施故障或宿主关闭 |
+| 504 | `engine_start_timeout` | 启动预算耗尽，监督任务继续完成回收 |
 
-引擎参数来自部署环境：`CPR_MIHOMO_BIN`（默认 `/app/bin/mihomo`）、`CPR_ENGINE_MAX`（默认 4）、
-`CPR_ENGINE_PORT_BASE` 与 `CPR_ENGINE_PORT_SPAN`（默认 24000 与 200）、`CPR_ENGINE_START_TIMEOUT_MS`（默认 15000）。
-每次启动按当前批准版本的连接重写最小配置，只含该节点与 `MATCH,node` 规则，配置文件 0600；
-停止先发 `SIGTERM`，宽限期后强制回收，入口端口与控制面端口随之释放。
+制品固定为v1.19.33 linux/amd64-compatible，启动前校验实际ELF摘要，认证controller再次核对版本。生成配置保留允许的HTTP TLS、SNI、证书验证、内联证书与header字段；超出能力的执行选项明确拒绝。SOCKS只接收显式 `dns-mode=remote` 的TCP路径；本地／缺省DNS及UDP选项拒绝。Mihomo内建localhost映射沿用其原行为。
+
+`running` 表示已完成本机controller与数据入口认证握手；上游代理认证、目标可达性和公网出口验证属于节点检测与绑定流程。真实上游拒绝时数据请求失败。
+
+部署参数为 `CPR_MIHOMO_BIN`（默认 `/app/bin/mihomo`）、`CPR_ENGINE_MAX`（默认2，1–4）、`CPR_ENGINE_PORT_BASE/CPR_ENGINE_PORT_SPAN`（24000/200）和 `CPR_ENGINE_START_TIMEOUT_MS`（15000，1000–30000）。登记上限256含旧占位项，实际端口范围也限制可登记数量。运行数据卷 `engines/entries.json` 保存稳定归属和私有认证材料，目录0700、文件0600；登记故障时停止分配。stdout/stderr每次启动各保留至多1MiB，超额内容持续排空。

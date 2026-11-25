@@ -18,9 +18,13 @@ Mihomo 不使用 Docker socket、TUN、host network 或特权模式。CPR 容器
 
 ### 引擎入口运行参数
 
-X08 的入口按已批准节点启动 Mihomo 子进程，只监听 CPR 回环地址。部署参数：`CPR_MIHOMO_BIN` 指定制品路径（默认 `/app/bin/mihomo`），`CPR_ENGINE_MAX` 限制并行实例（默认 4），`CPR_ENGINE_PORT_BASE` 与 `CPR_ENGINE_PORT_SPAN` 划定入口与控制面端口（默认 24000/200），`CPR_ENGINE_START_TIMEOUT_MS` 控制就绪等待（默认 15000）。入口记录在运行数据卷 `engines/entries.json`，重启后保持原端口；引擎进程随 CPR 容器回收。
+X08 入口由账号或授权预留项独立拥有，只监听 CPR 回环地址。`CPR_MIHOMO_BIN` 指定只读挂载的制品路径（默认 `/app/bin/mihomo`）；当前准入固定为官方 v1.19.33 linux/amd64-compatible 的已登记 ELF。启动校验摘要和平台，执行已核验文件句柄，并以本次 controller 凭据核对实际版本。其他制品或平台返回明确准入错误。
 
-本轮实测单实例 RSS 约 42MB、冷启动 52ms，容量按此估算。Mihomo 制品由部署者取自登记的发布包，镜像内暂不打包；正式分发前按[上游清单](UPSTREAM.md)补齐许可与对应源码资料。
+`CPR_ENGINE_MAX` 默认为2，取值1–4；`CPR_ENGINE_PORT_BASE`／`CPR_ENGINE_PORT_SPAN` 默认为24000／200，范围为高端口连续偶数跨度；`CPR_ENGINE_START_TIMEOUT_MS` 默认为15000，范围1000–30000。启动预算覆盖排队和制品校验，取消后监督任务继续回收。每入口 stdout/stderr 各保留至多1MiB，超额输出持续排空。
+
+Compose 默认设置 `XINAPI_CPR_MEMORY_LIMIT=1g`、`XINAPI_CPR_CPU_LIMIT=2.0` 与256个PID；此预算覆盖整个CPR容器。实例容量结论以[修复验证](worklog/X08-fix.md)的单／双实例观测为准，4实例及持续压力留待验证。
+
+入口登记位于运行数据卷 `engines/entries.json`，保存稳定端口、归属、批准版本与私有入口凭据，文件0600、目录0700。升级把v1节点登记转为端口占位，owner为空，原端口继续保留；新账号或预留项建立独立入口。登记缺失、损坏或写失败时拒绝分配，保留原文件供恢复。凭据留在受限服务端目录，API只返回公开观测。Mihomo按[制品登记](../third_party/mihomo.lock.json)由部署者提供只读挂载，许可与对应源码资料见[上游清单](UPSTREAM.md)。
 
 ## 计划交付物
 

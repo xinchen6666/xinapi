@@ -104,7 +104,10 @@ pub async fn initialize(config: HostConfig) -> Result<HostBundle, HostError> {
         subscription_fetch::HttpSubscriptionSource::new()
             .map_err(|_| HostError::SubscriptionSource)?,
     );
-    let engines = Arc::new(engine::EngineSupervisor::new(&config.runtime_data_dir));
+    let engines = Arc::new(engine::EngineSupervisor::new(
+        &config.runtime_data_dir,
+        cancellation.child_token(),
+    ));
     Ok(HostBundle {
         config,
         log_guard,
@@ -230,6 +233,7 @@ impl HostBundle {
         )
         .await;
         self.cancellation.cancel();
+        self.engines.shutdown().await;
         self.workers
             .shutdown(self.config.worker_shutdown_timeout())
             .await;
