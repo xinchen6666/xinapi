@@ -12,7 +12,7 @@
 | X06 | done | lead；审核修复已交付 | R1–R6 与部分接受确认完成，72 项接口及浏览器复验通过；源码与截图已普通推送至 [Draft PR #5](https://github.com/xinchen6666/xinapi/pull/5)，见 [E022](VALIDATION.md#e022-x06审核修复复验)和[修复报告](worklog/X06-fix.md) |
 | X07 | done | lead；专项复审修订已交付 | 来源密文、稳定节点ID、刷新差异及批准完成；复审三项修订通过 17+6+2 项、重启与真实页面复验，见 [E024](VALIDATION.md#e024-x07专项复审修订)；[Draft PR #6](https://github.com/xinchen6666/xinapi/pull/6) 已含修订 |
 | X08 | done | lead；审核修复已交付 | R1–R9及DNS语义修复完成；61项真实引擎场景、既有回归与[PR CI](https://github.com/xinchen6666/xinapi/actions/runs/45667344429)通过，见 [修复记录](worklog/X08-fix.md)与[E027](VALIDATION.md#e027-x08审核修复复验)；[Draft PR #7](https://github.com/xinchen6666/xinapi/pull/7) 保留修复后审阅入口 |
-| X09 | in_progress | lead；实现与限定复验通过 | 账号稳定入口、候选批准、operation回执和出口generation已实现；双出口HTTP2/WS、冲突及重启恢复通过，见[X09日志](worklog/X09.md)与[E028](VALIDATION.md#e028-x09账号绑定及换路)；交付进行中 |
+| X09 | done | lead；账号绑定与换路已交付 | 41项真实运行场景、既有回归及[PR CI](https://github.com/xinchen6666/xinapi/actions/runs/45690896769)通过；[Draft PR #8](https://github.com/xinchen6666/xinapi/pull/8)保留复审入口，见[X09日志](worklog/X09.md)与[E028](VALIDATION.md#e028-x09账号绑定及换路) |
 | X10 | pending | CPR 出站策略 | 故障与后台请求不直连 |
 | X11 | pending | OAuth／只读回执 | 授权归属、丢失响应与未知状态 |
 | X12 | pending | New API 管理后台 | 完整管理员工作流与权限证据 |
