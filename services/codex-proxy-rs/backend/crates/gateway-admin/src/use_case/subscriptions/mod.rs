@@ -2,7 +2,9 @@
 //!
 //! 本步只做一次性预览：下载与解析结果直接返回，状态写入留给后续任务
 
+mod connection;
 mod parse;
+mod source_manager;
 
 use std::{sync::Arc, time::Instant};
 
@@ -34,11 +36,44 @@ pub trait SubscriptionsService: Send + Sync {
         &self,
         source_url: &str,
     ) -> Result<SubscriptionPreview, SubscriptionPreviewError>;
+    async fn sources(
+        &self,
+    ) -> Result<Vec<crate::model::subscription_sources::SourceSummary>, crate::model::AdminError>;
+    async fn source(
+        &self,
+        id: &str,
+    ) -> Result<crate::model::subscription_sources::SourceDetail, crate::model::AdminError>;
+    async fn create_source(
+        &self,
+        name: &str,
+        url: &str,
+        context: &crate::model::MutationContext,
+    ) -> Result<crate::model::subscription_sources::SourceDetail, crate::model::AdminError>;
+    async fn update_source(
+        &self,
+        id: &str,
+        expected: u64,
+        name: &str,
+        url: Option<&str>,
+        context: &crate::model::MutationContext,
+    ) -> Result<crate::model::subscription_sources::SourceDetail, crate::model::AdminError>;
+    async fn refresh_source(
+        &self,
+        id: &str,
+        expected: u64,
+        context: &crate::model::MutationContext,
+    ) -> Result<crate::model::subscription_sources::SourceDetail, crate::model::AdminError>;
+    async fn approve_source(
+        &self,
+        command: crate::model::subscription_sources::ApproveSource,
+        context: &crate::model::MutationContext,
+    ) -> Result<crate::model::subscription_sources::SourceDetail, crate::model::AdminError>;
 }
 
 pub(crate) struct DefaultSubscriptionsService {
     source: Arc<dyn SubscriptionDocumentSource>,
     policy: SubscriptionFetchPolicy,
+    store: Option<Arc<dyn crate::ports::subscription_sources::SubscriptionStore>>,
 }
 
 impl DefaultSubscriptionsService {
@@ -46,7 +81,19 @@ impl DefaultSubscriptionsService {
         source: Arc<dyn SubscriptionDocumentSource>,
         policy: SubscriptionFetchPolicy,
     ) -> Self {
-        Self { source, policy }
+        Self {
+            source,
+            policy,
+            store: None,
+        }
+    }
+
+    pub(crate) fn with_store(
+        mut self,
+        store: Option<Arc<dyn crate::ports::subscription_sources::SubscriptionStore>>,
+    ) -> Self {
+        self.store = store;
+        self
     }
 
     /// 整次预览共用一个时限，provider 拉取计入同一预算
@@ -124,6 +171,51 @@ impl DefaultSubscriptionsService {
 
 #[async_trait]
 impl SubscriptionsService for DefaultSubscriptionsService {
+    async fn sources(
+        &self,
+    ) -> Result<Vec<crate::model::subscription_sources::SourceSummary>, crate::model::AdminError>
+    {
+        self.source_list().await
+    }
+    async fn source(
+        &self,
+        id: &str,
+    ) -> Result<crate::model::subscription_sources::SourceDetail, crate::model::AdminError> {
+        self.source_detail(id).await
+    }
+    async fn create_source(
+        &self,
+        name: &str,
+        url: &str,
+        context: &crate::model::MutationContext,
+    ) -> Result<crate::model::subscription_sources::SourceDetail, crate::model::AdminError> {
+        self.source_create(name, url, context).await
+    }
+    async fn update_source(
+        &self,
+        id: &str,
+        expected: u64,
+        name: &str,
+        url: Option<&str>,
+        context: &crate::model::MutationContext,
+    ) -> Result<crate::model::subscription_sources::SourceDetail, crate::model::AdminError> {
+        self.source_update(id, expected, name, url, context).await
+    }
+    async fn refresh_source(
+        &self,
+        id: &str,
+        expected: u64,
+        context: &crate::model::MutationContext,
+    ) -> Result<crate::model::subscription_sources::SourceDetail, crate::model::AdminError> {
+        self.source_refresh(id, expected, context).await
+    }
+    async fn approve_source(
+        &self,
+        command: crate::model::subscription_sources::ApproveSource,
+        context: &crate::model::MutationContext,
+    ) -> Result<crate::model::subscription_sources::SourceDetail, crate::model::AdminError> {
+        self.source_approve(command, context).await
+    }
     async fn preview(
         &self,
         source_url: &str,

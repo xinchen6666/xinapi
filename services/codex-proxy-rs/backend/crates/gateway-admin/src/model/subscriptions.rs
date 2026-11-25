@@ -1,7 +1,6 @@
 //! 订阅预览的格式、协议、诊断、结果与下载策略值对象
 //!
-//! 这里只保存可公开的预览事实：节点名、协议、可用标记与诊断码
-//! 节点地址、端口、凭据、UUID 与路径参数由解析层丢弃，不进入任何返回结构
+//! 公开预览事实与私有连接文档分别投影，连接秘密只供服务端持久化和匹配
 
 use std::time::Duration;
 
@@ -154,6 +153,7 @@ pub struct NodeCandidate {
     pub protocol: NodeProtocol,
     pub parse_valid: bool,
     pub supported: bool,
+    pub connection: Option<super::subscription_sources::ConnectionDocument>,
 }
 
 impl NodeCandidate {
@@ -164,6 +164,7 @@ impl NodeCandidate {
             protocol,
             parse_valid: protocol != NodeProtocol::Unknown,
             supported: protocol.is_materializable(),
+            connection: None,
         }
     }
 }

@@ -28,6 +28,8 @@ pub struct StoreConfig {
     pub(crate) pool: StorePoolConfig,
     #[serde(skip)]
     backup_staging_dir: PathBuf,
+    #[serde(skip)]
+    subscription_key_path: PathBuf,
 }
 
 /// PostgreSQL 连接池预算；acquire 超时决定池耗尽时快速失败而非排队积压
@@ -119,6 +121,7 @@ impl StoreConfig {
             });
         }
         self.backup_staging_dir = runtime_data_dir.join("backup-staging");
+        self.subscription_key_path = runtime_data_dir.join("subscription.key");
         self.validate_resolved()
     }
 
@@ -160,6 +163,12 @@ impl StoreConfig {
     #[must_use]
     pub fn backup_staging_dir(&self) -> &Path {
         &self.backup_staging_dir
+    }
+
+    /// 订阅文档独立使用部署数据目录中的专用密钥
+    #[must_use]
+    pub fn subscription_key_path(&self) -> &Path {
+        &self.subscription_key_path
     }
 }
 

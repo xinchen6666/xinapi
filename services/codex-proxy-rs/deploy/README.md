@@ -29,6 +29,12 @@
 自造样本联调可填写测试源主机名（例如 `127.0.0.1`、`localhost`），仅明文 HTTP 对这些主机开放本地地址例外；
 同名 HTTPS 继续执行公网地址策略。每项只填写主机名，生产部署保持空列表。接口限额见[订阅预览](../docs/api.md#13-订阅预览)
 
+订阅来源管理首次保存时，在 `host.runtime_data_dir/subscription.key` 创建专用部署密钥（0600、32 字节）。
+来源 URL、节点连接与批准历史在 PostgreSQL 内以 AES-256-GCM 密文保存，密钥与数据库密码、管理员 Key 各自独立。
+部署升级与容器重建应沿用同一运行数据卷；已有来源时密钥缺失或认证失败会明确拒绝来源读写。
+密钥文件仅供应用 UID 和受信部署者使用，版本控制与公开日志只保存脱敏职责说明。
+本功能的数据合同、来源限额及批准规则见[来源管理](../docs/api.md#14-订阅来源与批准版本)。
+
 `store.pool.observability_timeout_seconds` 默认 120 秒，控制观测查询与统计 Worker 的操作预算，
 缓存等待和统计事务的 SQL 时限沿用该配置。修改后重启应用；连接排队仍受
 `store.pool.acquire_timeout_seconds` 约束，模型请求时限由 `api.request_timeout_seconds` 单独控制

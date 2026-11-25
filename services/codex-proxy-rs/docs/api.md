@@ -3552,7 +3552,7 @@ GET/HEAD 不接受正文。响应状态码为 200–599，内容类型元数据�
 解析有效性与原生传输能力分别展示，端口或凭据校验通过仍需后续连通性验证。
 
 短 Base64 和大文档包装均按解码后的文档判断格式。已识别的 YAML/JSON 语法失败返回文档错误，
-URI 列表中的错误行则逐项进入诊断。节点读取只保留公开元数据，连接秘密在解析层丢弃。
+URI 列表中的错误行则逐项进入诊断。公开响应保留元数据，规范连接文档只由服务端匹配与密文持久化消费。
 
 下载默认仅接受公网 HTTPS。每次首跳、跳转及 provider 都校验全部 DNS 地址，并将连接固定到审核后的地址集合；
 TLS SNI、Host 与证书校验继续使用原始主机。私网、环回、链路本地、多播、保留地址以及映射至这些范围的 IPv6 地址均被拒绝。
@@ -3584,3 +3584,48 @@ TLS SNI、Host 与证书校验继续使用原始主机。私网、环回、链�
 | 502 | `50201` | `subscription_fetch_failed` | 连接、TLS、读取或来源状态错误 |
 
 错误信封附带稳定 reason 和脱敏英文消息，上游正文、响应头和目标地址留在内部。
+
+
+## 14. 订阅来源与批准版本
+
+来源管理复用订阅解析与受限下载链路。New API 的「订阅预览 → 来源管理」提供创建、编辑、刷新及批准。
+来源 URL 为提交字段，读取响应只含展示元数据。节点连接文档保持服务端私有，所有状态与版本由 CPR 拥有。
+
+以下 CPR 内部管理接口接受现有管理员身份。New API 的对应固定适配入口为 `/api/account-egress/subscription-sources`：
+读取要求 `AdminAuth` 与 `account_egress:read`；创建、编辑、刷新和批准额外要求超级管理员登录会话。
+个人访问令牌在来源写入端点统一拒绝，即使令牌所属用户为超级管理员也只保留所授予的读取职责。
+
+| 方法与 CPR 路径 | 请求 | 结果 |
+| --- | --- | --- |
+| `GET /api/admin/subscriptions/sources` | 空 | `{items: SourceSummary[]}` |
+| `GET /api/admin/subscriptions/sources/detail` | `source_id` | `SourceDetail` |
+| `POST /api/admin/subscriptions/sources/create` | `{name,source_url}` | 创建待刷新来源 |
+| `POST /api/admin/subscriptions/sources/update` | `{source_id,expected_revision,name,source_url?}` | 编辑元数据或替换私密 URL，清除旧待审结果 |
+| `POST /api/admin/subscriptions/sources/refresh` | `{source_id,expected_revision}` | 成功生成待审版本；下载失败返回 status=stale 和稳定错误码 |
+| `POST /api/admin/subscriptions/sources/approve` | `{source_id,expected_revision,review_id,selected,accept_partial,confirm_removals}` | 原子保存选定节点和批准版本 |
+
+`SourceSummary` 包含 `id,name,revision,approved_version,status,last_error_code,node_count,has_pending_review,updated_at`。
+`SourceDetail` 包含 `source,nodes,review`；node 包含 `id,name,protocol,version_id,available,supported`。
+review 包含 `id,source_id,expected_revision,complete,candidates,missing_node_ids,diagnostics,created_at`；
+candidate 包含 `index,name,protocol,parse_valid,supported,change,suggested_node_id,previous_node_ids`。
+`change` 取 `unchanged`、`renamed`、`added`、`connection_changed`、`ambiguous` 或 `invalid`。
+
+`selected` 每项为 `{candidate_index,node_id}`。`node_id:null` 表示创建新 UUID；指定旧 ID 时须属于该候选的相关身份集合。
+相同规范连接且两边唯一对应时提供继承建议；名称和排序属于展示数据。连接变化、同名候选或重复连接由管理员明确选择，
+每个旧节点 ID 在一次批准中最多使用一次。连接版本只追加，旧值保持；重复批准相同内容复用当前批准版本。
+规范化包含协议别名、主机大小写、数值端口、UUID 及已明确的默认值，匹配只比较结构化字段。
+
+刷新只创建待审核结果，批准前原节点继续有效。部分下载或跳过有效候选要求 `accept_partial=true`。
+完整来源中移出所选范围的已批准节点要求 `confirm_removals=true`，随后 availability 标为 false，身份与历史继续保留。
+部分来源批准保留缺失的旧节点。单纯的原生传输能力提示与来源完整性分别判断，Mihomo 待接入的有效元数据可保存。
+来源 revision、review ID 和存储层 CAS 共同保护批准：编辑、较新批准或其他刷新完成后，旧请求返回 409。
+
+运行数据最多 128 个来源；每来源最多 4096 个节点身份，待审核映射关系最多 32768 个，公开 JSON 上限 8 MiB。
+每个加密来源文档上限 32 MiB，超出时返回明确容量错误并保留原数据。数据量限制同时覆盖批准历史；相同内容的重复批准保持原批准版本。
+
+URL、规范连接、待审核事实和批准历史整体加密保存在 PostgreSQL `subscription_sources.document`。
+部署密钥独立存于运行数据目录的 `subscription.key`，模式 0600、长度 32 字节；AES-256-GCM 使用随机 nonce 和来源 ID/用途绑定。
+已有来源遇到密钥缺失或认证失败时返回存储错误。当前加密范围仅为订阅来源数据，其余原服务凭据沿用各自原存储合同。
+
+本步的 available 是已批准节点的状态投影。账号绑定、稳定代理入口、Mihomo 配置生成和实际发送策略在后续任务接入；
+来源批准只保存事实，账号启用状态与运行出口保持原值。

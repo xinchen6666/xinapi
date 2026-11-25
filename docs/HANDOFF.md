@@ -1,18 +1,16 @@
 # 当前交接
 
-## 当前：X06 审核修复已交付，等待复审
+## 当前：X07 来源与批准版本首个增量已通过本地复验
 
-用户已授权修复，R1–R6 和部分接受显式确认均已落实。当前复验为 passed：72 项真实接口场景、桌面/移动确认、账号与配置状态对比通过；Rust 完整回归 399 / 680 / 218 项、架构 16 项、严格 Clippy、Go 与前端检查均通过。详见 [修复报告](worklog/X06-fix.md)、[脱敏证据](evidence/X06-fix.json)和 [E022](VALIDATION.md#e022-x06审核修复复验)。
+已实现来源创建/编辑/读取、受控刷新差异、显式选择身份和批准版本。Admin 以规范连接字段直接匹配，Store 单点 AES-256-GCM 密文保存来源与连接；稳定节点 UUID 与只追加连接版本分离，改名/排序/等价默认值保留身份。完整缺失需确认后标记 available=false，部分结果保留旧节点；旧刷新/旧批准受 revision 和 review_id 校验。
 
-GitHub [整轮 CI](https://github.com/xinchen6666/xinapi/actions/runs/45440635026) 已成功，质量、New API 镜像、CPR 镜像及汇总均通过。
+New API 复用「订阅预览」页提供「来源管理」：管理员只读；超级管理员登录会话执行写入，个人访问令牌仅保留读取职责。URL只作为提交字段，列表与详情保持元数据投影。密钥在 CPR 运行数据卷内 `subscription.key`（0600、32字节），已有数据时缺少或错误密钥拒绝读写。
 
-新合同：候选新增 parse_valid，supported 继续表示原生 HTTP/SOCKS 支持；下载目标逐跳校验全部地址并固定连接；HTTP 测试名单仅在明文 HTTP 开放本地例外。结果预算为 4096 候选、4096 诊断、完整 JSON 8 MiB，超额返回 subscription_preview_too_large。部分结果由管理员选择解析有效节点并确认范围，页面确认只保存在当前预览。
+实际结果：15项业务流程、6项补充、真实桌面/移动、密钥、重启与迁移场景通过；Rust订阅25项/API7项/架构16项、Go权限路由、前端构建和类型检查通过。整仓前端56项失败/超时和controller整包超时分别保留。范围及截图见 [X07日志](worklog/X07.md)与 [E023](VALIDATION.md#e023-x07来源与批准版本)。
 
-工作分支为 task/X06-subscription-preview，[Draft PR #5](https://github.com/xinchen6666/xinapi/pull/5)保持 open，base 为 task/X05-admin-readonly。网络恢复后已核对远端与修复前代码，差异仅为先前四张截图；保留双方历史完成常规合并，已验证的源码与证据内容保持原值，随后普通推送成功。PR 标题、正文和附件已更新。X06 为 done，下一动作是按 PR 复审修复，再安排 X07。
+当前分支 task/X07-subscription-snapshots，首个增量正在提交交付；目标依赖 X06 Draft PR #5。X07暂记in_progress，下一动作是专项复审该增量；账号绑定、实际出口及引擎接入依既定后续任务推进。
 
-原 xinapi-x04-review 与 xinapi-x04-local 保持原镜像和数据。本轮验证使用 xinapi-x06-audit 与 xinapi/cpr:x06-fixed、xinapi/new-api:x06-fixed；私有脚本、配置、身份和构建日志保存在 .runtime/x06-fix 与原审核私有目录。临时服务已全部停止，隔离数据卷保留供复跑。用户在[协作入口](../AGENTS.md)和[当前规则](MEMORY.md)的编辑继续保留。
-
-本轮通过常规合并保留此前 API 分批交付与本地实现历史；用户协作规则编辑继续单独保留。
+原 X04 运行栈保留。验证使用独立 xinapi-x07-dev 与 xinapi-x07-upgrade；私有配置、身份、源码验证工具及日志位于 .runtime/x07 与 .runtime/x07-upgrade，收尾停止临时服务并保留隔离数据卷。协作入口和长期记忆的用户编辑继续独立保留。
 
 ## 上一轮 X06 交付记录
 

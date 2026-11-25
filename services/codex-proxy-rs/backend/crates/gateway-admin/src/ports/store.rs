@@ -681,6 +681,7 @@ impl AdminAccountStorePorts {
 /// 该类型不提供通用拆包入口
 #[derive(Clone)]
 pub struct AdminStorePorts {
+    subscriptions: Option<Arc<dyn super::subscription_sources::SubscriptionStore>>,
     accounts: AdminAccountStorePorts,
     auth: Arc<dyn AuthStore>,
     client_keys: Arc<dyn ClientKeyStore>,
@@ -694,6 +695,19 @@ pub struct AdminStorePorts {
 }
 
 impl AdminStorePorts {
+    #[must_use]
+    pub fn with_subscriptions(
+        mut self,
+        store: Arc<dyn super::subscription_sources::SubscriptionStore>,
+    ) -> Self {
+        self.subscriptions = Some(store);
+        self
+    }
+    #[must_use]
+    pub fn subscriptions(&self) -> Option<Arc<dyn super::subscription_sources::SubscriptionStore>> {
+        self.subscriptions.clone()
+    }
+
     #[must_use]
     pub fn usage_data(&self) -> Arc<dyn super::usage_data::UsageDataStore> {
         self.usage_data.clone()
@@ -732,6 +746,7 @@ impl AdminStorePorts {
         usage_data: Arc<dyn super::usage_data::UsageDataStore>,
     ) -> Self {
         Self {
+            subscriptions: None,
             accounts,
             auth,
             client_keys,

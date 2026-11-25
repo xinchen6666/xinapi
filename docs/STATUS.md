@@ -10,7 +10,7 @@
 | X04 | done | lead；修订已交付 | [PR #3](https://github.com/xinchen6666/xinapi/pull/3)已同步真实就绪启动与原卷补全修订，远端代码及文案读回通过，复验见 E018；保持 open，base 为 X03 |
 | X05 | done | lead；Draft 已交付 | [PR #4](https://github.com/xinchen6666/xinapi/pull/4)已推送并读回，base 为 X04；构建、真实 CPR、七语浏览器验证及 authz 全量回归通过，见 [E019](VALIDATION.md#e019-x05管理员只读入口) |
 | X06 | done | lead；审核修复已交付 | R1–R6 与部分接受确认完成，72 项接口及浏览器复验通过；源码与截图已普通推送至 [Draft PR #5](https://github.com/xinchen6666/xinapi/pull/5)，见 [E022](VALIDATION.md#e022-x06审核修复复验)和[修复报告](worklog/X06-fix.md) |
-| X07 | pending | CPR Store／Admin | 快照、节点身份、刷新差异与迁移 |
+| X07 | in_progress | lead；首个增量已实现并复验 | 来源密文、稳定节点ID、刷新差异及显式批准完成；15项业务流程、6项补充和真实页面通过，见 [E023](VALIDATION.md#e023-x07来源与批准版本)，交付进行中 |
 | X08 | pending | CPR Host／Mihomo | 引擎监督、稳定入口和资源观测 |
 | X09 | pending | CPR 路由／连接池 | 确认版本、换路与在途连接边界 |
 | X10 | pending | CPR 出站策略 | 故障与后台请求不直连 |

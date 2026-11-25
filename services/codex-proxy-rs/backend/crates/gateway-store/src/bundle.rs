@@ -233,6 +233,14 @@ async fn connect(
         plugins,
         usage_data,
     );
+    let admin_ports = if read_only {
+        admin_ports
+    } else {
+        admin_ports.with_subscriptions(Arc::new(postgres::PgSubscriptionStore::new(
+            pool.clone(),
+            config.subscription_key_path(),
+        )?))
+    };
 
     let execution_repository = Arc::new(postgres::PgExecutionStore::new(pool.clone()));
     let (execution, execution_writer) =

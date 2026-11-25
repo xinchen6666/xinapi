@@ -4,14 +4,20 @@
 //! 主机、端口、凭据、UUID 与路径参数留在服务端
 
 use axum::{
-    Router, extract::State, http::StatusCode, http::header, response::IntoResponse, routing::post,
+    Router,
+    extract::State,
+    http::StatusCode,
+    http::header,
+    response::IntoResponse,
+    routing::{get, post},
 };
 use gateway_admin::model::subscriptions::{
     MAX_PREVIEW_RESPONSE_BYTES, SubscriptionPreview, SubscriptionPreviewError,
 };
 use serde::{Deserialize, Serialize};
 
-use super::{AdminAuth, AdminEnvelope, AdminError, AdminJson};
+use super::{AdminAuth, AdminEnvelope, AdminError, AdminJson, AdminQuery};
+use gateway_admin::model::subscription_sources::{ApproveSource, SourceDetail};
 
 /// 正文内容类失败按 422 返回：请求本身合法，文档内容无法使用
 fn content_unusable(error: SubscriptionPreviewError) -> bool {
@@ -91,7 +97,29 @@ pub fn router<S>() -> Router<S>
 where
     S: crate::auth::SessionState + Clone + Send + Sync + 'static,
 {
-    Router::new().route("/api/admin/subscriptions/preview", post(preview::<S>))
+    Router::new()
+        .route("/api/admin/subscriptions/preview", post(preview::<S>))
+        .route("/api/admin/subscriptions/sources", get(sources::<S>))
+        .route(
+            "/api/admin/subscriptions/sources/detail",
+            get(source_detail::<S>),
+        )
+        .route(
+            "/api/admin/subscriptions/sources/create",
+            post(source_create::<S>),
+        )
+        .route(
+            "/api/admin/subscriptions/sources/update",
+            post(source_update::<S>),
+        )
+        .route(
+            "/api/admin/subscriptions/sources/refresh",
+            post(source_refresh::<S>),
+        )
+        .route(
+            "/api/admin/subscriptions/sources/approve",
+            post(source_approve::<S>),
+        )
 }
 
 fn map_error(error: SubscriptionPreviewError) -> AdminError {
@@ -128,4 +156,158 @@ where
         [(header::CONTENT_TYPE, "application/json")],
         body,
     ))
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct CreateSource {
+    name: String,
+    source_url: String,
+}
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct SourceId {
+    source_id: String,
+}
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct RefreshSource {
+    source_id: String,
+    expected_revision: u64,
+}
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct UpdateSource {
+    source_id: String,
+    expected_revision: u64,
+    name: String,
+    source_url: Option<String>,
+}
+
+fn source_error(error: gateway_admin::model::AdminError) -> AdminError {
+    use gateway_admin::model::AdminErrorKind;
+    let reason = match error.kind() {
+        AdminErrorKind::Conflict => "subscription_source_conflict",
+        AdminErrorKind::NotFound => "subscription_source_not_found",
+        AdminErrorKind::Invalid => "subscription_source_request_invalid",
+        _ => "subscription_source_unavailable",
+    };
+    super::wire::map_admin_service_error(error).with_reason(reason)
+}
+fn source_response<T: Serialize>(value: T) -> Result<impl IntoResponse, AdminError> {
+    let body = serde_json::to_vec(&AdminEnvelope::ok(value)).map_err(|_| AdminError::internal())?;
+    if body.len() > MAX_PREVIEW_RESPONSE_BYTES {
+        return Err(map_error(SubscriptionPreviewError::PreviewTooLarge));
+    }
+    Ok((
+        StatusCode::OK,
+        [(header::CONTENT_TYPE, "application/json")],
+        body,
+    ))
+}
+async fn sources<S>(_: AdminAuth, State(state): State<S>) -> Result<impl IntoResponse, AdminError>
+where
+    S: crate::auth::SessionState + Send + Sync,
+{
+    let items = state
+        .admin_services()
+        .subscriptions()
+        .sources()
+        .await
+        .map_err(source_error)?;
+    source_response(serde_json::json!({"items":items}))
+}
+async fn source_detail<S>(
+    _: AdminAuth,
+    State(state): State<S>,
+    AdminQuery(query): AdminQuery<SourceId>,
+) -> Result<impl IntoResponse, AdminError>
+where
+    S: crate::auth::SessionState + Send + Sync,
+{
+    let detail = state
+        .admin_services()
+        .subscriptions()
+        .source(&query.source_id)
+        .await
+        .map_err(source_error)?;
+    source_response(detail)
+}
+async fn source_create<S>(
+    auth: AdminAuth,
+    State(state): State<S>,
+    AdminJson(body): AdminJson<CreateSource>,
+) -> Result<impl IntoResponse, AdminError>
+where
+    S: crate::auth::SessionState + Send + Sync,
+{
+    let detail = state
+        .admin_services()
+        .subscriptions()
+        .create_source(
+            &body.name,
+            &body.source_url,
+            &auth.context().mutation_context(),
+        )
+        .await
+        .map_err(source_error)?;
+    source_response(detail)
+}
+async fn source_update<S>(
+    auth: AdminAuth,
+    State(state): State<S>,
+    AdminJson(body): AdminJson<UpdateSource>,
+) -> Result<impl IntoResponse, AdminError>
+where
+    S: crate::auth::SessionState + Send + Sync,
+{
+    let detail = state
+        .admin_services()
+        .subscriptions()
+        .update_source(
+            &body.source_id,
+            body.expected_revision,
+            &body.name,
+            body.source_url.as_deref(),
+            &auth.context().mutation_context(),
+        )
+        .await
+        .map_err(source_error)?;
+    source_response(detail)
+}
+async fn source_refresh<S>(
+    auth: AdminAuth,
+    State(state): State<S>,
+    AdminJson(body): AdminJson<RefreshSource>,
+) -> Result<impl IntoResponse, AdminError>
+where
+    S: crate::auth::SessionState + Send + Sync,
+{
+    let detail = state
+        .admin_services()
+        .subscriptions()
+        .refresh_source(
+            &body.source_id,
+            body.expected_revision,
+            &auth.context().mutation_context(),
+        )
+        .await
+        .map_err(source_error)?;
+    source_response(detail)
+}
+async fn source_approve<S>(
+    auth: AdminAuth,
+    State(state): State<S>,
+    AdminJson(body): AdminJson<ApproveSource>,
+) -> Result<impl IntoResponse, AdminError>
+where
+    S: crate::auth::SessionState + Send + Sync,
+{
+    let detail: SourceDetail = state
+        .admin_services()
+        .subscriptions()
+        .approve_source(body, &auth.context().mutation_context())
+        .await
+        .map_err(source_error)?;
+    source_response(detail)
 }

@@ -22,6 +22,7 @@ mod query_pattern;
 mod retention;
 mod runtime_settings;
 mod snapshot;
+mod subscription_sources;
 mod usage_data;
 mod usage_facts;
 
@@ -48,6 +49,7 @@ use query_pattern::literal_contains_pattern;
 pub use retention::*;
 pub use runtime_settings::*;
 pub use snapshot::*;
+pub use subscription_sources::PgSubscriptionStore;
 pub use usage_data::PgUsageDataStore;
 pub(crate) use usage_facts::{
     completed_usage_fact_predicate, push_completed_usage_fact_filter,

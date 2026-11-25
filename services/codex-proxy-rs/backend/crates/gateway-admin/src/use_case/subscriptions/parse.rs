@@ -1,6 +1,6 @@
 //! 订阅正文的格式识别、节点连接参数校验与 provider 声明读取
 //!
-//! 解析只消费正文中的节点事实，规则、脚本、监听和文件字段保持静态输入
+//! 私有连接文档只保存连接白名单，公开预览沿用展示事实与脱敏诊断
 
 use std::net::IpAddr;
 
@@ -10,11 +10,16 @@ use serde_json::{Map, Value};
 use url::Url;
 use yaml_rust2::{Yaml, YamlLoader};
 
-use crate::model::subscriptions::{
-    DiagnosticCode, MAX_DECOMPRESSED_BYTES, MAX_NODE_NAME_CHARS, MAX_PREVIEW_CANDIDATES,
-    MAX_PREVIEW_DIAGNOSTICS, MAX_PROVIDERS, NodeCandidate, NodeProtocol, PreviewDiagnostic,
-    SubscriptionFormat, SubscriptionPreviewError,
+use crate::model::{
+    subscription_sources::ConnectionDocument,
+    subscriptions::{
+        DiagnosticCode, MAX_DECOMPRESSED_BYTES, MAX_NODE_NAME_CHARS, MAX_PREVIEW_CANDIDATES,
+        MAX_PREVIEW_DIAGNOSTICS, MAX_PROVIDERS, NodeCandidate, NodeProtocol, PreviewDiagnostic,
+        SubscriptionFormat, SubscriptionPreviewError,
+    },
 };
+
+use super::connection;
 
 /// 单份文档的节点、诊断和待下载来源
 pub(super) struct ParsedDocument {
@@ -180,7 +185,20 @@ fn document_from_root(
             .and_then(Value::as_str)
             .map_or(NodeProtocol::Unknown, clash_protocol);
         let issue = validate_clash_node(entry, protocol);
-        push_node(&mut candidates, &mut diagnostics, name, protocol, issue)?;
+        let connection = if issue.is_none() {
+            connection::from_clash(entry, protocol)
+        } else {
+            Ok(None)
+        };
+        let issue = issue.or(connection.as_ref().err().copied());
+        push_node(
+            &mut candidates,
+            &mut diagnostics,
+            name,
+            protocol,
+            issue,
+            connection.ok().flatten(),
+        )?;
     }
     let mut providers = Vec::new();
     if let Some(entries) = root.get("proxy-providers") {
@@ -263,8 +281,10 @@ fn push_node(
     name: String,
     protocol: NodeProtocol,
     issue: Option<&'static str>,
+    connection: Option<ConnectionDocument>,
 ) -> Result<(), SubscriptionPreviewError> {
     let mut candidate = NodeCandidate::new(name, protocol);
+    candidate.connection = connection;
     if let Some(message) = issue {
         candidate.parse_valid = false;
         candidate.supported = false;
@@ -374,6 +394,7 @@ fn parse_uri_list(text: &str) -> Result<ParsedDocument, SubscriptionPreviewError
                 String::new(),
                 NodeProtocol::Unknown,
                 Some("The line requires a readable node scheme."),
+                None,
             )?;
             continue;
         };
@@ -381,7 +402,20 @@ fn parse_uri_list(text: &str) -> Result<ParsedDocument, SubscriptionPreviewError
         let protocol = scheme_protocol(scheme);
         let name = uri_name(line, scheme, rest);
         let issue = validate_uri(line, rest, protocol);
-        push_node(&mut candidates, &mut diagnostics, name, protocol, issue)?;
+        let connection = if issue.is_none() {
+            connection::from_uri(line, protocol)
+        } else {
+            Ok(None)
+        };
+        let issue = issue.or(connection.as_ref().err().copied());
+        push_node(
+            &mut candidates,
+            &mut diagnostics,
+            name,
+            protocol,
+            issue,
+            connection.ok().flatten(),
+        )?;
     }
     if !recognized {
         return Err(SubscriptionPreviewError::Unreadable);
@@ -529,14 +563,14 @@ fn uri_name(line: &str, scheme: &str, rest: &str) -> String {
 }
 fn clash_protocol(kind: &str) -> NodeProtocol {
     match kind.trim().to_ascii_lowercase().as_str() {
-        "ss" => NodeProtocol::Ss,
+        "ss" | "shadowsocks" => NodeProtocol::Ss,
         "vmess" => NodeProtocol::Vmess,
         "vless" => NodeProtocol::Vless,
         "trojan" => NodeProtocol::Trojan,
         "hysteria2" | "hy2" => NodeProtocol::Hysteria2,
         "tuic" => NodeProtocol::Tuic,
-        "socks5" => NodeProtocol::Socks5,
-        "http" => NodeProtocol::Http,
+        "socks" | "socks5" | "socks5h" => NodeProtocol::Socks5,
+        "http" | "https" => NodeProtocol::Http,
         _ => NodeProtocol::Unknown,
     }
 }
