@@ -4,7 +4,7 @@
 
 X07 来源与已批准版本的首个增量经两路独立只读复审，三项 P2 事实已修订：socks5h 的 DNS 解析位置进入连接身份（dns-mode），username/password/tls 的畸形类型在解析阶段拒绝，来源编辑器按打开时 revision 提交并在服务端版本推进时得到 409。复验通过六点专项 17 项、权限与存储 6 项、后端语义 2 项、cpr 重启 61 个来源一致，以及真实页面编辑冲突与主流程，页面运行错误零。证据见 [E024](VALIDATION.md#e024-x07专项复审修订)。
 
-审计环境把 CRITICAL_RATE_LIMIT 调至 200 次/20 分钟用于重复运行；产品默认 20 次/20 分钟。修订以普通提交推送至 task/X07-subscription-snapshots 并更新 [Draft PR #6](https://github.com/xinchen6666/xinapi/pull/6)，base 为 task/X06-subscription-preview。
+审计环境把 CRITICAL_RATE_LIMIT 调至 200 次/20 分钟用于重复运行；产品默认 20 次/20 分钟。修订以普通提交送达 task/X07-subscription-snapshots（git push 的 HTTPS 连接中断后改用 GitHub 官方内容接口，远端内容与本地逐一相等）并更新 [Draft PR #6](https://github.com/xinchen6666/xinapi/pull/6)，base 为 task/X06-subscription-preview。
 
 X07 状态为 done。下一动作：按 [PLAN](PLAN.md#x08) 启动 X08，先确认 CPR Host 写入范围、Mihomo 版本与摘要登记方式，再做单引擎启动、认证、正常关闭与异常回收验证；账号绑定由 X09 推进，出口策略由 X10 推进。
 
