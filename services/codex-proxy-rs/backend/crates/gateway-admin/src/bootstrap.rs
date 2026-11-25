@@ -74,6 +74,7 @@ async fn initialize_inner(
         account_probe: probe,
         proxy_probe,
         subscriptions,
+        engines,
         client_distribution,
         system,
         client_key_verifier,
@@ -195,6 +196,10 @@ async fn initialize_inner(
             )
             .with_store(store.subscriptions()),
         ),
+        engines: Arc::new(use_case::engines::DefaultEnginesService::new(
+            store.subscriptions(),
+            engines,
+        )),
         proxies: Arc::new(use_case::proxies::DefaultProxiesService::new(
             store.proxies(),
             proxy_probe,

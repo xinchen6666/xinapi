@@ -19,6 +19,7 @@ mod client_key_usage;
 pub mod client_keys;
 mod compression;
 pub(crate) mod diagnostics;
+pub mod engines;
 mod extract;
 pub mod observability;
 mod plugins;
@@ -47,6 +48,7 @@ where
 {
     Router::new()
         .merge(account_groups::router::<S>())
+        .merge(engines::router::<S>())
         .merge(proxies::router::<S>())
         .merge(plugins::router::<S>())
         .merge(accounts::router::<S>())

@@ -248,6 +248,7 @@ impl AdminTestFixture {
                     source: subscription_source.clone(),
                     policy: gateway_admin::model::subscriptions::SubscriptionFetchPolicy::default(),
                 },
+                engines: Arc::new(NoopEngineHost),
                 client_distribution: Arc::new(StaticClientDistribution),
                 system,
                 client_key_verifier: verifier.unwrap_or_else(|| Arc::new(UnusedClientKeyVerifier)),
@@ -281,6 +282,41 @@ impl AdminTestFixture {
 
     pub fn state(&self) -> AdminTestState {
         AdminTestState(self.services.clone())
+    }
+}
+
+/// 引擎监督由 Host 提供；本夹具验证管理边界时返回未注入分类
+struct NoopEngineHost;
+
+#[async_trait::async_trait]
+impl gateway_admin::ports::engine::EngineHost for NoopEngineHost {
+    async fn start(
+        &self,
+        _: gateway_admin::model::engines::EngineFacts,
+    ) -> Result<
+        gateway_admin::model::engines::EngineSnapshot,
+        gateway_admin::model::engines::EngineServiceError,
+    > {
+        Err(gateway_admin::model::engines::EngineServiceError::Unavailable)
+    }
+
+    async fn stop(
+        &self,
+        _: &str,
+    ) -> Result<
+        gateway_admin::model::engines::EngineSnapshot,
+        gateway_admin::model::engines::EngineServiceError,
+    > {
+        Err(gateway_admin::model::engines::EngineServiceError::Unavailable)
+    }
+
+    async fn list(
+        &self,
+    ) -> Result<
+        Vec<gateway_admin::model::engines::EngineSnapshot>,
+        gateway_admin::model::engines::EngineServiceError,
+    > {
+        Err(gateway_admin::model::engines::EngineServiceError::Unavailable)
     }
 }
 

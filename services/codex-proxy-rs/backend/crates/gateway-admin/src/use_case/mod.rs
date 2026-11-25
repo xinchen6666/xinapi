@@ -7,6 +7,7 @@ pub mod backup;
 pub mod client_distribution;
 pub mod client_keys;
 pub mod credentials;
+pub mod engines;
 pub mod import_tasks;
 pub mod key_usage;
 pub mod observability;

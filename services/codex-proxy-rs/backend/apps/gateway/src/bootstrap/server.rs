@@ -95,6 +95,7 @@ pub async fn run() -> Result<(), BootstrapError> {
                 snapshot: core.snapshot_control(),
                 account_probe: core.account_probe(),
                 proxy_probe: host.proxy_probe(provider_openai::build_reqwest_client_with_custom_ca),
+                engines: host.engines(),
                 subscriptions: gateway_admin::ports::subscription::SubscriptionRuntime {
                     source: host.subscription_source(),
                     policy: config.subscriptions.policy(),

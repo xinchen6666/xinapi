@@ -34,6 +34,7 @@ pub use use_case::{
     client_distribution::ClientDistributionService,
     client_keys::ClientKeyService,
     credentials::{CredentialsService, ProviderCredentials},
+    engines::EnginesService,
     import_tasks::ImportTasksService,
     observability::{ObservabilityService, ProviderUsageBillingProjector},
     proxies::ProxiesService,
@@ -208,6 +209,7 @@ pub struct AdminServices {
     plugin_management: Arc<PluginManagementService>,
     proxies: Arc<dyn ProxiesService>,
     subscriptions: Arc<dyn SubscriptionsService>,
+    engines: Arc<dyn EnginesService>,
     auth: Arc<dyn AuthService>,
     key_usage: Arc<dyn KeyUsageService>,
     peer_link: Arc<dyn PeerLinkService>,
@@ -269,6 +271,11 @@ impl AdminServices {
     #[must_use]
     pub fn subscriptions(&self) -> &dyn SubscriptionsService {
         self.subscriptions.as_ref()
+    }
+
+    #[must_use]
+    pub fn engines(&self) -> &dyn EnginesService {
+        self.engines.as_ref()
     }
 
     #[must_use]
@@ -364,6 +371,7 @@ pub struct AdminRuntimePorts {
     pub account_probe: Arc<dyn AccountProbe>,
     pub proxy_probe: Arc<dyn ports::proxy::ProxyProbe>,
     pub subscriptions: ports::subscription::SubscriptionRuntime,
+    pub engines: Arc<dyn ports::engine::EngineHost>,
     pub client_distribution: Arc<dyn ClientDistributionResolver>,
     pub system: Arc<dyn SystemOperations>,
     pub client_key_verifier: Arc<dyn ClientKeyVerifier>,

@@ -2,6 +2,7 @@
 
 pub mod backup;
 pub mod client_distribution;
+pub mod engine;
 pub mod peer;
 pub mod plugin_accounts;
 pub mod plugin_client_keys;

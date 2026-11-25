@@ -1,6 +1,16 @@
 # 当前交接
 
-## 当前：X07 专项复审修订已交付
+## 当前：X08 受管引擎入口已实现并通过运行验证
+
+管理员可对已批准节点启动受管 Mihomo 入口：入口只监听 CPR 回环地址，端口成对分配并写入运行数据卷 `engines/entries.json`，重启后保持同一端口；配置按当前批准版本重写为最小文件（唯一节点、`MATCH,node`、`0600`）。容量、启动超时、端口占用停发、异常退出回收与资源观测均已接通，管理 API 为 `GET /api/admin/engines`、`POST /api/admin/engines/start`、`POST /api/admin/engines/stop`。
+
+实测：真实 Mihomo v1.19.33 冷启动 52ms、RSS 约 42MB；经入口的请求由自造节点代理转发（代理计数 2→3）；回环隔离 errno 111；并发启动得到唯一 PID；`kill -9` 后状态 failed 并记录信号、端口释放、重启复用原端口；端口占用返回 409 `engine_port_conflict`；第三个实例返回 429；CPR 重启后入口全部 stopped、端口保持。证据见 [E025](VALIDATION.md#e025-x08受管引擎入口)与 [X08 日志](worklog/X08.md)。
+
+分支 task/X08-engine-supervision 以 task/X07-subscription-snapshots 为 base，交付后 X08 置 done。下一动作：X09 把账号出口绑定到稳定入口，并验证换路时的连接代次与在途流边界；严格出口与故障停发由 X10 承担。
+
+运行状态：xinapi-x07-dev 栈当前使用 xinapi/cpr:x08-engine 镜像并挂载本机 Mihomo 制品，入口进程已停止；自造节点代理容器已移除，验证脚本位于 .runtime/x08。x07-fresh 与 x07-upgrade 栈保留。
+
+## 上一轮 X07 专项复审修订
 
 X07 来源与已批准版本的首个增量经两路独立只读复审，三项 P2 事实已修订：socks5h 的 DNS 解析位置进入连接身份（dns-mode），username/password/tls 的畸形类型在解析阶段拒绝，来源编辑器按打开时 revision 提交并在服务端版本推进时得到 409。复验通过六点专项 17 项、权限与存储 6 项、后端语义 2 项、cpr 重启 61 个来源一致，以及真实页面编辑冲突与主流程，页面运行错误零。证据见 [E024](VALIDATION.md#e024-x07专项复审修订)。
 

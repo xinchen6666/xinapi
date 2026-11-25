@@ -3627,5 +3627,34 @@ URL、规范连接、待审核事实和批准历史整体加密保存在 Postgre
 部署密钥独立存于运行数据目录的 `subscription.key`，模式 0600、长度 32 字节；AES-256-GCM 使用随机 nonce 和来源 ID/用途绑定。
 已有来源遇到密钥缺失或认证失败时返回存储错误。当前加密范围仅为订阅来源数据，其余原服务凭据沿用各自原存储合同。
 
-本步的 available 是已批准节点的状态投影。账号绑定、稳定代理入口、Mihomo 配置生成和实际发送策略在后续任务接入；
-来源批准只保存事实，账号启用状态与运行出口保持原值。
+本步的 available 是已批准节点的状态投影。节点级受管入口见第 15 节；账号绑定与实际发送策略由后续任务接入，
+来源批准只保存事实，账号启用状态保持原值。
+
+## 15. 受管引擎入口
+
+管理员可对已批准节点启动受管 Mihomo 入口，入口只监听 CPR 容器的回环地址。启动、停止与列表沿用管理端鉴权；
+入口记录保存在运行数据卷的 `engines/entries.json`，同一来源节点在重启后复用原端口。
+
+| 方法与 CPR 路径 | 请求 | 结果 |
+| --- | --- | --- |
+| `GET /api/admin/engines` | 空 | `{items: EngineView[]}` |
+| `POST /api/admin/engines/start` | `{source_id,node_id}` | `{engine: EngineView}` |
+| `POST /api/admin/engines/stop` | `{entry_id}` | `{engine: EngineView}` |
+
+`EngineView` 包含 `entry_id,source_id,node_id,node_name,protocol,listen_host,listen_port,state,pid,started_at,rss_bytes,cpu_seconds,cold_start_ms,last_error`；
+`state` 取 `starting`、`running`、`stopped` 或 `failed`。重复启动同一入口复用运行中的进程。
+
+| HTTP | reason | 场景 |
+| ---: | --- | --- |
+| 404 | `engine_source_missing` / `engine_node_missing` / `engine_entry_unknown` | 来源、节点或入口记录缺失 |
+| 409 | `engine_port_conflict` | 入口端口占用；启动停发，端口保持 |
+| 409 | `engine_node_inactive` | 节点当前停用 |
+| 422 | `engine_node_unsupported` | 协议超出 HTTP 与 SOCKS5 入口范围 |
+| 429 | `engine_capacity_reached` | 实例达到 `CPR_ENGINE_MAX` |
+| 503 | `engine_binary_missing` / `engine_host_unavailable` / `engine_process_failed` / `engine_store_unavailable` | 部署、进程或存储故障 |
+| 504 | `engine_start_timeout` | 就绪探测超时 |
+
+引擎参数来自部署环境：`CPR_MIHOMO_BIN`（默认 `/app/bin/mihomo`）、`CPR_ENGINE_MAX`（默认 4）、
+`CPR_ENGINE_PORT_BASE` 与 `CPR_ENGINE_PORT_SPAN`（默认 24000 与 200）、`CPR_ENGINE_START_TIMEOUT_MS`（默认 15000）。
+每次启动按当前批准版本的连接重写最小配置，只含该节点与 `MATCH,node` 规则，配置文件 0600；
+停止先发 `SIGTERM`，宽限期后强制回收，入口端口与控制面端口随之释放。

@@ -1,0 +1,86 @@
+{
+  "task": "X08",
+  "checked_at": "2026-11-25T19:00:00+08:00",
+  "executor": "lead",
+  "kind": "real Mihomo subprocess in isolated compose environment",
+  "environment": {
+    "mihomo": "v1.19.33 linux/amd64 (third_party/mihomo.lock.json)",
+    "compose_project": "xinapi-x07-dev",
+    "cpr_image": "xinapi/cpr:x08-engine",
+    "fixture": "self-made HTTP node proxy 10.244.107.4:18081 and target site :18080"
+  },
+  "scenarios": [
+    {
+      "case": "start_and_measure",
+      "passed": true,
+      "cold_start_ms": 52,
+      "rss_bytes": 42070016,
+      "cpu_seconds": 0.06,
+      "listen_host": "127.0.0.1"
+    },
+    {
+      "case": "egress_through_node",
+      "passed": true,
+      "body": "engine-ok",
+      "proxy_requests": [
+        2,
+        3
+      ]
+    },
+    {
+      "case": "loopback_isolation",
+      "passed": true,
+      "connect_errno": "111"
+    },
+    {
+      "case": "config_mode_private",
+      "passed": true
+    },
+    {
+      "case": "concurrent_start_single_process",
+      "passed": true,
+      "pids": [
+        636
+      ],
+      "statuses": [
+        200,
+        200
+      ]
+    },
+    {
+      "case": "crash_detected_and_recovered",
+      "passed": true,
+      "last_error": "engine process exited: signal: 9 (SIGKILL)"
+    },
+    {
+      "case": "port_conflict_refused",
+      "passed": true,
+      "reason": "engine_port_conflict",
+      "port_kept": true,
+      "state_after": "stopped"
+    },
+    {
+      "case": "capacity_limit",
+      "passed": true,
+      "reason": "engine_capacity_reached"
+    },
+    {
+      "case": "stop_releases_ports",
+      "passed": true
+    },
+    {
+      "case": "restart_keeps_entries_stopped_with_stable_ports",
+      "passed": true,
+      "restart_ports": [
+        24100,
+        24102,
+        24104
+      ]
+    }
+  ],
+  "limitations": [
+    "entry is per approved node; account binding and switching belong to X09",
+    "per-process memory cap relies on container resource limits",
+    "management UI and New API BFF routing belong to X12"
+  ]
+}

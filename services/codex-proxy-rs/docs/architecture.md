@@ -75,7 +75,7 @@ flowchart TB
 | `gateway-api` | HTTP/WS/SSE 解码与交付、Admin 与 Key 用量 wire、静态 Web UI；不直接访问 Store 或具体 Provider |
 | `gateway-store` | PostgreSQL、Redis、S3/R2、`pg_dump` 适配器；不拥有业务策略 |
 | `gateway-egress` | Host 与 Provider 共用的 HTTP / WebSocket 出口选择，按目标应用环境代理和绕过规则 |
-| `gateway-host` | 配置加载、日志、HTTP 生命周期、Worker 监督与历史保留任务、系统更新、互联 HTTP 与外部价格源适配 |
+| `gateway-host` | 配置加载、日志、HTTP 生命周期、Worker 监督与历史保留任务、系统更新、受管引擎进程监督、互联 HTTP 与外部价格源适配 |
 | `gateway-plugin/sdk`（包名 `gateway-plugin-sdk`） | 公开插件清单与线协议，独立于网关领域；异步收发通过可选 `io` feature 提供 |
 | `gateway-plugin/runtime`（包名 `gateway-plugin-runtime`） | 插件包校验、能力适配、双向 RPC 与发布集合；通过 Host 管理子进程和受管 HTTP |
 | `providers/openai` | OpenAI OAuth、API Key 凭据、账号选择、目录、额度和 Responses/Messages/Images/Search transport |

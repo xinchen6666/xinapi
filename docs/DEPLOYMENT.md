@@ -16,6 +16,12 @@
 
 Mihomo 不使用 Docker socket、TUN、host network 或特权模式。CPR 容器运行非 root，使用 init、受限可写目录、日志轮转和进程预算。每账号受管入口和内核 controller 绑定容器回环；不要为了给管理员浏览器登录而把全段端口对公网发布。需浏览器同出口时，应有显式受控的临时访问方式，且与服务器流量分别观测。
 
+### 引擎入口运行参数
+
+X08 的入口按已批准节点启动 Mihomo 子进程，只监听 CPR 回环地址。部署参数：`CPR_MIHOMO_BIN` 指定制品路径（默认 `/app/bin/mihomo`），`CPR_ENGINE_MAX` 限制并行实例（默认 4），`CPR_ENGINE_PORT_BASE` 与 `CPR_ENGINE_PORT_SPAN` 划定入口与控制面端口（默认 24000/200），`CPR_ENGINE_START_TIMEOUT_MS` 控制就绪等待（默认 15000）。入口记录在运行数据卷 `engines/entries.json`，重启后保持原端口；引擎进程随 CPR 容器回收。
+
+本轮实测单实例 RSS 约 42MB、冷启动 52ms，容量按此估算。Mihomo 制品由部署者取自登记的发布包，镜像内暂不打包；正式分发前按[上游清单](UPSTREAM.md)补齐许可与对应源码资料。
+
 ## 计划交付物
 
 X02–X04：两个可独立构建的源码树、锁文件、应用镜像构建定义、根 `compose.yaml`、不含有效凭据的 `.env.example` 和初始化流程。X08 增加 Mihomo 平台制品清单、摘要验证、第三方许可/对应源码资料。X16 补齐 HTTPS 反代示例、干净主机安装步骤、管理员首次使用与故障排查。X17 补齐备份恢复演练；X18 提供 release 说明、确切提交、镜像标识与已验证的平台。

@@ -3,6 +3,7 @@
 pub mod client_distribution;
 mod command_line;
 pub mod config;
+mod engine;
 mod logging;
 pub mod official_plugins;
 pub mod outbound;
@@ -77,6 +78,7 @@ pub struct HostBundle {
     subscription_source: Arc<HttpSubscriptionSource>,
     official_plugins: Arc<official_plugins::FileOfficialPluginRelease>,
     command_signal: Option<command_line::SignalGuard>,
+    engines: Arc<engine::EngineSupervisor>,
 }
 
 /// 在启动其他包之前初始化进程级能力
@@ -102,6 +104,7 @@ pub async fn initialize(config: HostConfig) -> Result<HostBundle, HostError> {
         subscription_fetch::HttpSubscriptionSource::new()
             .map_err(|_| HostError::SubscriptionSource)?,
     );
+    let engines = Arc::new(engine::EngineSupervisor::new(&config.runtime_data_dir));
     Ok(HostBundle {
         config,
         log_guard,
@@ -113,6 +116,7 @@ pub async fn initialize(config: HostConfig) -> Result<HostBundle, HostError> {
         subscription_source,
         official_plugins,
         command_signal: None,
+        engines,
     })
 }
 
@@ -133,6 +137,12 @@ impl HostBundle {
     #[must_use]
     pub fn cancellation(&self) -> CancellationToken {
         self.cancellation.clone()
+    }
+
+    /// 受管引擎监督入口；进程随 Bundle 释放而回收
+    #[must_use]
+    pub fn engines(&self) -> Arc<dyn gateway_admin::ports::engine::EngineHost> {
+        self.engines.clone()
     }
 
     #[must_use]

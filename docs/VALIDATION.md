@@ -240,6 +240,19 @@ E001–E006 是 X01 之前的历史证据，仅支持当时的工作与版本；
 - 编译：Rust fmt/clippy、现有订阅 25 项、API 7 项与网关构建通过；New API go vet/go build、前端 1520 文件/2 项目类型检查与生产构建通过。
 - 截图：[编辑冲突](evidence/X07-review-editor-conflict.png)、[来源管理](evidence/X07-review-source-management.png)。修订推送至 [Draft PR #6](https://github.com/xinchen6666/xinapi/pull/6)，base 为 X06。
 
+<a id="e025-x08受管引擎入口"></a>
+### E025 X08：受管引擎入口
+
+- 2026-11-25（Asia/Shanghai），lead；范围为受管 Mihomo 引擎入口的监督、观测与稳定端口，结果 `passed_scoped`；实现与边界见 [X08 工作日志](worklog/X08.md)。
+- 启动：真实 Mihomo `v1.19.33` 在 CPR 容器内以唯一批准节点启动，冷启动 52ms（首个实例 207ms），RSS 约 42MB，CPU 0.06s；入口只监听 `127.0.0.1`，同网络其它容器连接返回 errno 111。
+- 出口：经入口请求目标站点返回 `engine-ok`，自造节点代理计数 2→3，确认流量经批准节点转发。
+- 生命周期：同一入口并发启动得到唯一 PID；`kill -9` 后状态 `failed` 并记录退出信号，端口释放，重启复用原端口；停止后入口与控制面端口均释放。
+- 冲突与容量：入口端口被占用时启动返回 409 `engine_port_conflict` 且端口保持；第三个实例返回 429 `engine_capacity_reached`。
+- 重启：CPR 重启后三个入口均为 `stopped`，端口 24100/24102/24104 保持，容器内残留监听清零；再次启动复用原端口。
+- 权限：入口目录与 `config.yaml` 实际为 `600`；控制面密钥随机生成，只存在于本机配置。
+- 编译：Rust 格式检查、改动 crate 的 Clippy `-D warnings`、网关构建通过；架构 16 项、订阅 25 项、API 7 项通过。
+- 边界：账号绑定与换路属 X09，严格出口属 X10，管理页面属 X12；Mihomo 二进制留在镜像外，验证使用本机下载制品。
+
 ## 未来记录模板
 
 每个run使用唯一证据ID，写：任务ID；checked_at（时区ISO时间）；执行者；证据种类；真实提交/工作区摘要；脱敏环境；实际命令/步骤；预期；实际；`passed/failed/partial/skipped/not_run`；本地持久证据路径；缺口；失效条件。未执行的命令只放计划，不放实际记录。

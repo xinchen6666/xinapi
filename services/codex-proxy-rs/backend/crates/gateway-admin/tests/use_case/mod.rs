@@ -332,6 +332,7 @@ impl AdminHarness {
                         "localhost".to_owned(),
                     ]),
                 },
+                engines: Arc::new(UnavailableEngineHost),
                 client_distribution: Arc::new(NoopClientDistribution),
                 system: self.system,
                 client_key_verifier: self.client_key_verifier,
@@ -359,6 +360,41 @@ impl gateway_admin::ports::subscription::SubscriptionDocumentSource
         gateway_admin::ports::subscription::SubscriptionFetchError,
     > {
         Err(gateway_admin::ports::subscription::SubscriptionFetchError::Failed)
+    }
+}
+
+/// 引擎监督由 Host 提供；管理用例夹具只验证未注入时的失败分类
+struct UnavailableEngineHost;
+
+#[async_trait]
+impl gateway_admin::ports::engine::EngineHost for UnavailableEngineHost {
+    async fn start(
+        &self,
+        _: gateway_admin::model::engines::EngineFacts,
+    ) -> Result<
+        gateway_admin::model::engines::EngineSnapshot,
+        gateway_admin::model::engines::EngineServiceError,
+    > {
+        Err(gateway_admin::model::engines::EngineServiceError::Unavailable)
+    }
+
+    async fn stop(
+        &self,
+        _: &str,
+    ) -> Result<
+        gateway_admin::model::engines::EngineSnapshot,
+        gateway_admin::model::engines::EngineServiceError,
+    > {
+        Err(gateway_admin::model::engines::EngineServiceError::Unavailable)
+    }
+
+    async fn list(
+        &self,
+    ) -> Result<
+        Vec<gateway_admin::model::engines::EngineSnapshot>,
+        gateway_admin::model::engines::EngineServiceError,
+    > {
+        Err(gateway_admin::model::engines::EngineServiceError::Unavailable)
     }
 }
 
