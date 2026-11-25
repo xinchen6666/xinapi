@@ -3644,7 +3644,7 @@ URL、规范连接、待审核事实和批准历史整体加密保存在 Postgre
 
 `EngineView` 包含 `entry_id,owner,source_id,node_id,version_id,node_name,protocol,listen_host,listen_port,state,pid,started_at,rss_bytes,cpu_seconds,cold_start_ms,last_error`。状态取 `starting/running/stopped/failed`，CPU为累计秒数。v1节点登记升级后保留原端口占位，`owner=null`、`version_id`为空；新归属拥有独立入口。
 
-同owner重复启动复用存活实例。所属来源、节点或连接版本变化返回 `engine_binding_conflict`，显式换路由后续流程处理。停止可取消正在启动的实例，回执在该实例回收后完成；停止中的重复启动返回取消状态。不同入口的进程等待相互独立。Host关闭统一发送终止信号并等待回收，异常退出主动回收，重启后登记和入口凭据保持、进程状态为stopped。
+同owner重复启动复用存活实例。所属来源、节点或连接版本变化返回 `engine_binding_conflict`，显式换路由后续流程处理。停止可取消正在启动的实例，回执在该实例回收后完成；停止中的重复启动返回取消状态。各入口的进程等待相互独立。Host关闭统一发送终止信号并等待回收，异常退出主动回收，重启后登记和入口凭据保持、进程状态为stopped。
 
 | HTTP | reason | 场景 |
 | ---: | --- | --- |

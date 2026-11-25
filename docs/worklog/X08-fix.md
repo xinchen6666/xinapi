@@ -55,4 +55,4 @@ SOCKS仅接收显式remote DNS的TCP连接；本地／缺省DNS和UDP拒绝。�
 
 验证使用独立xinapi-x08-audit栈，最终已停止CPR、fixture、Redis、PostgreSQL及自造SOCKS节点。原有运行栈保持原状；验证数据与脚本保留于 `.runtime/x08-audit` 和 `.runtime/x08-fix`。
 
-修复已普通推送至原 [Draft PR #7](https://github.com/xinchen6666/xinapi/pull/7)，base为X07。首轮CI的文档检查发现审核报告旧源码行锚点随重构失效，已将报告源码链接固定到被审核版本，后续CI以最新运行结果为准。账号绑定及换路继续由X09承接，完整New API管理界面由X12承接。此次修复交付后保留专项复审入口；最新状态以[进度](../STATUS.md)与[交接](../HANDOFF.md)为准
+修复已普通推送至原 [Draft PR #7](https://github.com/xinchen6666/xinapi/pull/7)，base为X07。首轮CI的文档检查发现审核报告旧源码行锚点随重构失效，已将报告源码链接固定到被审核版本，已修正的源码与报告对应 [PR CI 45667344429](https://github.com/xinchen6666/xinapi/actions/runs/45667344429)，质量检查、CPR镜像构建、发行版本核对与汇总全部成功；New API镜像按改动路径跳过。末笔交付记录仅涉及文档，沿用这轮源码构建与真实运行证据。账号绑定及换路继续由X09承接，完整New API管理界面由X12承接。此次修复交付后保留专项复审入口；最新状态以[进度](../STATUS.md)与[交接](../HANDOFF.md)为准
