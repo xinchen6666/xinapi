@@ -18,6 +18,7 @@ For commercial licensing, please contact support@quantumnous.com
 */
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation } from '@tanstack/react-query'
+import { useRef } from 'react'
 import { useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
 import { z } from 'zod'
@@ -63,6 +64,8 @@ type Props = {
 
 export function SourceEditor(props: Props) {
   const { t } = useTranslation()
+  // 草稿绑定打开时的版本；后台刷新推进版本后，提交仍按原版本校验并得到冲突
+  const openingRevision = useRef(props.detail?.source.revision)
   const form = useForm<Values>({
     resolver: zodResolver(schema),
     defaultValues: { name: props.detail?.source.name ?? '', source_url: '' },
@@ -85,7 +88,7 @@ export function SourceEditor(props: Props) {
     if (values.source_url) input.source_url = values.source_url
     if (props.detail) {
       input.source_id = props.detail.source.id
-      input.expected_revision = props.detail.source.revision
+      input.expected_revision = openingRevision.current
     }
     save.mutate(input)
     form.setValue('source_url', '')

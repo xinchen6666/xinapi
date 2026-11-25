@@ -56,6 +56,17 @@ pub(super) fn from_clash(
             uuid::Uuid::parse_str(uuid.as_str().ok_or(VALUE_ERROR)?).map_err(|_| VALUE_ERROR)?;
         result.insert("uuid".into(), Value::from(uuid.to_string()));
     }
+    // 认证与 TLS 直接决定出站握手，只接受对应标量类型
+    if result
+        .get("username")
+        .is_some_and(|value| !value.is_string())
+        || result
+            .get("password")
+            .is_some_and(|value| !value.is_string())
+        || result.get("tls").is_some_and(|value| !value.is_boolean())
+    {
+        return Err(VALUE_ERROR);
+    }
     // 统一协议默认值，展示改名与等价写法承接同一节点身份
     if result.get("network").and_then(Value::as_str) == Some("tcp") {
         result.remove("network");
@@ -104,6 +115,7 @@ fn connection_key(key: &str) -> bool {
             | "ca"
             | "ca-str"
             | "network"
+            | "dns-mode"
             | "ws-opts"
             | "http-opts"
             | "h2-opts"
@@ -357,6 +369,10 @@ pub(super) fn from_uri(
             }
             if url.scheme() == "https" {
                 result.insert("tls".into(), Value::Bool(true));
+            }
+            // socks5h 交由代理解析域名，socks5 本地解析；两种模式产生不同的出站行为
+            if url.scheme() == "socks5h" {
+                result.insert("dns-mode".into(), Value::from("remote"));
             }
         }
         _ => return Err(OPTION_ERROR),

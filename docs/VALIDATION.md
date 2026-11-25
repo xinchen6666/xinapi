@@ -1,6 +1,6 @@
 # 验收矩阵与证据
 
-更新：2026-11-22 UTC。前半部分是待执行验收，后半部分才是实际记录。状态权威为 [STATUS](STATUS.md)。本轮没有执行业务构建、代理内核、真实账号、支付或端到端测试。
+更新：2026-11-25 UTC。前半部分是待执行验收，后半部分才是实际记录。状态权威为 [STATUS](STATUS.md)。本轮没有执行业务构建、代理内核、真实账号、支付或端到端测试。
 
 ## 待执行验收矩阵
 
@@ -227,6 +227,18 @@ E001–E006 是 X01 之前的历史证据，仅支持当时的工作与版本；
 - 桌面和390px移动页面的创建、改名建议、批准、失败保留、私密链接隐藏及管理员只读通过，运行错误零。截图：[差异](evidence/X07-source-review.png)、[批准](evidence/X07-source-approval.png)、[移动](evidence/X07-source-mobile.png)。
 - 首个增量已交付 [Draft PR #6](https://github.com/xinchen6666/xinapi/pull/6)，base 为 X06；完整源码与四张截图已送达并读回。CI质量与New API镜像通过，CPR构建继续跟随[运行页](https://github.com/xinchen6666/xinapi/actions/runs/45552189412)。
 - 较早整仓测试保留56项前端失败/超时及controller整包超时记录；限定业务场景通过与整仓结果分别记账。真实账号绑定、稳定出口及Mihomo执行属于后续任务，当前available是已批准来源节点状态。
+
+<a id="e024-x07专项复审修订"></a>
+### E024 X07：专项复审修订
+
+- 2026-11-25（Asia/Shanghai），lead；范围为 X07 专项复审提出的三项修订，结果 `passed_scoped`；复审事实与修订对照见[工作日志](worklog/X07.md#专项复审与修订)。
+- R1 连接事实：socks5h 在 URI 解析写入 dns-mode=remote 并纳入连接键；同一来源切换解析位置返回 connection_changed，管理员显式选择旧身份后 UUID 保持、连接版本追加。
+- R2 凭据类型：username/password 要求字符串、tls 要求布尔值；畸形标量在解析阶段拒绝，候选 parse_valid=false、review.complete=false，批准路径保持拒绝。
+- R3 编辑器版本：编辑器按打开时 revision 提交；服务端版本已推进时两次保存均返回 409 subscription_source_conflict，并发编辑的名称保留，刷新与批准继续可用。
+- 复验环境：真实应用、自造来源、隔离数据卷；审计环境把 CRITICAL_RATE_LIMIT 调至 200 次/20 分钟以支持重复运行，产品默认 20 次/20 分钟。
+- 通过项：六点专项 17 项、权限与存储 6 项、后端语义 2 项、cpr 重启后 61 个来源逐项一致、浏览器主流程与编辑冲突，页面运行错误零。
+- 编译：Rust fmt/clippy、现有订阅 25 项、API 7 项与网关构建通过；New API go vet/go build、前端 1520 文件/2 项目类型检查与生产构建通过。
+- 截图：[编辑冲突](evidence/X07-review-editor-conflict.png)、[来源管理](evidence/X07-review-source-management.png)。修订推送至 [Draft PR #6](https://github.com/xinchen6666/xinapi/pull/6)，base 为 X06。
 
 ## 未来记录模板
 

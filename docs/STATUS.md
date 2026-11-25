@@ -1,6 +1,6 @@
 # 项目进度
 
-目标：[xinchen6666/xinapi](https://github.com/xinchen6666/xinapi)，单机 Docker Compose。更新：2026-11-24 UTC。**本表是 X 任务的唯一进度来源**；不以已有上游源码、文档或工具看板推断集成产品完成。
+目标：[xinchen6666/xinapi](https://github.com/xinchen6666/xinapi)，单机 Docker Compose。更新：2026-11-25 UTC。**本表是 X 任务的唯一进度来源**；不以已有上游源码、文档或工具看板推断集成产品完成。
 
 | ID | 状态 | 负责人／工作域 | 最近事实或验收入口 |
 | --- | --- | --- | --- |
@@ -10,7 +10,7 @@
 | X04 | done | lead；修订已交付 | [PR #3](https://github.com/xinchen6666/xinapi/pull/3)已同步真实就绪启动与原卷补全修订，远端代码及文案读回通过，复验见 E018；保持 open，base 为 X03 |
 | X05 | done | lead；Draft 已交付 | [PR #4](https://github.com/xinchen6666/xinapi/pull/4)已推送并读回，base 为 X04；构建、真实 CPR、七语浏览器验证及 authz 全量回归通过，见 [E019](VALIDATION.md#e019-x05管理员只读入口) |
 | X06 | done | lead；审核修复已交付 | R1–R6 与部分接受确认完成，72 项接口及浏览器复验通过；源码与截图已普通推送至 [Draft PR #5](https://github.com/xinchen6666/xinapi/pull/5)，见 [E022](VALIDATION.md#e022-x06审核修复复验)和[修复报告](worklog/X06-fix.md) |
-| X07 | in_progress | lead；首个可审阅增量已交付 | 来源密文、稳定节点ID、刷新差异及批准已交付 [Draft PR #6](https://github.com/xinchen6666/xinapi/pull/6)；15项业务流程、6项补充和真实页面通过，见 [E023](VALIDATION.md#e023-x07来源与批准版本)，待专项复审 |
+| X07 | done | lead；专项复审修订已交付 | 来源密文、稳定节点ID、刷新差异及批准完成；复审三项修订通过 17+6+2 项、重启与真实页面复验，见 [E024](VALIDATION.md#e024-x07专项复审修订)；[Draft PR #6](https://github.com/xinchen6666/xinapi/pull/6) 已含修订 |
 | X08 | pending | CPR Host／Mihomo | 引擎监督、稳定入口和资源观测 |
 | X09 | pending | CPR 路由／连接池 | 确认版本、换路与在途连接边界 |
 | X10 | pending | CPR 出站策略 | 故障与后台请求不直连 |

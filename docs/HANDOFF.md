@@ -1,6 +1,16 @@
 # 当前交接
 
-## 当前：X07 来源与批准版本首个增量已交付
+## 当前：X07 专项复审修订已交付
+
+X07 来源与已批准版本的首个增量经两路独立只读复审，三项 P2 事实已修订：socks5h 的 DNS 解析位置进入连接身份（dns-mode），username/password/tls 的畸形类型在解析阶段拒绝，来源编辑器按打开时 revision 提交并在服务端版本推进时得到 409。复验通过六点专项 17 项、权限与存储 6 项、后端语义 2 项、cpr 重启 61 个来源一致，以及真实页面编辑冲突与主流程，页面运行错误零。证据见 [E024](VALIDATION.md#e024-x07专项复审修订)。
+
+审计环境把 CRITICAL_RATE_LIMIT 调至 200 次/20 分钟用于重复运行；产品默认 20 次/20 分钟。修订以普通提交推送至 task/X07-subscription-snapshots 并更新 [Draft PR #6](https://github.com/xinchen6666/xinapi/pull/6)，base 为 task/X06-subscription-preview。
+
+X07 状态为 done。下一动作：按 [PLAN](PLAN.md#x08) 启动 X08，先确认 CPR Host 写入范围、Mihomo 版本与摘要登记方式，再做单引擎启动、认证、正常关闭与异常回收验证；账号绑定由 X09 推进，出口策略由 X10 推进。
+
+临时服务状态：xinapi-x07-dev、xinapi-x07-fresh 与 xinapi-x07-upgrade 运行栈保留；私有配置、身份与验证脚本位于 .runtime/x07 与 .runtime/x07-review。协作入口和长期记忆的用户编辑继续独立保留。
+
+## 上一轮 X07 首个增量交付记录
 
 已实现来源创建/编辑/读取、受控刷新差异、显式选择身份和批准版本。Admin 以规范连接字段直接匹配，Store 单点 AES-256-GCM 密文保存来源与连接；稳定节点 UUID 与只追加连接版本分离，改名/排序/等价默认值保留身份。完整缺失需确认后标记 available=false，部分结果保留旧节点；旧刷新/旧批准受 revision 和 review_id 校验。
 
