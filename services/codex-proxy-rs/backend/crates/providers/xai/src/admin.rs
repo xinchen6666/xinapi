@@ -655,12 +655,13 @@ impl ProviderAdmin for XaiAdminProvider {
                 return Err(provider_error(ProviderAdminErrorKind::NotFound));
             }
         }
-        let discovery = self
+        let mut oauth = self
             .oauth
-            .with_outbound_proxy(pending.outbound_proxy().cloned())
-            .discover()
-            .await
-            .map_err(map_oauth_error)?;
+            .with_outbound_proxy(pending.outbound_proxy().cloned());
+        if let AuthorizationMutationTarget::Reauthorize { account_id } = pending.target() {
+            oauth = oauth.with_account_id(account_id);
+        }
+        let discovery = oauth.discover().await.map_err(map_oauth_error)?;
         let redirect = RedirectUriAllowlist::new([crate::OFFICIAL_REDIRECT_URI])
             .and_then(|allowlist| allowlist.authorize(crate::OFFICIAL_REDIRECT_URI))
             .map_err(|_| provider_error(ProviderAdminErrorKind::Internal))?;
@@ -753,7 +754,8 @@ impl ProviderAdmin for XaiAdminProvider {
         );
         let oauth = self
             .oauth
-            .with_outbound_proxy(current.account.outbound_proxy().cloned());
+            .with_outbound_proxy(current.account.outbound_proxy().cloned())
+            .with_account_id(current.account.id());
         let discovery = oauth.discover().await.map_err(map_oauth_error)?;
         let tokens = oauth
             .verify_imported_credential(&discovery, candidate)
@@ -925,7 +927,10 @@ impl XaiAdminProvider {
             .map_or(stored.mutation.outbound_proxy(), |current| {
                 current.account.outbound_proxy()
             });
-        let oauth = self.oauth.with_outbound_proxy(proxy.cloned());
+        let mut oauth = self.oauth.with_outbound_proxy(proxy.cloned());
+        if let Some(current) = &current {
+            oauth = oauth.with_account_id(current.account.id());
+        }
         let discovery = oauth.discover().await.map_err(map_oauth_error)?;
         let tokens = oauth
             .exchange_authorization_code(&discovery, grant)

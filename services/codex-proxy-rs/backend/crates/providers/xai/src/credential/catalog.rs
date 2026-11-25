@@ -678,7 +678,8 @@ async fn fetch_candidate_catalog(
         wire_profile,
     )
     .map_err(|_| GrokCredentialCatalogError::InvalidCredentialData)?
-    .with_outbound_proxy(candidate.account.outbound_proxy().cloned());
+    .with_outbound_proxy(candidate.account.outbound_proxy().cloned())
+    .with_account_id(candidate.account.id());
     let snapshot = client
         .fetch(&session)
         .await

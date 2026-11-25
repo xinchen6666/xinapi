@@ -285,6 +285,9 @@ impl CodexCredentialProfileService {
         } else {
             self.http.clone()
         };
+        gateway_egress::admit_account(account.id().as_str(), account.outbound_proxy())
+            .await
+            .map_err(|_| CodexProfileAvatarError::TransportUnavailable)?;
         fetch_profile_avatar(
             &http,
             &self.base_url,

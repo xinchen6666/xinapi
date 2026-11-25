@@ -66,6 +66,11 @@ pub(super) fn build_account_http_client_with_timeout(
     timeout: Duration,
 ) -> Result<Client, CustomCaError> {
     super::tls::ensure_rustls_provider();
+    if let Some(proxy) = proxy {
+        proxy
+            .ensure_sendable()
+            .map_err(|_| CustomCaError::ProxyConfiguration)?;
+    }
     let cache_key = (
         custom_ca_env_cache_key(),
         egress_key(account_id, proxy),
@@ -408,6 +413,18 @@ impl CodexClientError {
 /// Codex 客户端结果类型
 pub type CodexClientResult<T> = Result<T, CodexClientError>;
 
+/// 托管出口拒绝发生在载荷发送前，沿用统一Provider错误合同
+pub(super) fn managed_egress_error() -> CodexClientError {
+    use gateway_core::{
+        error::{ProviderError, ProviderErrorKind},
+        upstream::UpstreamSendState,
+    };
+    CodexClientError::Outbound(Box::new(
+        ProviderError::new(ProviderErrorKind::Unavailable, UpstreamSendState::NotSent)
+            .with_retry_prohibited(),
+    ))
+}
+
 /// Codex SSE 字节流
 pub type CodexBackendSseStream =
     Pin<Box<dyn Stream<Item = CodexClientResult<Bytes>> + Send + 'static>>;
@@ -710,6 +727,7 @@ pub struct CodexBackendClient {
     pub(super) websocket_origin_breaker: WebSocketOriginBreaker,
     pub(super) websocket_origin_key: String,
     pub(super) outbound_proxy: Option<gateway_core::account::OutboundProxy>,
+    pub(super) local_account_id: Option<String>,
     pub(super) egress_key: String,
     pub(super) middleware_headers: Vec<MiddlewareHeader>,
     pub(super) outbound_middleware: Option<gateway_core::engine::middleware::outbound::Pipeline>,
@@ -743,6 +761,7 @@ impl CodexBackendClient {
             client,
             websocket_origin_key: websocket_origin_key(&base_url),
             outbound_proxy: None,
+            local_account_id: None,
             egress_key: String::new(),
             middleware_headers: Vec::new(),
             outbound_middleware: None,
@@ -804,6 +823,17 @@ impl CodexBackendClient {
         self
     }
 
+    /// 每次发送重新确认托管出口，缓存客户端和存量连接共享同一准入规则
+    pub(super) async fn admit_egress(&self) -> CodexClientResult<()> {
+        match self.local_account_id.as_deref() {
+            Some(account_id) => {
+                gateway_egress::admit_account(account_id, self.outbound_proxy.as_ref()).await
+            }
+            None => gateway_egress::admit(self.outbound_proxy.as_ref()).await,
+        }
+        .map_err(|_| managed_egress_error())
+    }
+
     pub(super) fn connection_opening(&self) -> Result<Option<Duration>, CodexClientError> {
         self.connection_budget.as_ref().map_or(Ok(None), |budget| {
             budget
@@ -844,6 +874,7 @@ impl CodexBackendClient {
         request: reqwest::RequestBuilder,
         fallback: reqwest::RequestBuilder,
     ) -> CodexClientResult<ReqwestResponse> {
+        self.admit_egress().await?;
         let response = request.send().await.map_err(CodexClientError::HttpJson)?;
         if response.status() != StatusCode::NOT_FOUND
             || self.base_url.trim_end_matches('/') == self.official_base_url.trim_end_matches('/')
@@ -856,6 +887,7 @@ impl CodexBackendClient {
         );
         drop(response);
         // 消费可能已在回退端完成，传输失败不能被先前的 404 覆盖
+        self.admit_egress().await?;
         fallback.send().await.map_err(CodexClientError::HttpJson)
     }
 
@@ -885,9 +917,15 @@ impl CodexBackendClient {
         &self,
         account: &gateway_core::account::ProviderAccount,
     ) -> Result<Self, CodexClientError> {
+        if let Some(proxy) = account.outbound_proxy() {
+            proxy
+                .ensure_sendable()
+                .map_err(|_| managed_egress_error())?;
+        }
         let mut client = self.clone();
         client.fedramp_routing = false;
         client.outbound_proxy = account.outbound_proxy().cloned();
+        client.local_account_id = Some(account.id().as_str().to_owned());
         client.egress_key = egress_key(account.id().as_str(), account.outbound_proxy());
         if account.authentication_kind() == crate::CODEX_AUTHENTICATION_KIND_API_KEY {
             client

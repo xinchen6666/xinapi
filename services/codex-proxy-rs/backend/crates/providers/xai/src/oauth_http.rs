@@ -126,6 +126,7 @@ pub struct OAuthHttpRequest {
     headers: Vec<HttpHeader>,
     form: Vec<FormField>,
     pub(crate) outbound_proxy: Option<gateway_core::account::OutboundProxy>,
+    pub(crate) account_id: Option<String>,
 }
 
 impl OAuthHttpRequest {
@@ -136,6 +137,7 @@ impl OAuthHttpRequest {
             headers: Vec::new(),
             form: Vec::new(),
             outbound_proxy: None,
+            account_id: None,
         }
     }
 
@@ -146,6 +148,7 @@ impl OAuthHttpRequest {
             headers,
             form,
             outbound_proxy: None,
+            account_id: None,
         }
     }
 

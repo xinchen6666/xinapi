@@ -386,6 +386,7 @@ pub struct OpenAiTokenClient {
     client: Client,
     config: TokenClientConfig,
     profile: CodexWireProfileState,
+    outbound_proxy: Option<gateway_core::account::OutboundProxy>,
 }
 
 /// 官方 Codex token client 无法安全构建
@@ -408,7 +409,9 @@ impl OpenAiTokenClient {
             .timeout(TOKEN_REQUEST_TIMEOUT);
         let client =
             build_reqwest_client_with_custom_ca(builder).map_err(|_| TokenClientBuildError)?;
-        Ok(Self::new(client, self.config.clone(), self.profile.clone()))
+        let mut client = Self::new(client, self.config.clone(), self.profile.clone());
+        client.outbound_proxy = Some(proxy.clone());
+        Ok(client)
     }
     /// 共享运行时画像；刷新时取快照，授权码交换仍使用 raw auth 请求
     pub fn new(client: Client, config: TokenClientConfig, profile: CodexWireProfileState) -> Self {
@@ -416,6 +419,7 @@ impl OpenAiTokenClient {
             client,
             config,
             profile,
+            outbound_proxy: None,
         }
     }
 
@@ -443,6 +447,9 @@ impl OpenAiTokenClient {
             .map_err(|_| PersonalAccessTokenError::Unavailable)?;
         let client = self
             .with_proxy(proxy)
+            .map_err(|_| PersonalAccessTokenError::Unavailable)?;
+        gateway_egress::admit(client.outbound_proxy.as_ref())
+            .await
             .map_err(|_| PersonalAccessTokenError::Unavailable)?;
         let response = client
             .client
@@ -599,6 +606,9 @@ impl TokenRefresher for OpenAiTokenClient {
                 upstream: None,
             }
         })?;
+        gateway_egress::admit(self.outbound_proxy.as_ref())
+            .await
+            .map_err(|_| proxy_refresh_failure())?;
         let response = self
             .client
             .post(&self.config.token_endpoint)
@@ -642,6 +652,9 @@ impl AuthorizationCodeExchanger for OpenAiTokenClient {
         &self,
         grant: AuthorizationCodeGrant,
     ) -> Result<AuthorizationTokenSet, AuthorizationCodeExchangeError> {
+        gateway_egress::admit(self.outbound_proxy.as_ref())
+            .await
+            .map_err(|_| AuthorizationCodeExchangeError::Unavailable)?;
         let response = self
             .client
             .post(&self.config.token_endpoint)

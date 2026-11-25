@@ -146,12 +146,12 @@ pub struct AccountRecord {
 }
 
 impl AccountRecord {
-    /// 配置保留绑定，执行请求时禁用代理使用部署默认出口
+    /// 托管出口始终携带发送要求，普通代理沿用启停语义
     #[must_use]
     pub fn effective_outbound_proxy(&self) -> Option<&gateway_core::account::OutboundProxy> {
         self.outbound_proxy
             .as_ref()
-            .filter(|_| self.outbound_proxy_enabled)
+            .filter(|proxy| self.outbound_proxy_enabled || proxy.is_managed())
     }
 }
 

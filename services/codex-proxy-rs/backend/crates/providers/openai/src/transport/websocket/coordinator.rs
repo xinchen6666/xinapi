@@ -90,6 +90,16 @@ impl PoolBinding {
 }
 
 impl PreparedWebSocket {
+    pub(crate) fn set_egress_context(
+        &mut self,
+        account_id: Option<String>,
+        outbound_proxy: Option<gateway_core::account::OutboundProxy>,
+    ) {
+        self.connection
+            .websocket
+            .set_egress_context(account_id, outbound_proxy);
+    }
+
     pub(crate) fn max_message_bytes(&self) -> Option<usize> {
         self.connection.metadata.max_message_bytes
     }

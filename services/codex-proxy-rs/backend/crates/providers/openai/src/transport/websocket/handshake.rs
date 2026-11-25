@@ -94,6 +94,7 @@ impl CodexWebSocketConnection {
             headers,
             permessage_deflate: true,
             outbound_proxy: None,
+            local_account_id: None,
             connection_budget: None,
         }
     }
@@ -162,7 +163,12 @@ pub(super) async fn connect_pumped_websocket(
     proxy_permit: Option<super::pool::ProxyConnectionPermit>,
 ) -> Result<(PumpedWebSocket, WsResponse<Option<Vec<u8>>>), CodexWebSocketExchangeError> {
     let (raw, response) = connect_websocket(connection, fast_path).await?;
-    Ok((PumpedWebSocket::new(raw, context, proxy_permit), response))
+    let mut pumped = PumpedWebSocket::new(raw, context, proxy_permit);
+    pumped.set_egress_context(
+        connection.local_account_id.clone(),
+        connection.outbound_proxy.clone(),
+    );
+    Ok((pumped, response))
 }
 
 pub(super) async fn send_websocket_request(
@@ -206,10 +212,29 @@ pub(super) fn websocket_connection_metadata(
     }
 }
 
+async fn admit_connection(connection: &CodexWebSocketConnection) -> Result<(), tungstenite::Error> {
+    match connection.local_account_id.as_deref() {
+        Some(id) => gateway_egress::admit_account(id, connection.outbound_proxy.as_ref()).await,
+        None => gateway_egress::admit(connection.outbound_proxy.as_ref()).await,
+    }
+    .map_err(|_| {
+        tungstenite::Error::Io(std::io::Error::new(
+            std::io::ErrorKind::PermissionDenied,
+            "Managed egress is unavailable.",
+        ))
+    })
+}
+
 async fn connect_websocket(
     connection: &CodexWebSocketConnection,
     fast_path: bool,
 ) -> Result<(RawWsStream, WsResponse<Option<Vec<u8>>>), CodexWebSocketExchangeError> {
+    admit_connection(connection)
+        .await
+        .map_err(|source| CodexWebSocketExchangeError::Connect {
+            source,
+            proxy_hint: None,
+        })?;
     let request = websocket_handshake_request(connection)?;
     let connector = tls::maybe_build_rustls_client_config_with_custom_ca()
         .map_err(|error| CodexWebSocketExchangeError::Connect {
@@ -239,7 +264,9 @@ async fn connect_websocket(
             crate::transport::connection::acquire().await
         }
         .map_err(tungstenite::Error::Io)?;
+        admit_connection(connection).await?;
         let stream = dial_account(connection, &mut proxy_hint).await?;
+        admit_connection(connection).await?;
         match stream {
             MaybeTlsStream::Plain(tcp) => {
                 let (websocket, response) = client_async_tls_with_config(

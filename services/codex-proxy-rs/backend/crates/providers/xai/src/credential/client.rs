@@ -19,6 +19,7 @@ pub struct GrokOAuthClient {
     transport: Arc<dyn OAuthHttpTransport>,
     verifier: Arc<dyn TokenVerifier>,
     outbound_proxy: Option<gateway_core::account::OutboundProxy>,
+    account_id: Option<String>,
 }
 
 impl GrokOAuthClient {
@@ -36,6 +37,7 @@ impl GrokOAuthClient {
             transport,
             verifier,
             outbound_proxy: None,
+            account_id: None,
         }
     }
 
@@ -43,6 +45,16 @@ impl GrokOAuthClient {
     #[must_use]
     pub const fn config(&self) -> &GrokOAuthConfig {
         &self.config
+    }
+
+    #[must_use]
+    pub(crate) fn with_account_id(
+        &self,
+        account_id: &gateway_core::account::ProviderAccountId,
+    ) -> Self {
+        let mut client = self.clone();
+        client.account_id = Some(account_id.as_str().to_owned());
+        client
     }
 
     #[must_use]
@@ -144,7 +156,9 @@ impl GrokOAuthClient {
         let evidence = self
             .verifier
             .verify(
-                context.with_outbound_proxy(self.outbound_proxy.as_ref()),
+                context
+                    .with_outbound_proxy(self.outbound_proxy.as_ref())
+                    .with_account_id(self.account_id.as_deref()),
                 candidate,
             )
             .await?;
@@ -214,7 +228,9 @@ impl GrokOAuthClient {
         let evidence = self
             .verifier
             .verify(
-                context.with_outbound_proxy(self.outbound_proxy.as_ref()),
+                context
+                    .with_outbound_proxy(self.outbound_proxy.as_ref())
+                    .with_account_id(self.account_id.as_deref()),
                 verification_candidate,
             )
             .await
@@ -278,6 +294,7 @@ impl GrokOAuthClient {
         mut request: OAuthHttpRequest,
     ) -> Result<OAuthHttpResponse, OAuthError> {
         request.outbound_proxy = self.outbound_proxy.clone();
+        request.account_id = self.account_id.clone();
         self.transport
             .execute(request)
             .await

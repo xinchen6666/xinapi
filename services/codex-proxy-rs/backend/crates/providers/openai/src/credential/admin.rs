@@ -894,6 +894,12 @@ impl CodexCredentialAdminService {
                 return Err(CodexCredentialAdminError::RefreshLeaseUnavailable);
             }
         };
+        gateway_egress::admit_account(
+            current.account.id().as_str(),
+            current.account.outbound_proxy(),
+        )
+        .await
+        .map_err(|_| CodexCredentialAdminError::RefreshUnavailable)?;
         let tokens = self
             .refresher
             .refresh_with_proxy(

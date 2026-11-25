@@ -30,6 +30,7 @@ use crate::{
 
 const ENTITY: &str = "outbound proxy";
 const SELECT: &str = "select p.*,
+    (select account_id from managed_routes r where r.proxy_id=p.id) as managed_account_id,
     (select count(*) from provider_accounts a where a.outbound_proxy_id = p.id) as account_count
     from outbound_proxies p";
 
@@ -96,6 +97,46 @@ fn invalid() -> StoreError {
     }
 }
 
+/// 受管代理的连接事实附带原账号归属，OAuth等窄调用沿同一准入合同
+fn projected_proxy(row: &PgRow) -> StoreResult<OutboundProxy> {
+    use gateway_core::account::ManagedEgressRequirement;
+    let generation = u64::try_from(
+        row.try_get::<i64, _>("route_generation")
+            .map_err(|source| invalid().with_source(source))?,
+    )
+    .map_err(|source| invalid().with_source(source))?;
+    let limit = u32::try_from(
+        row.try_get::<i64, _>("max_websocket_connections")
+            .map_err(|source| invalid().with_source(source))?,
+    )
+    .map_err(|source| invalid().with_source(source))?;
+    let proxy = OutboundProxy::parse(
+        &row.try_get::<String, _>("proxy_url")
+            .map_err(|source| invalid().with_source(source))?,
+    )
+    .map_err(|source| invalid().with_source(source))?
+    .with_max_websocket_connections(limit)
+    .with_route_generation(generation);
+    let owner: Option<String> = row
+        .try_get("managed_account_id")
+        .map_err(|source| invalid().with_source(source))?;
+    if let Some(account_id) = owner {
+        Ok(
+            proxy.with_managed_requirement(ManagedEgressRequirement::Account {
+                account_id,
+                proxy_id: row
+                    .try_get("id")
+                    .map_err(|source| invalid().with_source(source))?,
+                generation,
+            }),
+        )
+    } else if generation > 0 {
+        Ok(OutboundProxy::blocked_managed(String::new()))
+    } else {
+        Ok(proxy)
+    }
+}
+
 fn record(row: PgRow) -> StoreResult<ProxyRecord> {
     let success: Option<bool> = row
         .try_get("last_test_success")
@@ -127,25 +168,7 @@ fn record(row: PgRow) -> StoreResult<ProxyRecord> {
         name: row
             .try_get("name")
             .map_err(|source| invalid().with_source(source))?,
-        proxy: OutboundProxy::parse(
-            &row.try_get::<String, _>("proxy_url")
-                .map_err(|source| invalid().with_source(source))?,
-        )
-        .map_err(|source| invalid().with_source(source))?
-        .with_max_websocket_connections(
-            u32::try_from(
-                row.try_get::<i64, _>("max_websocket_connections")
-                    .map_err(|source| invalid().with_source(source))?,
-            )
-            .map_err(|source| invalid().with_source(source))?,
-        )
-        .with_route_generation(
-            u64::try_from(
-                row.try_get::<i64, _>("route_generation")
-                    .map_err(|source| invalid().with_source(source))?,
-            )
-            .map_err(|source| invalid().with_source(source))?,
-        ),
+        proxy: projected_proxy(&row)?,
         revision: AdminRevision::new(
             u64::try_from(
                 row.try_get::<i64, _>("revision")

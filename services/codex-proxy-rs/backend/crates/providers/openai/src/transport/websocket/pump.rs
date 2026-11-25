@@ -248,6 +248,8 @@ pub(crate) struct PumpedWebSocket {
     tx_command: mpsc::Sender<PumpCommand>,
     rx_message: SharedMessages,
     control: Option<Arc<PumpControl>>,
+    account_id: Option<String>,
+    outbound_proxy: Option<gateway_core::account::OutboundProxy>,
     closed: Arc<AtomicBool>,
     lifecycle: Arc<Mutex<PumpLifecycleState>>,
     pump: Option<JoinHandle<()>>,
@@ -309,10 +311,22 @@ impl PumpedWebSocket {
             tx_command,
             rx_message: Arc::new(tokio::sync::Mutex::new(rx_message)),
             control: None,
+            account_id: None,
+            outbound_proxy: None,
             closed,
             lifecycle,
             pump: Some(pump),
         }
+    }
+
+    /// 每轮租用固定当前账号出口，控制通道随后复制同一份归属
+    pub(crate) fn set_egress_context(
+        &mut self,
+        account_id: Option<String>,
+        outbound_proxy: Option<gateway_core::account::OutboundProxy>,
+    ) {
+        self.account_id = account_id;
+        self.outbound_proxy = outbound_proxy;
     }
 
     /// 通过 pump 发送一条消息，区分未开始发送与底层传输失败
@@ -320,7 +334,20 @@ impl PumpedWebSocket {
         if self.is_closed() {
             return Err(CodexWebSocketExchangeError::SendNotStarted);
         }
-        send_message(&self.tx_command, message).await
+        match self.account_id.as_deref() {
+            Some(account_id) => {
+                gateway_egress::admit_account(account_id, self.outbound_proxy.as_ref()).await
+            }
+            None => gateway_egress::admit(self.outbound_proxy.as_ref()).await,
+        }
+        .map_err(|_| CodexWebSocketExchangeError::SendNotStarted)?;
+        send_message(
+            &self.tx_command,
+            message,
+            self.account_id.clone(),
+            self.outbound_proxy.clone(),
+        )
+        .await
     }
 
     /// 每轮发送后替换控制 owner，旧执行的弱引用不能控制下一轮连接
@@ -331,6 +358,8 @@ impl PumpedWebSocket {
                 tx_command: self.tx_command.clone(),
                 rx_message: Arc::clone(&self.rx_message),
                 cancellation: tokio_util::sync::CancellationToken::new(),
+                account_id: self.account_id.clone(),
+                outbound_proxy: self.outbound_proxy.clone(),
             });
             let target: Arc<dyn ResponseControlTransport> = transport.clone();
             control.bind(&target);
@@ -607,7 +636,12 @@ async fn handle_command(
     command: PumpCommand,
     closed: bool,
 ) -> Option<PumpExitReason> {
-    let PumpCommand::Send { message, ack } = command;
+    let PumpCommand::Send {
+        message,
+        account_id,
+        outbound_proxy,
+        ack,
+    } = command;
     // 发送超时或取消后，尚在队列里的业务帧不应继续打到上游
     if ack.is_closed() {
         return None;
@@ -617,6 +651,19 @@ async fn handle_command(
         return None;
     }
     let is_close = matches!(message, Message::Close(_));
+    if !is_close {
+        let admitted = match account_id.as_deref() {
+            Some(id) => gateway_egress::admit_account(id, outbound_proxy.as_ref()).await,
+            None => gateway_egress::admit(outbound_proxy.as_ref()).await,
+        };
+        if admitted.is_err() {
+            let _ = ack.send(Err(CodexWebSocketExchangeError::SendNotStarted));
+            return Some(PumpExitReason::MessageReceiverClosed);
+        }
+        if ack.is_closed() {
+            return None;
+        }
+    }
     let result = write_message(inner, message).await;
     let transport_error = result
         .as_ref()

@@ -35,6 +35,15 @@ impl StoreBundle {
         self.diagnostics.clone()
     }
 
+    /// 发送前读取最新托管绑定和来源事实，故障按拒绝处理
+    #[must_use]
+    pub fn managed_egress_state(&self) -> Arc<dyn gateway_core::account::ManagedEgressState> {
+        Arc::new(postgres::PgManagedEgressState::new(
+            self.pool.clone(),
+            self.admin_ports.subscriptions(),
+        ))
+    }
+
     #[must_use]
     pub fn admin_ports(&self) -> AdminStorePorts {
         self.admin_ports.clone()

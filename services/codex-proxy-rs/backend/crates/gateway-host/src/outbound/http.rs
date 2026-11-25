@@ -319,6 +319,9 @@ impl HttpClient {
         *outgoing.method_mut() = method;
         *outgoing.uri_mut() = uri;
         *outgoing.headers_mut() = headers;
+        gateway_egress::admit(proxy).await.map_err(|_| {
+            HttpError::invalid("managed egress denied").with_kind(HttpErrorKind::AddressDenied)
+        })?;
         let response = tokio::time::timeout_at(deadline, client.request(outgoing))
             .await
             .map_err(|_| HttpError {

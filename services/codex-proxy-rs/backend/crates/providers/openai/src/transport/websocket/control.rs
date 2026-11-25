@@ -17,6 +17,8 @@ pub(super) const WEBSOCKET_SEND_TIMEOUT: Duration = Duration::from_secs(5 * 60);
 pub(super) enum PumpCommand {
     Send {
         message: Message,
+        account_id: Option<String>,
+        outbound_proxy: Option<gateway_core::account::OutboundProxy>,
         ack: oneshot::Sender<Result<(), CodexWebSocketExchangeError>>,
     },
 }
@@ -27,15 +29,24 @@ pub(super) struct PumpControl {
     pub(super) tx_command: mpsc::Sender<PumpCommand>,
     pub(super) rx_message: SharedMessages,
     pub(super) cancellation: CancellationToken,
+    pub(super) account_id: Option<String>,
+    pub(super) outbound_proxy: Option<gateway_core::account::OutboundProxy>,
 }
 
 pub(super) async fn send_message(
     commands: &mpsc::Sender<PumpCommand>,
     message: Message,
+    account_id: Option<String>,
+    outbound_proxy: Option<gateway_core::account::OutboundProxy>,
 ) -> Result<(), CodexWebSocketExchangeError> {
     let (ack, rx_ack) = oneshot::channel();
     commands
-        .send(PumpCommand::Send { message, ack })
+        .send(PumpCommand::Send {
+            message,
+            account_id,
+            outbound_proxy,
+            ack,
+        })
         .await
         .map_err(|_| CodexWebSocketExchangeError::SendNotStarted)?;
     // 回执丢失不能证明未发送，只有 pump 明确拒绝的命令才允许按 NotSent 恢复
@@ -52,7 +63,13 @@ impl ResponseControlTransport for PumpControl {
             () = self.cancellation.cancelled() => Err(ResponseControlUnavailable),
             result = tokio::time::timeout(
                 WEBSOCKET_SEND_TIMEOUT,
-                send_message(&self.tx_command, Message::Text(payload.to_owned().into())),
+                async {
+                    match self.account_id.as_deref() {
+                        Some(account_id) => gateway_egress::admit_account(account_id, self.outbound_proxy.as_ref()).await,
+                        None => gateway_egress::admit(self.outbound_proxy.as_ref()).await,
+                    }.map_err(|_| CodexWebSocketExchangeError::SendNotStarted)?;
+                    send_message(&self.tx_command, Message::Text(payload.to_owned().into()), self.account_id.clone(), self.outbound_proxy.clone()).await
+                },
             ) => result.map_err(|_| ResponseControlUnavailable)?.map_err(|_| ResponseControlUnavailable),
         }
     }

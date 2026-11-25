@@ -518,7 +518,11 @@ fn billing_session(
             .map(|value| SecretValue::new(value.to_owned())),
         wire_profile.clone(),
     )
-    .map(|session| session.with_outbound_proxy(loaded.account.outbound_proxy().cloned()))
+    .map(|session| {
+        session
+            .with_outbound_proxy(loaded.account.outbound_proxy().cloned())
+            .with_account_id(loaded.account.id())
+    })
     .map_err(|_| GrokQuotaError::InvalidData)
 }
 

@@ -49,6 +49,7 @@ pub struct GrokModelCatalogSession {
     email: Option<SecretValue>,
     wire_profile: XaiWireProfileState,
     outbound_proxy: Option<gateway_core::account::OutboundProxy>,
+    account_id: Option<String>,
 }
 
 impl GrokModelCatalogSession {
@@ -77,7 +78,17 @@ impl GrokModelCatalogSession {
             email,
             wire_profile,
             outbound_proxy: None,
+            account_id: None,
         })
+    }
+
+    #[must_use]
+    pub(crate) fn with_account_id(
+        mut self,
+        account_id: &gateway_core::account::ProviderAccountId,
+    ) -> Self {
+        self.account_id = Some(account_id.as_str().to_owned());
+        self
     }
 
     #[must_use]
@@ -108,6 +119,7 @@ pub struct GrokModelCatalogRequest {
     endpoint: Url,
     headers: Vec<GrokHeader>,
     pub(crate) outbound_proxy: Option<gateway_core::account::OutboundProxy>,
+    pub(crate) account_id: Option<String>,
 }
 
 impl GrokModelCatalogRequest {
@@ -135,6 +147,7 @@ impl GrokModelCatalogRequest {
             endpoint,
             headers,
             outbound_proxy: session.outbound_proxy.clone(),
+            account_id: session.account_id.clone(),
         })
     }
 
@@ -265,6 +278,7 @@ pub struct GrokBillingRequest {
     endpoint: Url,
     headers: Vec<GrokHeader>,
     pub(crate) outbound_proxy: Option<gateway_core::account::OutboundProxy>,
+    pub(crate) account_id: Option<String>,
 }
 
 impl GrokBillingRequest {
@@ -298,6 +312,7 @@ impl GrokBillingRequest {
             endpoint,
             headers,
             outbound_proxy: session.outbound_proxy.clone(),
+            account_id: session.account_id.clone(),
         })
     }
 

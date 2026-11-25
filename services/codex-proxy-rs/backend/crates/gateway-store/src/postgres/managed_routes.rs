@@ -399,7 +399,7 @@ impl ManagedRouteStore for PgManagedRouteStore {
                     .execute(&mut *tx).await.map_err(unavailable)?;
             }
             // 账号关联与解析URL共同发布，换代同时撤销旧出口额度缓存
-            let changed=sqlx::query("update provider_accounts set outbound_proxy_id=$2,outbound_proxy_url=$3,(provider_quota_json,quota_observed_at)=(select provider_quota_json,quota_observed_at where quota_paused),updated_at=greatest(now(),updated_at) where id=$1 and outbound_proxy_id is not distinct from $4 and outbound_proxy_url is not distinct from $5")
+            let changed=sqlx::query("update provider_accounts set managed_egress_required=true,outbound_proxy_id=$2,outbound_proxy_url=$3,(provider_quota_json,quota_observed_at)=(select provider_quota_json,quota_observed_at where quota_paused),updated_at=greatest(now(),updated_at) where id=$1 and outbound_proxy_id is not distinct from $4 and outbound_proxy_url is not distinct from $5")
                 .bind(&op.account_id).bind(&proxy_id).bind(endpoint.expose_url()).bind(&op.expected_proxy_id).bind(&op.expected_proxy_url)
                 .execute(&mut *tx).await.map_err(unavailable)?;
             if changed.rows_affected()!=1{return Err(conflict());}

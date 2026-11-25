@@ -300,6 +300,18 @@ impl PendingAuthorizationMutation {
             ),
         ]);
         if let Some(proxy) = &self.outbound_proxy {
+            if let Some(requirement) = proxy.managed_requirement() {
+                document.insert(
+                    "managed_egress".to_owned(),
+                    serde_json::to_value(requirement).expect("managed egress value"),
+                );
+            }
+            if proxy.route_generation() > 0 {
+                document.insert(
+                    "outbound_proxy_route_generation".to_owned(),
+                    Value::from(proxy.route_generation()),
+                );
+            }
             document.insert(
                 "outbound_proxy_url".to_owned(),
                 Value::String(proxy.expose_url().to_owned()),
@@ -344,12 +356,40 @@ impl PendingAuthorizationMutation {
             StoredAuthorizationOwnerV1::AdminApiKey => AuthorizationOwner::AdminApiKey,
             StoredAuthorizationOwnerV1::System => AuthorizationOwner::System,
         };
-        let proxy = document
-            .outbound_proxy_url
-            .as_deref()
-            .map(gateway_core::account::OutboundProxy::parse)
-            .transpose()
-            .map_err(|_| invalid())?;
+        let proxy =
+            if let Some(gateway_core::account::ManagedEgressRequirement::Blocked { account_id }) =
+                &document.managed_egress
+            {
+                Some(gateway_core::account::OutboundProxy::blocked_managed(
+                    account_id.clone(),
+                ))
+            } else {
+                document
+                    .outbound_proxy_url
+                    .as_deref()
+                    .map(gateway_core::account::OutboundProxy::parse)
+                    .transpose()
+                    .map_err(|_| invalid())?
+            };
+        let proxy = match (proxy, document.managed_egress) {
+            (Some(proxy), Some(requirement)) => Some(
+                proxy
+                    .with_managed_requirement(requirement)
+                    .with_route_generation(document.outbound_proxy_route_generation.unwrap_or(0)),
+            ),
+            (None, Some(_)) => return Err(invalid()),
+            (proxy, None) => {
+                if document.outbound_proxy_route_generation.unwrap_or(0) > 0
+                    || document
+                        .outbound_proxy_id
+                        .as_deref()
+                        .is_some_and(|id| id.starts_with("proxy_managed_"))
+                {
+                    return Err(invalid());
+                }
+                proxy
+            }
+        };
         let proxy = match (proxy, document.outbound_proxy_max_websocket_connections) {
             (Some(proxy), Some(limit)) => Some(proxy.with_max_websocket_connections(limit)),
             (None, Some(_)) => return Err(invalid()),
@@ -381,6 +421,10 @@ struct StoredAuthorizationMutationV1 {
     outbound_proxy_max_websocket_connections: Option<u32>,
     #[serde(default)]
     outbound_proxy_id: Option<String>,
+    #[serde(default)]
+    managed_egress: Option<gateway_core::account::ManagedEgressRequirement>,
+    #[serde(default)]
+    outbound_proxy_route_generation: Option<u64>,
 }
 
 #[derive(Deserialize)]

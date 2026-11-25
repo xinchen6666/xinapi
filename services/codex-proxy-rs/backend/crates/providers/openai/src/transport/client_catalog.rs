@@ -109,6 +109,7 @@ impl CodexBackendClient {
                 .headers_mut()
                 .insert(gateway_protocol::peer::ROUTE_HEADER, route.clone());
         }
+        self.admit_egress().await?;
         let response = self.client.execute(request).await?;
         let status = response.status();
         let diagnostics = response_meta::diagnostics(Some(status.as_u16()), response.headers())

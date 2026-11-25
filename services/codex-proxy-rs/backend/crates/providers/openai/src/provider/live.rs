@@ -718,10 +718,29 @@ impl LiveGateway for CodexLiveGateway {
                     request.subprotocols.join(", "),
                 ));
             }
-            match connect_live_sideband(endpoint, headers, account.outbound_proxy().cloned()).await
+            gateway_egress::admit_account(account.id().as_str(), account.outbound_proxy())
+                .await
+                .map_err(|_| {
+                    LiveGatewayError::new(
+                        LiveGatewayErrorKind::UpstreamUnavailable,
+                        "Managed egress is unavailable.",
+                    )
+                })?;
+            match connect_live_sideband(
+                endpoint,
+                headers,
+                account.outbound_proxy().cloned(),
+                account.id().as_str().to_owned(),
+            )
+            .await
             {
                 Ok(sideband) => {
-                    let mut relay = into_live_relay(sideband.stream, sideband.subprotocol);
+                    let mut relay = into_live_relay(
+                        sideband.stream,
+                        sideband.subprotocol,
+                        account.id().as_str().to_owned(),
+                        account.outbound_proxy().cloned(),
+                    );
                     // guard 随中继存活：传输中断只释放占用，绑定保留到会话 TTL，
                     // 官方 FramelessBidi 客户端会重连同一 call。
                     relay.with_guard(Box::new(claim));

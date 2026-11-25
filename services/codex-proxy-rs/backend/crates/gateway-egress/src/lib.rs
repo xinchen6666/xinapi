@@ -1,6 +1,43 @@
 //! 网关 HTTP 与 WebSocket 出口：业务指定的代理优先，否则按目的地址使用部署环境
 
-use std::sync::OnceLock;
+use gateway_core::account::{ManagedEgressDenied, ManagedEgressGate};
+use std::sync::{Arc, OnceLock};
+
+static MANAGED_GATE: OnceLock<Arc<dyn ManagedEgressGate>> = OnceLock::new();
+
+/// 组合根在启动Provider前安装部署级托管准入能力
+pub fn install_managed_gate(gate: Arc<dyn ManagedEgressGate>) -> Result<(), ManagedEgressDenied> {
+    MANAGED_GATE.set(gate).map_err(|_| ManagedEgressDenied)
+}
+
+/// 已有账号的旧客户端也按当前持久要求校验，覆盖从普通出口转为托管
+pub async fn admit_account(
+    account_id: &str,
+    proxy: Option<&OutboundProxy>,
+) -> Result<(), ManagedEgressDenied> {
+    if let Some(gate) = MANAGED_GATE.get() {
+        gate.admit_account(account_id, proxy).await
+    } else {
+        admit(proxy).await
+    }
+}
+
+/// 每个实际发送执行当前准入，缓存客户端复用也遵循此边界
+pub async fn admit(proxy: Option<&OutboundProxy>) -> Result<(), ManagedEgressDenied> {
+    let Some(proxy) = proxy else {
+        return Ok(());
+    };
+    proxy.ensure_sendable()?;
+    if proxy.is_managed() {
+        MANAGED_GATE
+            .get()
+            .ok_or(ManagedEgressDenied)?
+            .admit(proxy)
+            .await
+    } else {
+        Ok(())
+    }
+}
 
 use gateway_core::account::{InvalidOutboundProxy, OutboundProxy};
 use hyper_util::client::proxy::matcher::Matcher;
@@ -68,6 +105,7 @@ fn environment() -> Result<&'static Environment, InvalidOutboundProxy> {
 pub fn http_client(proxy: Option<&OutboundProxy>) -> Result<ClientBuilder, InvalidOutboundProxy> {
     let mut builder = Client::builder().no_proxy();
     if let Some(proxy) = proxy {
+        proxy.ensure_sendable().map_err(|_| InvalidOutboundProxy)?;
         return Ok(builder.proxy(Proxy::all(proxy.expose_url()).map_err(|_| InvalidOutboundProxy)?));
     }
     let env = environment()?;
@@ -94,8 +132,9 @@ pub fn for_destination<'a>(
     proxy: Option<&'a OutboundProxy>,
     url: &Url,
 ) -> Result<Option<&'a OutboundProxy>, InvalidOutboundProxy> {
-    if proxy.is_some() {
-        return Ok(proxy);
+    if let Some(proxy) = proxy {
+        proxy.ensure_sendable().map_err(|_| InvalidOutboundProxy)?;
+        return Ok(Some(proxy));
     }
     let env = environment()?;
     let (scheme, proxy) = match url.scheme() {

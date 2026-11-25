@@ -149,6 +149,7 @@ impl CodexBackendClient {
                 .and_then(reqwest::Body::as_bytes)
                 .unwrap_or_default(),
         );
+        self.admit_egress().await?;
         let headers_started_at = Instant::now();
         let response = self
             .client

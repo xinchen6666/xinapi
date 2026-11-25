@@ -31,6 +31,7 @@ pub(crate) async fn connect_live_sideband(
     endpoint: String,
     mut business_headers: Vec<(String, String)>,
     outbound_proxy: Option<gateway_core::account::OutboundProxy>,
+    account_id: String,
 ) -> Result<CodexLiveSideband, CodexWebSocketExchangeError> {
     use tungstenite::client::IntoClientRequest;
 
@@ -52,6 +53,7 @@ pub(crate) async fn connect_live_sideband(
         headers: business_headers,
         permessage_deflate: true,
         outbound_proxy,
+        local_account_id: Some(account_id),
         connection_budget: None,
     };
     let (stream, response) = connect_sideband_websocket(&connection).await?;
@@ -67,12 +69,21 @@ pub(crate) async fn connect_live_sideband(
 }
 
 /// 把上游原始 WebSocket 流拆装为 Core 抽象中继。
-pub(crate) fn into_live_relay(stream: RawWsStream, subprotocol: Option<String>) -> LiveRelay {
+pub(crate) fn into_live_relay(
+    stream: RawWsStream,
+    subprotocol: Option<String>,
+    account_id: String,
+    outbound_proxy: Option<gateway_core::account::OutboundProxy>,
+) -> LiveRelay {
     let (sink, receiver) = stream.split();
     LiveRelay::new(
         subprotocol,
         Box::new(TungsteniteLiveStream { inner: receiver }),
-        Box::new(TungsteniteLiveSink { inner: sink }),
+        Box::new(TungsteniteLiveSink {
+            inner: sink,
+            account_id,
+            outbound_proxy,
+        }),
     )
 }
 
@@ -136,6 +147,8 @@ impl LiveRelayStream for TungsteniteLiveStream {
 
 struct TungsteniteLiveSink {
     inner: futures::stream::SplitSink<RawWsStream, Message>,
+    account_id: String,
+    outbound_proxy: Option<gateway_core::account::OutboundProxy>,
 }
 
 impl LiveRelaySink for TungsteniteLiveSink {
@@ -144,6 +157,14 @@ impl LiveRelaySink for TungsteniteLiveSink {
         frame: LiveFrame,
     ) -> futures::future::BoxFuture<'_, Result<(), LiveGatewayError>> {
         Box::pin(async move {
+            gateway_egress::admit_account(&self.account_id, self.outbound_proxy.as_ref())
+                .await
+                .map_err(|_| {
+                    LiveGatewayError::new(
+                        LiveGatewayErrorKind::UpstreamUnavailable,
+                        "Managed egress is unavailable.",
+                    )
+                })?;
             self.inner
                 .send(message_from_frame(frame))
                 .await

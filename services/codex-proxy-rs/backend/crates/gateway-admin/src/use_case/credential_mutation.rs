@@ -155,6 +155,14 @@ pub(super) async fn pending_authorization(
                         .get(id)
                         .await
                         .map_err(|error| map_store_error(error, "proxy"))?;
+                    if matches!(
+                        record.proxy.managed_requirement(),
+                        Some(gateway_core::account::ManagedEgressRequirement::Account { .. })
+                    ) {
+                        return Err(AdminError::conflict(
+                            "该托管入口已归属现有账号，新授权请使用独立预留入口",
+                        ));
+                    }
                     proxy_id = Some(record.id);
                     if !record.enabled {
                         return Err(AdminError::invalid("代理已禁用，请启用后再选择"));
@@ -168,6 +176,14 @@ pub(super) async fn pending_authorization(
             }
         }
     };
+    if let Some(proxy) = &proxy {
+        proxy.ensure_sendable().map_err(|_| {
+            AdminError::new(
+                crate::model::AdminErrorKind::Unavailable,
+                "托管出口当前停发，请恢复已批准绑定",
+            )
+        })?;
+    }
     Ok(PendingAuthorizationMutation::new(
         provider_kind.clone(),
         target,

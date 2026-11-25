@@ -514,6 +514,16 @@ impl CodexOAuthAdminService {
         } else {
             None
         };
+        if let Some(current) = &current {
+            gateway_egress::admit_account(
+                current.account.id().as_str(),
+                current.account.outbound_proxy(),
+            )
+            .await
+            .map_err(|_| {
+                CodexOAuthAdminError::Exchange(AuthorizationCodeExchangeError::Unavailable)
+            })?;
+        }
         let (mut secret, id_token) = self
             .exchange_pending(
                 &pending,

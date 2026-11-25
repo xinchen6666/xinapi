@@ -240,7 +240,7 @@ impl AccountGroupStore for PgAccountGroupRepository {
             "select coalesce(proxy.enabled, true) as outbound_proxy_enabled, coalesce(proxy.max_websocket_connections, 0) as outbound_proxy_max_websocket_connections, coalesce(proxy.route_generation, 0) as outbound_proxy_route_generation, proxy.auto_location, proxy.detected_location_json, proxy.location_country, proxy.location_region, proxy.location_city, proxy.location_timezone, membership.account_group_id,
                     account.id, account.provider_kind, account.name, account.notes, account.email,
                     account.upstream_user_id, account.upstream_account_id, account.plan_type,
-                    account.authentication_kind, account.credential_revision, account.outbound_proxy_id, account.outbound_proxy_url,
+                    account.authentication_kind, account.credential_revision, account.managed_egress_required, account.outbound_proxy_id, account.outbound_proxy_url,
                     account.has_refresh_token, account.access_token_expires_at,
                     account.next_refresh_at, account.enabled, account.quota_settings, account.quota_paused, account.auto_use_quota_credits, account.concurrency_limit,
                     account.quota_observed_at, account.weight, account.model_access_json, account.credential_state, account.quota_access_state,

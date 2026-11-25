@@ -46,6 +46,7 @@ pub struct ReqwestOidcTokenVerifier {
 
 struct OidcEgress {
     client: Client,
+    outbound_proxy: Option<gateway_core::account::OutboundProxy>,
     jwks_cache: Mutex<JwksCache>,
 }
 
@@ -66,6 +67,7 @@ impl ReqwestOidcTokenVerifier {
                 None,
                 OidcEgress {
                     client,
+                    outbound_proxy: None,
                     jwks_cache: Mutex::new(JwksCache::default()),
                 },
             ),
@@ -161,7 +163,9 @@ impl ReqwestOidcTokenVerifier {
             return Err(VerificationFailure::Rejected);
         }
         let kid = header.kid.as_deref().ok_or(VerificationFailure::Rejected)?;
-        let key = self.decoding_key(context.jwks_uri(), kid, egress).await?;
+        let key = self
+            .decoding_key(context.jwks_uri(), kid, egress, context.account_id())
+            .await?;
 
         let mut validation = Validation::new(Algorithm::ES256);
         validation.leeway = 0;
@@ -221,6 +225,12 @@ impl ReqwestOidcTokenVerifier {
         if !valid_bearer_token(access_token) {
             return Err(VerificationFailure::Rejected);
         }
+        crate::transport::network::admit_egress(
+            context.account_id(),
+            egress.outbound_proxy.as_ref(),
+        )
+        .await
+        .map_err(|_| VerificationFailure::Unavailable)?;
         let response = egress
             .client
             .get(context.userinfo_endpoint().clone())
@@ -253,6 +263,7 @@ impl ReqwestOidcTokenVerifier {
         jwks_uri: &Url,
         kid: &str,
         egress: &OidcEgress,
+        account_id: Option<&str>,
     ) -> Result<DecodingKey, VerificationFailure> {
         if !valid_key_id(kid) {
             return Err(VerificationFailure::Rejected);
@@ -270,7 +281,7 @@ impl ReqwestOidcTokenVerifier {
             }
 
             // fresh cache 未命中 kid 时只强制刷新一次，以支持官方密钥轮换
-            let keys = self.fetch_jwks(jwks_uri, &egress.client).await?;
+            let keys = self.fetch_jwks(jwks_uri, egress, account_id).await?;
             cache.replace(jwks_uri.clone(), keys);
             return cache
                 .keys
@@ -280,7 +291,7 @@ impl ReqwestOidcTokenVerifier {
         }
 
         // 过期缓存不会在网络或协议失败时作为 stale fallback 使用
-        let keys = self.fetch_jwks(jwks_uri, &egress.client).await?;
+        let keys = self.fetch_jwks(jwks_uri, egress, account_id).await?;
         cache.replace(jwks_uri.clone(), keys);
         cache
             .keys
@@ -292,12 +303,17 @@ impl ReqwestOidcTokenVerifier {
     async fn fetch_jwks(
         &self,
         jwks_uri: &Url,
-        client: &Client,
+        egress: &OidcEgress,
+        account_id: Option<&str>,
     ) -> Result<HashMap<String, CachedJwk>, VerificationFailure> {
         if !self.endpoint_policy.validate_jwks(jwks_uri) {
             return Err(VerificationFailure::Rejected);
         }
-        let response = client
+        crate::transport::network::admit_egress(account_id, egress.outbound_proxy.as_ref())
+            .await
+            .map_err(|_| VerificationFailure::Unavailable)?;
+        let response = egress
+            .client
             .get(jwks_uri.clone())
             .header(ACCEPT, "application/json")
             .send()
@@ -338,6 +354,7 @@ impl TokenVerifier for ReqwestOidcTokenVerifier {
                         .map_err(|_| VerificationFailure::Unavailable)?;
                     Ok::<_, VerificationFailure>(OidcEgress {
                         client,
+                        outbound_proxy: context.outbound_proxy().cloned(),
                         jwks_cache: Mutex::new(JwksCache::default()),
                     })
                 })

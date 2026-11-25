@@ -327,7 +327,7 @@ impl ProviderAccountStateUpdate {
     }
 }
 
-pub(crate) const ACCOUNT_SELECT: &str = "select coalesce(proxy_enabled, true) as outbound_proxy_enabled, coalesce(max_websocket_connections, 0) as outbound_proxy_max_websocket_connections, coalesce(route_generation, 0) as outbound_proxy_route_generation, auto_location, detected_location_json, location_country, location_region, location_city, location_timezone, outbound_proxy_id, outbound_proxy_url, id, provider_kind, name, notes, email, upstream_user_id,
+pub(crate) const ACCOUNT_SELECT: &str = "select coalesce(proxy_enabled, true) as outbound_proxy_enabled, coalesce(max_websocket_connections, 0) as outbound_proxy_max_websocket_connections, coalesce(route_generation, 0) as outbound_proxy_route_generation, auto_location, detected_location_json, location_country, location_region, location_city, location_timezone, managed_egress_required, outbound_proxy_id, outbound_proxy_url, id, provider_kind, name, notes, email, upstream_user_id,
             upstream_account_id, plan_type, authentication_kind, provider_credentials_json, credential_revision,
             has_refresh_token, access_token_expires_at, next_refresh_at, enabled, quota_settings, quota_paused, auto_use_quota_credits, concurrency_limit, weight, model_access_json, credential_state,
             quota_access_state, quota_evidence, quota_access_observed_at, quota_reset_at,
@@ -338,7 +338,7 @@ pub(crate) const ACCOUNT_SELECT: &str = "select coalesce(proxy_enabled, true) as
        on outbound_proxy_id = location_proxy_id
      where id = $1";
 
-pub(crate) const ACCOUNT_SELECT_BY_IDS: &str = "select coalesce(proxy_enabled, true) as outbound_proxy_enabled, coalesce(max_websocket_connections, 0) as outbound_proxy_max_websocket_connections, coalesce(route_generation, 0) as outbound_proxy_route_generation, auto_location, detected_location_json, location_country, location_region, location_city, location_timezone, outbound_proxy_id, outbound_proxy_url, id, provider_kind, name, notes, email, upstream_user_id,
+pub(crate) const ACCOUNT_SELECT_BY_IDS: &str = "select coalesce(proxy_enabled, true) as outbound_proxy_enabled, coalesce(max_websocket_connections, 0) as outbound_proxy_max_websocket_connections, coalesce(route_generation, 0) as outbound_proxy_route_generation, auto_location, detected_location_json, location_country, location_region, location_city, location_timezone, managed_egress_required, outbound_proxy_id, outbound_proxy_url, id, provider_kind, name, notes, email, upstream_user_id,
             upstream_account_id, plan_type, authentication_kind, provider_credentials_json, credential_revision,
             has_refresh_token, access_token_expires_at, next_refresh_at, enabled, quota_settings, quota_paused, auto_use_quota_credits, concurrency_limit, weight, model_access_json, credential_state,
             quota_access_state, quota_evidence, quota_access_observed_at, quota_reset_at,
@@ -350,7 +350,7 @@ pub(crate) const ACCOUNT_SELECT_BY_IDS: &str = "select coalesce(proxy_enabled, t
      where id = any($1::text[]) and provider_kind = $2
      order by id";
 
-pub(crate) const REFRESH_CANDIDATES_SELECT: &str = "select coalesce(proxy_enabled, true) as outbound_proxy_enabled, coalesce(max_websocket_connections, 0) as outbound_proxy_max_websocket_connections, coalesce(route_generation, 0) as outbound_proxy_route_generation, auto_location, detected_location_json, location_country, location_region, location_city, location_timezone, outbound_proxy_id, outbound_proxy_url, id, provider_kind, name, notes, email, upstream_user_id,
+pub(crate) const REFRESH_CANDIDATES_SELECT: &str = "select coalesce(proxy_enabled, true) as outbound_proxy_enabled, coalesce(max_websocket_connections, 0) as outbound_proxy_max_websocket_connections, coalesce(route_generation, 0) as outbound_proxy_route_generation, auto_location, detected_location_json, location_country, location_region, location_city, location_timezone, managed_egress_required, outbound_proxy_id, outbound_proxy_url, id, provider_kind, name, notes, email, upstream_user_id,
             upstream_account_id, plan_type, authentication_kind, provider_credentials_json, credential_revision,
             has_refresh_token, access_token_expires_at, next_refresh_at, enabled, quota_settings, quota_paused, auto_use_quota_credits, concurrency_limit, weight, model_access_json, credential_state,
             quota_access_state, quota_evidence, quota_access_observed_at, quota_reset_at,
@@ -427,7 +427,7 @@ pub(crate) fn core_account_from_summary(
     .with_outbound_proxy(
         summary
             .outbound_proxy
-            .filter(|_| summary.outbound_proxy_enabled),
+            .filter(|proxy| summary.outbound_proxy_enabled || proxy.is_managed()),
     )
     .with_request_location(summary.request_location)
     .with_refresh_schedule(
@@ -456,6 +456,45 @@ pub(crate) fn quota_version_from_row(
         credential_revision: CoreCredentialRevision::new(to_u64(get(row, "credential_revision")?)?)
             .map_err(|_| invalid("invalid credential revision"))?,
         observed_at: observed_at.into(),
+    }))
+}
+
+/// 托管发送要求保持显式代理值，连接缺失或停用时交给发送准入拒绝
+fn outbound_proxy_from_row(
+    row: &sqlx::postgres::PgRow,
+) -> StoreResult<Option<gateway_core::account::OutboundProxy>> {
+    use gateway_core::account::{ManagedEgressRequirement, OutboundProxy};
+    let required: bool = get(row, "managed_egress_required")?;
+    let account_id: String = get(row, "id")?;
+    let proxy_id: Option<String> = get(row, "outbound_proxy_id")?;
+    let url: Option<String> = get(row, "outbound_proxy_url")?;
+    let enabled: bool = get(row, "outbound_proxy_enabled")?;
+    let generation = u64::try_from(get::<i64>(row, "outbound_proxy_route_generation")?)
+        .map_err(|source| invalid("invalid proxy route generation").with_source(source))?;
+    if required && (!enabled || generation == 0 || proxy_id.is_none() || url.is_none()) {
+        return Ok(Some(OutboundProxy::blocked_managed(account_id)));
+    }
+    let Some(url) = url else {
+        return Ok(None);
+    };
+    let proxy = match OutboundProxy::parse(&url) {
+        Ok(proxy) => proxy,
+        Err(_) if required => return Ok(Some(OutboundProxy::blocked_managed(account_id))),
+        Err(source) => return Err(invalid("invalid outbound proxy").with_source(source)),
+    };
+    let limit = u32::try_from(get::<i64>(row, "outbound_proxy_max_websocket_connections")?)
+        .map_err(|source| invalid("invalid proxy websocket limit").with_source(source))?;
+    let proxy = proxy
+        .with_max_websocket_connections(limit)
+        .with_route_generation(generation);
+    Ok(Some(if required {
+        proxy.with_managed_requirement(ManagedEgressRequirement::Account {
+            account_id,
+            proxy_id: proxy_id.ok_or_else(|| invalid("managed proxy identifier is absent"))?,
+            generation,
+        })
+    } else {
+        proxy
     }))
 }
 
@@ -489,26 +528,7 @@ pub(crate) fn account_summary_from_row(
         outbound_proxy_id: get(&row, "outbound_proxy_id")?,
         outbound_proxy_enabled: get(&row, "outbound_proxy_enabled")?,
         request_location: super::super::proxies::effective_location_from_row(&row)?,
-        outbound_proxy: get::<Option<String>>(&row, "outbound_proxy_url")?
-            .map(|url| {
-                let limit = u32::try_from(get::<i64>(
-                    &row,
-                    "outbound_proxy_max_websocket_connections",
-                )?)
-                .map_err(|source| invalid("invalid proxy websocket limit").with_source(source))?;
-                let generation =
-                    u64::try_from(get::<i64>(&row, "outbound_proxy_route_generation")?).map_err(
-                        |source| invalid("invalid proxy route generation").with_source(source),
-                    )?;
-                gateway_core::account::OutboundProxy::parse(&url)
-                    .map(|proxy| {
-                        proxy
-                            .with_max_websocket_connections(limit)
-                            .with_route_generation(generation)
-                    })
-                    .map_err(|source| invalid("invalid outbound proxy").with_source(source))
-            })
-            .transpose()?,
+        outbound_proxy: outbound_proxy_from_row(&row)?,
         id: get(&row, "id")?,
         provider_kind: get(&row, "provider_kind")?,
         name: get(&row, "name")?,

@@ -12,6 +12,7 @@ mod connection;
 mod control_plane;
 mod execution;
 mod execution_buffer;
+mod managed_egress;
 mod managed_routes;
 mod observability;
 mod ops_events;
@@ -41,6 +42,7 @@ pub use control_plane::{
 };
 pub use execution::*;
 pub use execution_buffer::*;
+pub use managed_egress::PgManagedEgressState;
 pub use managed_routes::PgManagedRouteStore;
 pub use observability::*;
 pub use ops_events::*;

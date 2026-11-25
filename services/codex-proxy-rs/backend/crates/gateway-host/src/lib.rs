@@ -148,6 +148,18 @@ impl HostBundle {
         self.engines.clone()
     }
 
+    /// 组合根安装的托管发送准入，每次请求核对Store与实际引擎
+    pub fn install_managed_egress(
+        &self,
+        state: Arc<dyn gateway_core::account::ManagedEgressState>,
+    ) -> Result<(), HostError> {
+        let gate = Arc::new(engine::admission::StrictEgressGate {
+            state,
+            engines: self.engines.clone(),
+        });
+        gateway_egress::install_managed_gate(gate).map_err(|_| HostError::ManagedEgress)
+    }
+
     #[must_use]
     pub fn system_operations(&self) -> Arc<dyn SystemOperations> {
         self.system.clone()
@@ -263,6 +275,8 @@ impl Drop for HostBundle {
 
 #[derive(Debug, thiserror::Error)]
 pub enum HostError {
+    #[error("托管出口准入安装失败")]
+    ManagedEgress,
     #[error(transparent)]
     Logging(#[from] logging::LogError),
     #[error(transparent)]

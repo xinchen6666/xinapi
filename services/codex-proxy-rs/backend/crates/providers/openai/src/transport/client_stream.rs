@@ -138,6 +138,7 @@ impl CodexBackendClient {
                 .unwrap_or_default(),
         );
         let client = self.http_opening_client()?;
+        self.admit_egress().await?;
         let headers_started_at = Instant::now();
         let response = client.execute(outbound).await?;
         let upstream_headers_ms = elapsed_duration_millis(headers_started_at.elapsed());
@@ -324,6 +325,7 @@ impl CodexBackendClient {
             &websocket_request,
         );
         opening.connection.outbound_proxy = self.outbound_proxy.clone();
+        opening.connection.local_account_id = self.local_account_id.clone();
         opening.connection.connection_budget = self.connection_budget.clone();
         let (plugin_payload, outbound_profile) = self
             .prepare_websocket_request(&mut opening.connection, &websocket_request)
@@ -419,6 +421,7 @@ impl CodexBackendClient {
                 self.egress_key
             )
         });
+        self.admit_egress().await?;
         let prepared = prepare_response_create_request_with_pool(
             &opening,
             pool,
@@ -617,8 +620,15 @@ impl CodexBackendClient {
             PreparedResponseRoute::WebSocket(route) => {
                 let PreparedWebSocketRoute {
                     request: websocket_request,
-                    prepared,
+                    mut prepared,
                 } = *route;
+                prepared
+                    .set_egress_context(self.local_account_id.clone(), self.outbound_proxy.clone());
+                // 池租用完成后再次准入，保证存量WS上的新轮次使用当前许可
+                if let Err(error) = self.admit_egress().await {
+                    prepared.discard().await;
+                    return Err(error);
+                }
                 let mut exchange = execute_prepared_response_create_request_stream(
                     &websocket_request,
                     prepared,

@@ -309,6 +309,13 @@ impl CodexCredentialRefreshService {
             .refresh_token
             .as_ref()
             .ok_or(CodexCredentialRefreshError::InvalidRefreshResponse)?;
+        // 出口故障暂停本次发送，保留令牌身份与有效期状态供路由恢复后续期
+        if gateway_egress::admit_account(due.account.id().as_str(), due.account.outbound_proxy())
+            .await
+            .is_err()
+        {
+            return Ok(CodexCredentialRefreshOutcome::Transient { account_id });
+        }
         let observed_at = SystemTime::now();
         let refresh_result = self
             .refresher

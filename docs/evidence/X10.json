@@ -1,0 +1,3523 @@
+{
+  "task": "X10",
+  "checked_at": "2026-11-25T22:58:26.306996+00:00",
+  "result": "passed_scoped",
+  "environment": "Real CPR/Store/Host/Mihomo with two isolated node proxies, a default-route observer and self-made HTTP/TLS/SSE/WebSocket upstream; TLS policy for xAI verification trusts only a generated local certificate",
+  "provider_observations": {
+    "scope": "actual Host+Store gate and cached OpenAI transport; real Mihomo; self-made endpoints",
+    "calls": [
+      {
+        "stage": "allowed",
+        "request": "quota",
+        "admitted_stage": true,
+        "business_completed": true,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "allowed",
+        "request": "profile",
+        "admitted_stage": true,
+        "business_completed": true,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "allowed",
+        "request": "models",
+        "admitted_stage": true,
+        "business_completed": true,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "allowed",
+        "request": "sse",
+        "admitted_stage": true,
+        "business_completed": true,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "allowed",
+        "request": "websocket",
+        "admitted_stage": true,
+        "business_completed": true,
+        "timed_out": false,
+        "target_delta": 2,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "allowed",
+        "request": "refresh",
+        "admitted_stage": true,
+        "business_completed": true,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "allowed",
+        "request": "exchange",
+        "admitted_stage": true,
+        "business_completed": true,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "allowed",
+        "request": "xai_discovery",
+        "admitted_stage": true,
+        "business_completed": true,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "allowed",
+        "request": "xai_refresh",
+        "admitted_stage": true,
+        "business_completed": true,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "allowed",
+        "request": "xai_exchange",
+        "admitted_stage": true,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "allowed",
+        "request": "xai_models",
+        "admitted_stage": true,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "allowed",
+        "request": "xai_billing",
+        "admitted_stage": true,
+        "business_completed": true,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "allowed",
+        "request": "xai_subscription",
+        "admitted_stage": true,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "allowed",
+        "request": "xai_inference",
+        "admitted_stage": true,
+        "business_completed": true,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "allowed",
+        "request": "xai_userinfo",
+        "admitted_stage": true,
+        "business_completed": true,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "allowed",
+        "request": "xai_jwks",
+        "admitted_stage": true,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "cached_default_client_after_managed",
+        "request": "quota",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "cached_default_client_after_managed",
+        "request": "profile",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "cached_default_client_after_managed",
+        "request": "models",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "cached_default_client_after_managed",
+        "request": "sse",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "cached_default_client_after_managed",
+        "request": "websocket",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "proxy_disabled",
+        "request": "quota",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "proxy_disabled",
+        "request": "profile",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "proxy_disabled",
+        "request": "models",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "proxy_disabled",
+        "request": "sse",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "proxy_disabled",
+        "request": "websocket",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "proxy_disabled",
+        "request": "refresh",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "proxy_disabled",
+        "request": "exchange",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "proxy_disabled",
+        "request": "xai_discovery",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "proxy_disabled",
+        "request": "xai_refresh",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "proxy_disabled",
+        "request": "xai_exchange",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "proxy_disabled",
+        "request": "xai_models",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "proxy_disabled",
+        "request": "xai_billing",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "proxy_disabled",
+        "request": "xai_subscription",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "proxy_disabled",
+        "request": "xai_inference",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "proxy_disabled",
+        "request": "xai_userinfo",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "proxy_disabled",
+        "request": "xai_jwks",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "recovered_proxy_disabled",
+        "request": "quota",
+        "admitted_stage": true,
+        "business_completed": true,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "recovered_proxy_disabled",
+        "request": "profile",
+        "admitted_stage": true,
+        "business_completed": true,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "recovered_proxy_disabled",
+        "request": "models",
+        "admitted_stage": true,
+        "business_completed": true,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "recovered_proxy_disabled",
+        "request": "sse",
+        "admitted_stage": true,
+        "business_completed": true,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "recovered_proxy_disabled",
+        "request": "websocket",
+        "admitted_stage": true,
+        "business_completed": true,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "recovered_proxy_disabled",
+        "request": "refresh",
+        "admitted_stage": true,
+        "business_completed": true,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "recovered_proxy_disabled",
+        "request": "exchange",
+        "admitted_stage": true,
+        "business_completed": true,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "recovered_proxy_disabled",
+        "request": "xai_discovery",
+        "admitted_stage": true,
+        "business_completed": true,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "recovered_proxy_disabled",
+        "request": "xai_refresh",
+        "admitted_stage": true,
+        "business_completed": true,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "recovered_proxy_disabled",
+        "request": "xai_exchange",
+        "admitted_stage": true,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "recovered_proxy_disabled",
+        "request": "xai_models",
+        "admitted_stage": true,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "recovered_proxy_disabled",
+        "request": "xai_billing",
+        "admitted_stage": true,
+        "business_completed": true,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "recovered_proxy_disabled",
+        "request": "xai_subscription",
+        "admitted_stage": true,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "recovered_proxy_disabled",
+        "request": "xai_inference",
+        "admitted_stage": true,
+        "business_completed": true,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "recovered_proxy_disabled",
+        "request": "xai_userinfo",
+        "admitted_stage": true,
+        "business_completed": true,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "recovered_proxy_disabled",
+        "request": "xai_jwks",
+        "admitted_stage": true,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "unbound",
+        "request": "quota",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "unbound",
+        "request": "profile",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "unbound",
+        "request": "models",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "unbound",
+        "request": "sse",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "unbound",
+        "request": "websocket",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "unbound",
+        "request": "refresh",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "unbound",
+        "request": "exchange",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "unbound",
+        "request": "xai_discovery",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "unbound",
+        "request": "xai_refresh",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "unbound",
+        "request": "xai_exchange",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "unbound",
+        "request": "xai_models",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "unbound",
+        "request": "xai_billing",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "unbound",
+        "request": "xai_subscription",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "unbound",
+        "request": "xai_inference",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "unbound",
+        "request": "xai_userinfo",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "unbound",
+        "request": "xai_jwks",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "recovered_unbound",
+        "request": "quota",
+        "admitted_stage": true,
+        "business_completed": true,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "recovered_unbound",
+        "request": "profile",
+        "admitted_stage": true,
+        "business_completed": true,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "recovered_unbound",
+        "request": "models",
+        "admitted_stage": true,
+        "business_completed": true,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "recovered_unbound",
+        "request": "sse",
+        "admitted_stage": true,
+        "business_completed": true,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "recovered_unbound",
+        "request": "websocket",
+        "admitted_stage": true,
+        "business_completed": true,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "recovered_unbound",
+        "request": "refresh",
+        "admitted_stage": true,
+        "business_completed": true,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "recovered_unbound",
+        "request": "exchange",
+        "admitted_stage": true,
+        "business_completed": true,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "recovered_unbound",
+        "request": "xai_discovery",
+        "admitted_stage": true,
+        "business_completed": true,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "recovered_unbound",
+        "request": "xai_refresh",
+        "admitted_stage": true,
+        "business_completed": true,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "recovered_unbound",
+        "request": "xai_exchange",
+        "admitted_stage": true,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "recovered_unbound",
+        "request": "xai_models",
+        "admitted_stage": true,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "recovered_unbound",
+        "request": "xai_billing",
+        "admitted_stage": true,
+        "business_completed": true,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "recovered_unbound",
+        "request": "xai_subscription",
+        "admitted_stage": true,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "recovered_unbound",
+        "request": "xai_inference",
+        "admitted_stage": true,
+        "business_completed": true,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "recovered_unbound",
+        "request": "xai_userinfo",
+        "admitted_stage": true,
+        "business_completed": true,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "recovered_unbound",
+        "request": "xai_jwks",
+        "admitted_stage": true,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "generation_mismatch",
+        "request": "quota",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "generation_mismatch",
+        "request": "profile",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "generation_mismatch",
+        "request": "models",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "generation_mismatch",
+        "request": "sse",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "generation_mismatch",
+        "request": "websocket",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "generation_mismatch",
+        "request": "refresh",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "generation_mismatch",
+        "request": "exchange",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "generation_mismatch",
+        "request": "xai_discovery",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "generation_mismatch",
+        "request": "xai_refresh",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "generation_mismatch",
+        "request": "xai_exchange",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "generation_mismatch",
+        "request": "xai_models",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "generation_mismatch",
+        "request": "xai_billing",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "generation_mismatch",
+        "request": "xai_subscription",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "generation_mismatch",
+        "request": "xai_inference",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "generation_mismatch",
+        "request": "xai_userinfo",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "generation_mismatch",
+        "request": "xai_jwks",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "recovered_generation_mismatch",
+        "request": "quota",
+        "admitted_stage": true,
+        "business_completed": true,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "recovered_generation_mismatch",
+        "request": "profile",
+        "admitted_stage": true,
+        "business_completed": true,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "recovered_generation_mismatch",
+        "request": "models",
+        "admitted_stage": true,
+        "business_completed": true,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "recovered_generation_mismatch",
+        "request": "sse",
+        "admitted_stage": true,
+        "business_completed": true,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "recovered_generation_mismatch",
+        "request": "websocket",
+        "admitted_stage": true,
+        "business_completed": true,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "recovered_generation_mismatch",
+        "request": "refresh",
+        "admitted_stage": true,
+        "business_completed": true,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "recovered_generation_mismatch",
+        "request": "exchange",
+        "admitted_stage": true,
+        "business_completed": true,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "recovered_generation_mismatch",
+        "request": "xai_discovery",
+        "admitted_stage": true,
+        "business_completed": true,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "recovered_generation_mismatch",
+        "request": "xai_refresh",
+        "admitted_stage": true,
+        "business_completed": true,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "recovered_generation_mismatch",
+        "request": "xai_exchange",
+        "admitted_stage": true,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "recovered_generation_mismatch",
+        "request": "xai_models",
+        "admitted_stage": true,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "recovered_generation_mismatch",
+        "request": "xai_billing",
+        "admitted_stage": true,
+        "business_completed": true,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "recovered_generation_mismatch",
+        "request": "xai_subscription",
+        "admitted_stage": true,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "recovered_generation_mismatch",
+        "request": "xai_inference",
+        "admitted_stage": true,
+        "business_completed": true,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "recovered_generation_mismatch",
+        "request": "xai_userinfo",
+        "admitted_stage": true,
+        "business_completed": true,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "recovered_generation_mismatch",
+        "request": "xai_jwks",
+        "admitted_stage": true,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "url_mismatch",
+        "request": "quota",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "url_mismatch",
+        "request": "profile",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "url_mismatch",
+        "request": "models",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "url_mismatch",
+        "request": "sse",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "url_mismatch",
+        "request": "websocket",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "url_mismatch",
+        "request": "refresh",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "url_mismatch",
+        "request": "exchange",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "url_mismatch",
+        "request": "xai_discovery",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "url_mismatch",
+        "request": "xai_refresh",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "url_mismatch",
+        "request": "xai_exchange",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "url_mismatch",
+        "request": "xai_models",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "url_mismatch",
+        "request": "xai_billing",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "url_mismatch",
+        "request": "xai_subscription",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "url_mismatch",
+        "request": "xai_inference",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "url_mismatch",
+        "request": "xai_userinfo",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "url_mismatch",
+        "request": "xai_jwks",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "recovered_url",
+        "request": "quota",
+        "admitted_stage": true,
+        "business_completed": true,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "recovered_url",
+        "request": "profile",
+        "admitted_stage": true,
+        "business_completed": true,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "recovered_url",
+        "request": "models",
+        "admitted_stage": true,
+        "business_completed": true,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "recovered_url",
+        "request": "sse",
+        "admitted_stage": true,
+        "business_completed": true,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "recovered_url",
+        "request": "websocket",
+        "admitted_stage": true,
+        "business_completed": true,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "recovered_url",
+        "request": "refresh",
+        "admitted_stage": true,
+        "business_completed": true,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "recovered_url",
+        "request": "exchange",
+        "admitted_stage": true,
+        "business_completed": true,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "recovered_url",
+        "request": "xai_discovery",
+        "admitted_stage": true,
+        "business_completed": true,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "recovered_url",
+        "request": "xai_refresh",
+        "admitted_stage": true,
+        "business_completed": true,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "recovered_url",
+        "request": "xai_exchange",
+        "admitted_stage": true,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "recovered_url",
+        "request": "xai_models",
+        "admitted_stage": true,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "recovered_url",
+        "request": "xai_billing",
+        "admitted_stage": true,
+        "business_completed": true,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "recovered_url",
+        "request": "xai_subscription",
+        "admitted_stage": true,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "recovered_url",
+        "request": "xai_inference",
+        "admitted_stage": true,
+        "business_completed": true,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "recovered_url",
+        "request": "xai_userinfo",
+        "admitted_stage": true,
+        "business_completed": true,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "recovered_url",
+        "request": "xai_jwks",
+        "admitted_stage": true,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "account_disabled",
+        "request": "quota",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "account_disabled",
+        "request": "profile",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "account_disabled",
+        "request": "models",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "account_disabled",
+        "request": "sse",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "account_disabled",
+        "request": "websocket",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "account_disabled",
+        "request": "refresh",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "account_disabled",
+        "request": "exchange",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "account_disabled",
+        "request": "xai_discovery",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "account_disabled",
+        "request": "xai_refresh",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "account_disabled",
+        "request": "xai_exchange",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "account_disabled",
+        "request": "xai_models",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "account_disabled",
+        "request": "xai_billing",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "account_disabled",
+        "request": "xai_subscription",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "account_disabled",
+        "request": "xai_inference",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "account_disabled",
+        "request": "xai_userinfo",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "account_disabled",
+        "request": "xai_jwks",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "recovered_account_disabled",
+        "request": "quota",
+        "admitted_stage": true,
+        "business_completed": true,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "recovered_account_disabled",
+        "request": "profile",
+        "admitted_stage": true,
+        "business_completed": true,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "recovered_account_disabled",
+        "request": "models",
+        "admitted_stage": true,
+        "business_completed": true,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "recovered_account_disabled",
+        "request": "sse",
+        "admitted_stage": true,
+        "business_completed": true,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "recovered_account_disabled",
+        "request": "websocket",
+        "admitted_stage": true,
+        "business_completed": true,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "recovered_account_disabled",
+        "request": "refresh",
+        "admitted_stage": true,
+        "business_completed": true,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "recovered_account_disabled",
+        "request": "exchange",
+        "admitted_stage": true,
+        "business_completed": true,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "recovered_account_disabled",
+        "request": "xai_discovery",
+        "admitted_stage": true,
+        "business_completed": true,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "recovered_account_disabled",
+        "request": "xai_refresh",
+        "admitted_stage": true,
+        "business_completed": true,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "recovered_account_disabled",
+        "request": "xai_exchange",
+        "admitted_stage": true,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "recovered_account_disabled",
+        "request": "xai_models",
+        "admitted_stage": true,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "recovered_account_disabled",
+        "request": "xai_billing",
+        "admitted_stage": true,
+        "business_completed": true,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "recovered_account_disabled",
+        "request": "xai_subscription",
+        "admitted_stage": true,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "recovered_account_disabled",
+        "request": "xai_inference",
+        "admitted_stage": true,
+        "business_completed": true,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "recovered_account_disabled",
+        "request": "xai_userinfo",
+        "admitted_stage": true,
+        "business_completed": true,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "recovered_account_disabled",
+        "request": "xai_jwks",
+        "admitted_stage": true,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "route_applying",
+        "request": "quota",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "route_applying",
+        "request": "profile",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "route_applying",
+        "request": "models",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "route_applying",
+        "request": "sse",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "route_applying",
+        "request": "websocket",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "route_applying",
+        "request": "refresh",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "route_applying",
+        "request": "exchange",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "route_applying",
+        "request": "xai_discovery",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "route_applying",
+        "request": "xai_refresh",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "route_applying",
+        "request": "xai_exchange",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "route_applying",
+        "request": "xai_models",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "route_applying",
+        "request": "xai_billing",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "route_applying",
+        "request": "xai_subscription",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "route_applying",
+        "request": "xai_inference",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "route_applying",
+        "request": "xai_userinfo",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "route_applying",
+        "request": "xai_jwks",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "recovered_applying",
+        "request": "quota",
+        "admitted_stage": true,
+        "business_completed": true,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "recovered_applying",
+        "request": "profile",
+        "admitted_stage": true,
+        "business_completed": true,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "recovered_applying",
+        "request": "models",
+        "admitted_stage": true,
+        "business_completed": true,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "recovered_applying",
+        "request": "sse",
+        "admitted_stage": true,
+        "business_completed": true,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "recovered_applying",
+        "request": "websocket",
+        "admitted_stage": true,
+        "business_completed": true,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "recovered_applying",
+        "request": "refresh",
+        "admitted_stage": true,
+        "business_completed": true,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "recovered_applying",
+        "request": "exchange",
+        "admitted_stage": true,
+        "business_completed": true,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "recovered_applying",
+        "request": "xai_discovery",
+        "admitted_stage": true,
+        "business_completed": true,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "recovered_applying",
+        "request": "xai_refresh",
+        "admitted_stage": true,
+        "business_completed": true,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "recovered_applying",
+        "request": "xai_exchange",
+        "admitted_stage": true,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "recovered_applying",
+        "request": "xai_models",
+        "admitted_stage": true,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "recovered_applying",
+        "request": "xai_billing",
+        "admitted_stage": true,
+        "business_completed": true,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "recovered_applying",
+        "request": "xai_subscription",
+        "admitted_stage": true,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "recovered_applying",
+        "request": "xai_inference",
+        "admitted_stage": true,
+        "business_completed": true,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "recovered_applying",
+        "request": "xai_userinfo",
+        "admitted_stage": true,
+        "business_completed": true,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "recovered_applying",
+        "request": "xai_jwks",
+        "admitted_stage": true,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "source_unavailable",
+        "request": "quota",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "source_unavailable",
+        "request": "profile",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "source_unavailable",
+        "request": "models",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "source_unavailable",
+        "request": "sse",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "source_unavailable",
+        "request": "websocket",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "source_unavailable",
+        "request": "refresh",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "source_unavailable",
+        "request": "exchange",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "source_unavailable",
+        "request": "xai_discovery",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "source_unavailable",
+        "request": "xai_refresh",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "source_unavailable",
+        "request": "xai_exchange",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "source_unavailable",
+        "request": "xai_models",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "source_unavailable",
+        "request": "xai_billing",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "source_unavailable",
+        "request": "xai_subscription",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "source_unavailable",
+        "request": "xai_inference",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "source_unavailable",
+        "request": "xai_userinfo",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "source_unavailable",
+        "request": "xai_jwks",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "recovered_source",
+        "request": "quota",
+        "admitted_stage": true,
+        "business_completed": true,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "recovered_source",
+        "request": "profile",
+        "admitted_stage": true,
+        "business_completed": true,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "recovered_source",
+        "request": "models",
+        "admitted_stage": true,
+        "business_completed": true,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "recovered_source",
+        "request": "sse",
+        "admitted_stage": true,
+        "business_completed": true,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "recovered_source",
+        "request": "websocket",
+        "admitted_stage": true,
+        "business_completed": true,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "recovered_source",
+        "request": "refresh",
+        "admitted_stage": true,
+        "business_completed": true,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "recovered_source",
+        "request": "exchange",
+        "admitted_stage": true,
+        "business_completed": true,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "recovered_source",
+        "request": "xai_discovery",
+        "admitted_stage": true,
+        "business_completed": true,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "recovered_source",
+        "request": "xai_refresh",
+        "admitted_stage": true,
+        "business_completed": true,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "recovered_source",
+        "request": "xai_exchange",
+        "admitted_stage": true,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "recovered_source",
+        "request": "xai_models",
+        "admitted_stage": true,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "recovered_source",
+        "request": "xai_billing",
+        "admitted_stage": true,
+        "business_completed": true,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "recovered_source",
+        "request": "xai_subscription",
+        "admitted_stage": true,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "recovered_source",
+        "request": "xai_inference",
+        "admitted_stage": true,
+        "business_completed": true,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "recovered_source",
+        "request": "xai_userinfo",
+        "admitted_stage": true,
+        "business_completed": true,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "recovered_source",
+        "request": "xai_jwks",
+        "admitted_stage": true,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "engine_stopped",
+        "request": "quota",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "engine_stopped",
+        "request": "profile",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "engine_stopped",
+        "request": "models",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "engine_stopped",
+        "request": "sse",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "engine_stopped",
+        "request": "websocket",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "engine_stopped",
+        "request": "refresh",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "engine_stopped",
+        "request": "exchange",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "engine_stopped",
+        "request": "xai_discovery",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "engine_stopped",
+        "request": "xai_refresh",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "engine_stopped",
+        "request": "xai_exchange",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "engine_stopped",
+        "request": "xai_models",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "engine_stopped",
+        "request": "xai_billing",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "engine_stopped",
+        "request": "xai_subscription",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "engine_stopped",
+        "request": "xai_inference",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "engine_stopped",
+        "request": "xai_userinfo",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "engine_stopped",
+        "request": "xai_jwks",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "recovered_engine",
+        "request": "quota",
+        "admitted_stage": true,
+        "business_completed": true,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "recovered_engine",
+        "request": "profile",
+        "admitted_stage": true,
+        "business_completed": true,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "recovered_engine",
+        "request": "models",
+        "admitted_stage": true,
+        "business_completed": true,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "recovered_engine",
+        "request": "sse",
+        "admitted_stage": true,
+        "business_completed": true,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "recovered_engine",
+        "request": "websocket",
+        "admitted_stage": true,
+        "business_completed": true,
+        "timed_out": false,
+        "target_delta": 2,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "recovered_engine",
+        "request": "refresh",
+        "admitted_stage": true,
+        "business_completed": true,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "recovered_engine",
+        "request": "exchange",
+        "admitted_stage": true,
+        "business_completed": true,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "recovered_engine",
+        "request": "xai_discovery",
+        "admitted_stage": true,
+        "business_completed": true,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "recovered_engine",
+        "request": "xai_refresh",
+        "admitted_stage": true,
+        "business_completed": true,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "recovered_engine",
+        "request": "xai_exchange",
+        "admitted_stage": true,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "recovered_engine",
+        "request": "xai_models",
+        "admitted_stage": true,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "recovered_engine",
+        "request": "xai_billing",
+        "admitted_stage": true,
+        "business_completed": true,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "recovered_engine",
+        "request": "xai_subscription",
+        "admitted_stage": true,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "recovered_engine",
+        "request": "xai_inference",
+        "admitted_stage": true,
+        "business_completed": true,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "recovered_engine",
+        "request": "xai_userinfo",
+        "admitted_stage": true,
+        "business_completed": true,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "recovered_engine",
+        "request": "xai_jwks",
+        "admitted_stage": true,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "database_read_failure",
+        "request": "quota",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "database_read_failure",
+        "request": "profile",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "database_read_failure",
+        "request": "models",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "database_read_failure",
+        "request": "sse",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "database_read_failure",
+        "request": "websocket",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "database_read_failure",
+        "request": "refresh",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "database_read_failure",
+        "request": "exchange",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "database_read_failure",
+        "request": "xai_discovery",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "database_read_failure",
+        "request": "xai_refresh",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "database_read_failure",
+        "request": "xai_exchange",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "database_read_failure",
+        "request": "xai_models",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "database_read_failure",
+        "request": "xai_billing",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "database_read_failure",
+        "request": "xai_subscription",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "database_read_failure",
+        "request": "xai_inference",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "database_read_failure",
+        "request": "xai_userinfo",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "database_read_failure",
+        "request": "xai_jwks",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "recovered_database",
+        "request": "quota",
+        "admitted_stage": true,
+        "business_completed": true,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "recovered_database",
+        "request": "profile",
+        "admitted_stage": true,
+        "business_completed": true,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "recovered_database",
+        "request": "models",
+        "admitted_stage": true,
+        "business_completed": true,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "recovered_database",
+        "request": "sse",
+        "admitted_stage": true,
+        "business_completed": true,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "recovered_database",
+        "request": "websocket",
+        "admitted_stage": true,
+        "business_completed": true,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "recovered_database",
+        "request": "refresh",
+        "admitted_stage": true,
+        "business_completed": true,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "recovered_database",
+        "request": "exchange",
+        "admitted_stage": true,
+        "business_completed": true,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "recovered_database",
+        "request": "xai_discovery",
+        "admitted_stage": true,
+        "business_completed": true,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "recovered_database",
+        "request": "xai_refresh",
+        "admitted_stage": true,
+        "business_completed": true,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "recovered_database",
+        "request": "xai_exchange",
+        "admitted_stage": true,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "recovered_database",
+        "request": "xai_models",
+        "admitted_stage": true,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "recovered_database",
+        "request": "xai_billing",
+        "admitted_stage": true,
+        "business_completed": true,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "recovered_database",
+        "request": "xai_subscription",
+        "admitted_stage": true,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "recovered_database",
+        "request": "xai_inference",
+        "admitted_stage": true,
+        "business_completed": true,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "recovered_database",
+        "request": "xai_userinfo",
+        "admitted_stage": true,
+        "business_completed": true,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "recovered_database",
+        "request": "xai_jwks",
+        "admitted_stage": true,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      }
+    ],
+    "checks": [
+      {
+        "case": "proxy_disabled_projection",
+        "managed": true,
+        "blocked": true,
+        "passed": true
+      },
+      {
+        "case": "unbound_projection",
+        "managed": true,
+        "blocked": true,
+        "passed": true
+      },
+      {
+        "case": "generation_mismatch_projection",
+        "managed": true,
+        "blocked": false,
+        "passed": true
+      },
+      {
+        "case": "account_disabled_projection",
+        "managed": true,
+        "blocked": false,
+        "passed": true
+      },
+      {
+        "case": "managed_account_null_proxy_denied",
+        "passed": true
+      },
+      {
+        "case": "finally_restore_and_cleanup",
+        "table_restored": true,
+        "rows_restored": true,
+        "source_restored": true,
+        "engine_stopped": true,
+        "passed": true
+      }
+    ],
+    "cleanup": "owned engine stopped; synthetic account/proxy/source state and relation name restored"
+  },
+  "supplemental_observations": {
+    "scope": "actual Host+Store gate and cached OpenAI transport; real Mihomo; self-made endpoints",
+    "calls": [
+      {
+        "stage": "explicit_proxy_ignores_no_proxy_star",
+        "request": "quota",
+        "admitted_stage": true,
+        "business_completed": true,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "explicit_proxy_ignores_no_proxy_star",
+        "request": "sse",
+        "admitted_stage": true,
+        "business_completed": true,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "explicit_proxy_ignores_no_proxy_star",
+        "request": "websocket",
+        "admitted_stage": true,
+        "business_completed": true,
+        "timed_out": false,
+        "target_delta": 2,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "engine_crashed",
+        "request": "quota",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "engine_crashed",
+        "request": "profile",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "engine_crashed",
+        "request": "models",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "engine_crashed",
+        "request": "sse",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "engine_crashed",
+        "request": "websocket",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "engine_crashed",
+        "request": "refresh",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "engine_crashed",
+        "request": "exchange",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "engine_crashed",
+        "request": "xai_discovery",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "engine_crashed",
+        "request": "xai_refresh",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "engine_crashed",
+        "request": "xai_exchange",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "engine_crashed",
+        "request": "xai_models",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "engine_crashed",
+        "request": "xai_billing",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "engine_crashed",
+        "request": "xai_subscription",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "engine_crashed",
+        "request": "xai_inference",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "engine_crashed",
+        "request": "xai_userinfo",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "engine_crashed",
+        "request": "xai_jwks",
+        "admitted_stage": false,
+        "business_completed": false,
+        "timed_out": false,
+        "target_delta": 0,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "engine_crash_recovered",
+        "request": "quota",
+        "admitted_stage": true,
+        "business_completed": true,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "engine_crash_recovered",
+        "request": "sse",
+        "admitted_stage": true,
+        "business_completed": true,
+        "timed_out": false,
+        "target_delta": 1,
+        "default_delta": 0,
+        "passed": true
+      },
+      {
+        "stage": "engine_crash_recovered",
+        "request": "websocket",
+        "admitted_stage": true,
+        "business_completed": true,
+        "timed_out": false,
+        "target_delta": 2,
+        "default_delta": 0,
+        "passed": true
+      }
+    ],
+    "checks": [
+      {
+        "case": "existing_response_control_allowed",
+        "passed": true
+      },
+      {
+        "case": "existing_response_control_rechecks_revocation",
+        "passed": true
+      },
+      {
+        "case": "managed_proxy_delete_constraint",
+        "passed": true
+      },
+      {
+        "case": "finally_restore_and_cleanup",
+        "table_restored": true,
+        "rows_restored": true,
+        "source_restored": true,
+        "engine_stopped": true,
+        "passed": true
+      }
+    ],
+    "cleanup": "owned engine stopped; synthetic account/proxy/source state and relation name restored"
+  },
+  "gateway_api": [
+    {
+      "case": "approved_route_send",
+      "passed": true,
+      "status": 200,
+      "upstream_delta": 1,
+      "default_delta": 0
+    },
+    {
+      "case": "engine_stopped",
+      "passed": true,
+      "statuses": [
+        502,
+        502
+      ],
+      "upstream_delta": 0,
+      "default_delta": 0
+    },
+    {
+      "case": "engine_restored",
+      "passed": true,
+      "status": 200,
+      "upstream_delta": 1,
+      "default_delta": 0
+    },
+    {
+      "case": "proxy_disabled",
+      "passed": true,
+      "statuses": [
+        502,
+        502
+      ],
+      "upstream_delta": 0,
+      "default_delta": 0
+    },
+    {
+      "case": "proxy_enabled_restored",
+      "passed": true,
+      "status": 200,
+      "upstream_delta": 1,
+      "default_delta": 0
+    },
+    {
+      "case": "account_unbound",
+      "passed": true,
+      "statuses": [
+        502,
+        502
+      ],
+      "upstream_delta": 0,
+      "default_delta": 0
+    },
+    {
+      "case": "unbound_requirement_sticky",
+      "passed": true
+    },
+    {
+      "case": "approved_binding_restored",
+      "passed": true,
+      "status": 200,
+      "upstream_delta": 1,
+      "default_delta": 0
+    },
+    {
+      "case": "generation_mismatch",
+      "passed": true,
+      "statuses": [
+        502,
+        502
+      ],
+      "upstream_delta": 0,
+      "default_delta": 0
+    },
+    {
+      "case": "binding_url_corrupt",
+      "passed": true,
+      "statuses": [
+        502,
+        502
+      ],
+      "upstream_delta": 0,
+      "default_delta": 0
+    },
+    {
+      "case": "recovered_after_faults",
+      "passed": true,
+      "status": 200,
+      "upstream_delta": 1,
+      "default_delta": 0
+    },
+    {
+      "case": "default_observer_records_control",
+      "passed": true,
+      "upstream_delta": 1,
+      "default_delta": 1
+    }
+  ],
+  "entry_guards": {
+    "managed_proxy_api_delete": 409,
+    "new_authorization_borrowed_owner": 409,
+    "ready": true
+  },
+  "coverage": {
+    "provider_request_kinds": [
+      "exchange",
+      "models",
+      "profile",
+      "quota",
+      "refresh",
+      "sse",
+      "websocket",
+      "xai_billing",
+      "xai_discovery",
+      "xai_exchange",
+      "xai_inference",
+      "xai_jwks",
+      "xai_models",
+      "xai_refresh",
+      "xai_subscription",
+      "xai_userinfo"
+    ],
+    "provider_call_observations": 331,
+    "blocked_call_observations": 165,
+    "blocked_target_delta": 0,
+    "blocked_default_delta": 0,
+    "projection_and_cleanup_checks": 10,
+    "gateway_cases": 12
+  },
+  "validation_limits": [
+    "Counts establish actual transport admission and default-egress isolation; business_completed separately records mock response decoding",
+    "xAI code exchange uses a fail-closed verifier and JWKS fixture intentionally lacks a valid signing key; these are transport observations, not successful external authorization",
+    "Public OIDC prewarming, public release/DNS metadata and new credential import lacking an established local owner retain deployment-level behavior",
+    "Real third-party credentials, public egress addresses and a long-duration load test were not run",
+    "Backpressure revocation at the last writer is source-reviewed; existing control/backpressure regressions passed and real idle control revocation was observed"
+  ]
+}

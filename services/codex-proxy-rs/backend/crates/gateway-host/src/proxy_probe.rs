@@ -92,6 +92,11 @@ impl HttpProxyProbe {
             .timeout(Duration::from_secs(12))
             .redirect(reqwest::redirect::Policy::none());
         let client = (self.build_client)(builder)?;
+        if let ProbeRoute::Proxy(proxy) = proxy {
+            gateway_egress::admit(Some(proxy))
+                .await
+                .map_err(|_| "托管出口暂停发送")?;
+        }
         let mut response = client.get(endpoint).send().await.map_err(|error| {
             if error.is_timeout() {
                 "出口连接超时"
@@ -288,6 +293,9 @@ impl HttpProxyProbe {
         if !matches!(proxy, ProbeRoute::Proxy(_)) {
             return self.lookup_location(ip, proxy).await;
         }
+        if matches!(proxy, ProbeRoute::Proxy(value) if value.is_managed()) {
+            return self.lookup_location(ip, proxy).await;
+        }
         match self.lookup_location(ip, ProbeRoute::Deployment).await {
             Ok(location) => Ok(location),
             Err(error) => self.lookup_location(ip, proxy).await.or(Err(error)),
@@ -311,6 +319,11 @@ impl HttpProxyProbe {
         let client = (self.build_client)(builder)?;
         // 查询已检测到的具体出口，不能再次查询“我的 IP”，轮换代理可能换到另一个出口
         let url = format!("{}/{ip}", self.location_endpoint.trim_end_matches('/'));
+        if let ProbeRoute::Proxy(proxy) = proxy {
+            gateway_egress::admit(Some(proxy))
+                .await
+                .map_err(|_| "托管出口暂停发送")?;
+        }
         let mut response = client
             .get(url)
             .query(&[("fields", "ip,success,country_code,region,city,timezone.id")])

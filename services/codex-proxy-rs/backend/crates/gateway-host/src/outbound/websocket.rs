@@ -27,6 +27,7 @@ type Socket = WebSocketStream<TokioIo<hyper::upgrade::Upgraded>>;
 
 /// 读写分别串行，允许等待输出时发送控制消息；关闭会唤醒在途操作并释放容量
 pub struct ManagedWebSocket {
+    outbound_proxy: Option<OutboundProxy>,
     handshake_version: http::Version,
     handshake_headers: Vec<(String, Vec<u8>)>,
     writer: Mutex<Option<(SplitSink<Socket, Message>, OwnedSemaphorePermit)>>,
@@ -119,6 +120,7 @@ impl HttpClient {
             version: response.response.version(),
             headers: response.headers.clone(),
             connection: Some(ManagedWebSocket {
+                outbound_proxy: proxy.cloned(),
                 handshake_version: response.response.version(),
                 handshake_headers: response.headers,
                 writer: Mutex::new(Some((writer, response.permit))),
@@ -163,6 +165,8 @@ impl ManagedWebSocket {
             result = tokio::time::timeout(timeout, async {
                 let mut writer = self.writer.lock().await;
                 let (writer, _) = writer.as_mut().ok_or_else(|| HttpError::invalid("WebSocket closed"))?;
+                gateway_egress::admit(self.outbound_proxy.as_ref()).await
+                    .map_err(|_| HttpError::invalid("managed egress denied").with_kind(HttpErrorKind::AddressDenied))?;
                 writer.send(message).await.map_err(|_| HttpError::sent("WebSocket send"))
             }) => result.unwrap_or_else(|_| Err(timeout_error())),
         };

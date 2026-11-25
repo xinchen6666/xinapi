@@ -43,6 +43,9 @@ impl PeerTransport for HttpPeerTransport {
             .connect_timeout(REQUEST_TIMEOUT)
             .timeout(REQUEST_TIMEOUT);
         let client = (self.build_client)(builder).map_err(|_| UpstreamInfoFailure::Unavailable)?;
+        gateway_egress::admit_account(account.id().as_str(), account.outbound_proxy())
+            .await
+            .map_err(|_| UpstreamInfoFailure::Unavailable)?;
         let response = client
             .get(format!(
                 "{}/cpr/link",

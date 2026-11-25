@@ -39,6 +39,17 @@ use super::upstream_error::{
 };
 use gateway_core::account::OutboundProxy;
 
+/// 账号身份与出口事实共同参与实时准入，初次授权只携带显式出口
+pub(crate) async fn admit_egress(
+    account_id: Option<&str>,
+    proxy: Option<&OutboundProxy>,
+) -> Result<(), gateway_core::account::ManagedEgressDenied> {
+    match account_id {
+        Some(id) => gateway_egress::admit_account(id, proxy).await,
+        None => gateway_egress::admit(proxy).await,
+    }
+}
+
 pub(crate) const OFFICIAL_OAUTH_HOST: &str = "auth.x.ai";
 const OFFICIAL_INFERENCE_HOST: &str = "cli-chat-proxy.grok.com";
 const OFFICIAL_INFERENCE_PATH: &str = "/v1/responses";
@@ -307,6 +318,12 @@ impl OAuthHttpTransport for ReqwestOAuthTransport {
                     .collect::<Vec<_>>();
                 builder = builder.form(&form);
             }
+            admit_egress(
+                request.account_id.as_deref(),
+                request.outbound_proxy.as_ref(),
+            )
+            .await
+            .map_err(|_| TransportFailure::new(TransportFailureKind::NotSent))?;
             let response = builder.send().await.map_err(classify_oauth_reqwest_error)?;
             let status = response.status().as_u16();
             let body = match collect_bounded(response, MAX_OAUTH_RESPONSE_BYTES).await {
@@ -422,6 +439,12 @@ impl GrokInferenceTransport for ReqwestGrokInferenceTransport {
             for header in request.headers() {
                 builder = builder.header(header.name(), header.value().as_ref());
             }
+            gateway_egress::admit_account(
+                request.binding().as_str(),
+                request.binding().outbound_proxy(),
+            )
+            .await
+            .map_err(|_| inference_client_pool_unavailable())?;
             let dns_observer = Arc::new(RequestDnsObserver::default());
             let headers_started_at = Instant::now();
             let response =
@@ -596,6 +619,14 @@ impl GrokModelCatalogTransport for ReqwestGrokModelCatalogTransport {
             for header in request.headers() {
                 builder = builder.header(header.name(), header.value().expose());
             }
+            admit_egress(
+                request.account_id.as_deref(),
+                request.outbound_proxy.as_ref(),
+            )
+            .await
+            .map_err(|_| {
+                GrokModelCatalogTransportError::new(GrokModelCatalogTransportErrorKind::Transport)
+            })?;
             let response = builder
                 .send()
                 .await
@@ -663,6 +694,14 @@ impl GrokBillingTransport for ReqwestGrokModelCatalogTransport {
             for header in request.headers() {
                 builder = builder.header(header.name(), header.value().expose());
             }
+            admit_egress(
+                request.account_id.as_deref(),
+                request.outbound_proxy.as_ref(),
+            )
+            .await
+            .map_err(|_| {
+                GrokBillingTransportError::new(GrokBillingTransportErrorKind::Transport)
+            })?;
             let response = builder
                 .send()
                 .await

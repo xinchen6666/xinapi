@@ -46,6 +46,7 @@ impl Environment {
             Mode::Help => gateway_store::initialize_read_only(store).await?,
         };
         host.report_startup_ready("Store");
+        host.install_managed_egress(store.managed_egress_state())?;
         let plugin_http = Arc::new(HttpClient::new()?);
         Ok(Self {
             host,

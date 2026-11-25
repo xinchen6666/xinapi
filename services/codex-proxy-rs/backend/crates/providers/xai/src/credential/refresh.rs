@@ -168,6 +168,19 @@ pub enum GrokRefreshFailure {
 pub trait GrokCredentialRefresher: Send + Sync {
     async fn prepare_cycle(&self) -> Result<(), GrokRefreshFailure>;
 
+    /// 已有账号刷新保持身份直至实际网络发送，覆盖出口要求收紧
+    async fn refresh_for_account(
+        &self,
+        account_id: &ProviderAccountId,
+        token: &SecretValue,
+        proxy: Option<&gateway_core::account::OutboundProxy>,
+    ) -> Result<GrokRefreshTokens, GrokRefreshFailure> {
+        gateway_egress::admit_account(account_id.as_str(), proxy)
+            .await
+            .map_err(|_| GrokRefreshFailure::Transient)?;
+        self.refresh_with_proxy(token, proxy).await
+    }
+
     async fn refresh(
         &self,
         refresh_token: &SecretValue,
@@ -210,6 +223,27 @@ impl GrokOAuthRefreshClient {
 
 #[async_trait]
 impl GrokCredentialRefresher for GrokOAuthRefreshClient {
+    async fn refresh_for_account(
+        &self,
+        account_id: &ProviderAccountId,
+        token: &SecretValue,
+        proxy: Option<&gateway_core::account::OutboundProxy>,
+    ) -> Result<GrokRefreshTokens, GrokRefreshFailure> {
+        let client = self
+            .client
+            .with_outbound_proxy(proxy.cloned())
+            .with_account_id(account_id);
+        let discovery = client
+            .discover()
+            .await
+            .map_err(classify_oauth_refresh_error)?;
+        let tokens = client
+            .refresh(&discovery, &RefreshTokenGrant::new(token.clone()))
+            .await
+            .map_err(classify_oauth_refresh_error)?;
+        refreshed_tokens(tokens)
+    }
+
     async fn refresh_with_proxy(
         &self,
         token: &SecretValue,
@@ -469,7 +503,11 @@ impl GrokCredentialRefreshService {
         };
         let tokens = self
             .refresher
-            .refresh_with_proxy(&loaded.refresh_token, loaded.account.outbound_proxy())
+            .refresh_for_account(
+                loaded.account.id(),
+                &loaded.refresh_token,
+                loaded.account.outbound_proxy(),
+            )
             .await
             .map_err(GrokCredentialRefreshError::ManualFailure)?;
         if tokens.access_token.is_empty() || tokens.access_token.len() > MAX_SECRET_BYTES {
@@ -643,7 +681,8 @@ impl GrokCredentialRefreshService {
 
         match self
             .refresher
-            .refresh_with_proxy(
+            .refresh_for_account(
+                &credential.account_id,
                 &credential.refresh_token,
                 credential.outbound_proxy.as_ref(),
             )

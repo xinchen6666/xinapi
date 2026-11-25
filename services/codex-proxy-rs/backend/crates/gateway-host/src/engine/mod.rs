@@ -1,5 +1,6 @@
 //! 入口登记与每入口监督任务的组合边界
 
+pub(super) mod admission;
 mod artifact;
 mod config;
 mod entries;
@@ -76,6 +77,58 @@ impl EngineSupervisor {
         drop(inner);
         completions.await;
     }
+    pub(super) async fn authorize_egress(
+        &self,
+        target: &gateway_core::account::ManagedEgressTarget,
+        proxy: &gateway_core::account::OutboundProxy,
+    ) -> Result<(), gateway_core::account::ManagedEgressDenied> {
+        use gateway_core::account::ManagedEgressDenied as Denied;
+        if self.cancellation.is_cancelled() {
+            return Err(Denied);
+        }
+        let inner = self.inner.lock().await;
+        if self
+            .transitions
+            .lock()
+            .map_err(|_| Denied)?
+            .contains(&target.entry_id)
+        {
+            return Err(Denied);
+        }
+        let record = inner
+            .registry
+            .as_ref()
+            .map_err(|_| Denied)?
+            .records()
+            .iter()
+            .find(|r| r.entry_id == target.entry_id)
+            .ok_or(Denied)?;
+        let run = inner.runs.get(&target.entry_id).ok_or(Denied)?;
+        let view = run.status.borrow();
+        if run.cancel.is_cancelled()
+            || *run.done.borrow()
+            || view.state != EngineState::Running
+            || record.source_id != target.source_id
+            || record.node_id != target.node_id
+            || record.version_id != target.version_id
+        {
+            return Err(Denied);
+        }
+        let endpoint = format!(
+            "http://{}:{}@127.0.0.1:{}/",
+            record.username, record.password, record.listen_port
+        );
+        if proxy.expose_url() != endpoint {
+            return Err(Denied);
+        }
+        let pid = view
+            .pid
+            .and_then(|pid| i32::try_from(pid).ok())
+            .ok_or(Denied)?;
+        nix::sys::signal::kill(nix::unistd::Pid::from_raw(pid), None).map_err(|_| Denied)?;
+        Ok(())
+    }
+
     fn settings(&self) -> Result<Arc<EngineSettings>, Error> {
         self.settings.as_ref().cloned().map_err(|e| *e)
     }
@@ -270,6 +323,16 @@ impl EngineHost for EngineSupervisor {
             "http://{}:{}@127.0.0.1:{}",
             record.username, record.password, record.listen_port
         ))
+        .map(|proxy| {
+            proxy.with_managed_requirement(
+                gateway_core::account::ManagedEgressRequirement::Reservation {
+                    entry_id: record.entry_id.clone(),
+                    source_id: record.source_id.clone(),
+                    node_id: record.node_id.clone(),
+                    version_id: record.version_id.clone(),
+                },
+            )
+        })
         .map_err(|_| Error::Configuration)
     }
 

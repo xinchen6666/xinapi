@@ -11,6 +11,7 @@ use crate::transport::protocol::responses::{
 pub struct CodexWebSocketConnection {
     pub(crate) connection_budget: Option<gateway_core::engine::connection::ConnectionBudget>,
     pub(crate) outbound_proxy: Option<gateway_core::account::OutboundProxy>,
+    pub(crate) local_account_id: Option<String>,
     pub(super) endpoint: String,
     pub(super) headers: Vec<(String, String)>,
     pub(super) permessage_deflate: bool,
@@ -31,6 +32,7 @@ impl fmt::Debug for CodexWebSocketConnection {
 impl PartialEq for CodexWebSocketConnection {
     fn eq(&self, other: &Self) -> bool {
         self.endpoint == other.endpoint
+            && self.local_account_id == other.local_account_id
             && self.headers == other.headers
             && self.permessage_deflate == other.permessage_deflate
             && self
@@ -182,6 +184,7 @@ impl CodexWebSocketConnection {
             headers,
             permessage_deflate: true,
             outbound_proxy: None,
+            local_account_id: None,
             connection_budget: None,
         }
     }
