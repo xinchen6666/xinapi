@@ -225,6 +225,7 @@ E001–E006 是 X01 之前的历史证据，仅支持当时的工作与版本；
 - 空库和X06既有库追加迁移成功，旧代理保留；升级重复启动和主环境重启后，来源、节点与版本保持原值。正式测试文件保持原状，现有迁移清单的手工摘要操作按当前约定省略。
 - 格式、Rust改动库Clippy和网关构建通过；现有订阅25项、API7项、架构16项通过。Go build/vet及authz/router/middleware通过；前端1520文件/2项目类型检查、改动lint、生产构建通过，共享弹窗3项、表格7项通过。
 - 桌面和390px移动页面的创建、改名建议、批准、失败保留、私密链接隐藏及管理员只读通过，运行错误零。截图：[差异](evidence/X07-source-review.png)、[批准](evidence/X07-source-approval.png)、[移动](evidence/X07-source-mobile.png)。
+- 首个增量已交付 [Draft PR #6](https://github.com/xinchen6666/xinapi/pull/6)，base 为 X06；完整源码与四张截图已送达并读回。CI质量与New API镜像通过，CPR构建继续跟随[运行页](https://github.com/xinchen6666/xinapi/actions/runs/45552189412)。
 - 较早整仓测试保留56项前端失败/超时及controller整包超时记录；限定业务场景通过与整仓结果分别记账。真实账号绑定、稳定出口及Mihomo执行属于后续任务，当前available是已批准来源节点状态。
 
 ## 未来记录模板
