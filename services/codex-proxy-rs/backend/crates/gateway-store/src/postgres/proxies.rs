@@ -138,6 +138,13 @@ fn record(row: PgRow) -> StoreResult<ProxyRecord> {
                     .map_err(|source| invalid().with_source(source))?,
             )
             .map_err(|source| invalid().with_source(source))?,
+        )
+        .with_route_generation(
+            u64::try_from(
+                row.try_get::<i64, _>("route_generation")
+                    .map_err(|source| invalid().with_source(source))?,
+            )
+            .map_err(|source| invalid().with_source(source))?,
         ),
         revision: AdminRevision::new(
             u64::try_from(
@@ -351,8 +358,8 @@ pub(crate) async fn resolve_proxy_selection(
     match selection {
         AccountProxySelection::Direct => Ok((None, None)),
         AccountProxySelection::Saved(id) => {
-            let (value, enabled, limit): (String, bool, i64) = sqlx::query_as(
-                "select proxy_url, enabled, max_websocket_connections from outbound_proxies where id = $1 for share",
+            let (value, enabled, limit, generation): (String, bool, i64, i64) = sqlx::query_as(
+                "select proxy_url, enabled, max_websocket_connections, route_generation from outbound_proxies where id = $1 for share",
             )
             .bind(id)
             .fetch_optional(&mut **transaction)
@@ -373,6 +380,10 @@ pub(crate) async fn resolve_proxy_selection(
                         .map_err(|source| invalid().with_source(source))?
                         .with_max_websocket_connections(
                             u32::try_from(limit).map_err(|source| invalid().with_source(source))?,
+                        )
+                        .with_route_generation(
+                            u64::try_from(generation)
+                                .map_err(|source| invalid().with_source(source))?,
                         ),
                 ),
             ))
@@ -417,6 +428,13 @@ impl ProxyStore for PgProxyRepository {
         let revision = bump_config_revision_in_transaction(&mut transaction)
             .await
             .map_err(store_error)?;
+        super::managed_routes::guard_account_binding(
+            &mut transaction,
+            &[account_id.as_str().to_owned()],
+            &AccountProxySelection::Direct,
+        )
+        .await
+        .map_err(store_error)?;
         // 在同一条更新中校验绑定，避免旧弹窗清除账号后来选择的其他代理
         let updated = sqlx::query(
             "update provider_accounts
@@ -558,6 +576,15 @@ impl ProxyStore for PgProxyRepository {
     }
 
     async fn reserve_import(&self, id: &str) -> AdminStoreResult<ProxyImportReservation> {
+        let managed: bool =
+            sqlx::query_scalar("select exists(select 1 from managed_routes where proxy_id=$1)")
+                .bind(id)
+                .fetch_one(&self.pool)
+                .await
+                .map_err(|source| store_error(unavailable(source)))?;
+        if managed {
+            return Err(store_error(conflict(id)));
+        }
         let slot = self
             .import_slots
             .clone()
@@ -742,6 +769,9 @@ impl ProxyStore for PgProxyRepository {
         let revision = bump_config_revision_in_transaction(&mut transaction)
             .await
             .map_err(store_error)?;
+        super::managed_routes::guard_proxy_mutation(&mut transaction, &command.id)
+            .await
+            .map_err(store_error)?;
         if let Some(proxy) = &command.proxy {
             lock_url(&mut transaction, proxy)
                 .await
@@ -848,6 +878,9 @@ impl ProxyStore for PgProxyRepository {
         let config_revision = bump_config_revision_in_transaction(&mut transaction)
             .await
             .map_err(store_error)?;
+        super::managed_routes::guard_proxy_mutation(&mut transaction, id)
+            .await
+            .map_err(store_error)?;
         // 先锁定代理并校验版本，阻止新绑定插入；后续解绑和删除共同提交
         let locked: Option<String> = sqlx::query_scalar(
             "select id from outbound_proxies where id = $1 and revision = $2 for update",
@@ -945,6 +978,9 @@ impl ProxyStore for PgProxyRepository {
         .fetch_one(&mut *transaction)
         .await
         .map_err(|source| store_error(unavailable(source)))?;
+        super::managed_routes::guard_proxy_mutation(&mut transaction, id)
+            .await
+            .map_err(store_error)?;
         let current = transaction_record(&mut transaction, id)
             .await
             .map_err(store_error)?;

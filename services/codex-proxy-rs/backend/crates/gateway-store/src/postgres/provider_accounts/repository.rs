@@ -107,14 +107,14 @@ impl PgProviderAccountRepository {
         omissions: Option<&gateway_core::account::AccountCatalogOmissions>,
     ) -> StoreResult<Vec<ProviderAccountSummary>> {
         let mut query = sqlx::QueryBuilder::<Postgres>::new(
-            "select coalesce(proxy_enabled, true) as outbound_proxy_enabled, coalesce(max_websocket_connections, 0) as outbound_proxy_max_websocket_connections, auto_location, detected_location_json, location_country, location_region, location_city, location_timezone, outbound_proxy_id, outbound_proxy_url, id, provider_kind, name, notes, email, upstream_user_id,
+            "select coalesce(proxy_enabled, true) as outbound_proxy_enabled, coalesce(max_websocket_connections, 0) as outbound_proxy_max_websocket_connections, coalesce(route_generation, 0) as outbound_proxy_route_generation, auto_location, detected_location_json, location_country, location_region, location_city, location_timezone, outbound_proxy_id, outbound_proxy_url, id, provider_kind, name, notes, email, upstream_user_id,
                     upstream_account_id, plan_type, authentication_kind, credential_revision, has_refresh_token,
                     access_token_expires_at, next_refresh_at, enabled, quota_settings, quota_paused, auto_use_quota_credits, concurrency_limit, weight, model_access_json, credential_state,
                     credential_observed_at, quota_access_state, quota_evidence,
                     quota_access_observed_at, quota_reset_at,
                     quota_observed_at, last_error_reason, last_error_message, created_at, updated_at
              from provider_accounts
-             left join (select id as location_proxy_id, enabled as proxy_enabled, max_websocket_connections, auto_location, detected_location_json, location_country, location_region, location_city, location_timezone from outbound_proxies) proxy_location
+             left join (select id as location_proxy_id, enabled as proxy_enabled, max_websocket_connections, route_generation, auto_location, detected_location_json, location_country, location_region, location_city, location_timezone from outbound_proxies) proxy_location
                on outbound_proxy_id = location_proxy_id
              where true",
         );
@@ -205,14 +205,14 @@ impl ProviderAccountRepository for PgProviderAccountRepository {
             return Err(invalid("plugin account page limit must be positive"));
         }
         let rows = sqlx::query(
-            "select coalesce(proxy_enabled, true) as outbound_proxy_enabled, coalesce(max_websocket_connections, 0) as outbound_proxy_max_websocket_connections, auto_location, detected_location_json, location_country, location_region, location_city, location_timezone, outbound_proxy_id, outbound_proxy_url, id, provider_kind, name, notes, email, upstream_user_id,
+            "select coalesce(proxy_enabled, true) as outbound_proxy_enabled, coalesce(max_websocket_connections, 0) as outbound_proxy_max_websocket_connections, coalesce(route_generation, 0) as outbound_proxy_route_generation, auto_location, detected_location_json, location_country, location_region, location_city, location_timezone, outbound_proxy_id, outbound_proxy_url, id, provider_kind, name, notes, email, upstream_user_id,
                     upstream_account_id, plan_type, authentication_kind, credential_revision, has_refresh_token,
                     access_token_expires_at, next_refresh_at, enabled, quota_settings, quota_paused, auto_use_quota_credits, concurrency_limit, weight, model_access_json, credential_state,
                     credential_observed_at, quota_access_state, quota_evidence,
                     quota_access_observed_at, quota_reset_at,
                     quota_observed_at, last_error_reason, last_error_message, created_at, updated_at
                from provider_accounts
-               left join (select id as location_proxy_id, enabled as proxy_enabled, max_websocket_connections, auto_location, detected_location_json, location_country, location_region, location_city, location_timezone from outbound_proxies) proxy_location
+               left join (select id as location_proxy_id, enabled as proxy_enabled, max_websocket_connections, route_generation, auto_location, detected_location_json, location_country, location_region, location_city, location_timezone from outbound_proxies) proxy_location
                  on outbound_proxy_id = location_proxy_id
               where ($1::text is null or provider_kind = $1)
                 and ($2::text is null or id > $2)
@@ -760,6 +760,21 @@ pub(crate) async fn upsert_provider_account_in_transaction(
         ),
         None => None,
     };
+    if let Some(proxy_id) = &proxy_id {
+        // 导入可能命中上游身份的既有账号，绑定保护使用实际持久归属
+        let existing: Option<String> = sqlx::query_scalar(
+            "select id from provider_accounts where provider_kind=$1 and upstream_user_id=$2 and coalesce(upstream_account_id,'')=coalesce($3,'')")
+            .bind(&account.provider_kind).bind(&account.upstream_user_id).bind(&account.upstream_account_id)
+            .fetch_optional(&mut **transaction).await
+            .map_err(|source| postgres_unavailable("resolve imported account binding owner",source))?;
+        let owner = existing.unwrap_or_else(|| account.id.clone());
+        super::super::managed_routes::guard_account_binding(
+            transaction,
+            &[owner],
+            &gateway_admin::model::proxies::AccountProxySelection::Saved(proxy_id.clone()),
+        )
+        .await?;
+    }
     let imported = sqlx::query_as::<_, (String, i64)>(
         "insert into provider_accounts (
            outbound_proxy_url, outbound_proxy_id, id, provider_kind, name, email, upstream_user_id,
@@ -949,6 +964,12 @@ pub(crate) async fn update_provider_accounts_scheduling_in_transaction(
 ) -> StoreResult<()> {
     let (proxy_id, proxy) = match outbound_proxy {
         Some(selection) => {
+            super::super::managed_routes::guard_account_binding(
+                transaction,
+                account_ids,
+                selection,
+            )
+            .await?;
             super::super::proxies::resolve_proxy_selection(transaction, selection).await?
         }
         None => (None, None),
@@ -997,6 +1018,7 @@ pub(crate) async fn delete_provider_accounts_in_transaction(
     scope: &ProviderAccountAdminScope,
     account_ids: &[String],
 ) -> StoreResult<()> {
+    super::super::managed_routes::guard_account_delete(transaction, account_ids).await?;
     let deleted = sqlx::query_scalar::<_, String>(
         "delete from provider_accounts
          where id = any($1::text[]) and provider_kind = $2
@@ -1255,14 +1277,14 @@ impl PgProviderAccountRepository {
             .map(AccountGroupId::as_str)
             .collect::<Vec<_>>();
         let rows = sqlx::query(
-            "select coalesce(proxy_enabled, true) as outbound_proxy_enabled, coalesce(max_websocket_connections, 0) as outbound_proxy_max_websocket_connections, auto_location, detected_location_json, location_country, location_region, location_city, location_timezone, outbound_proxy_id, outbound_proxy_url, id, provider_kind, name, notes, email, upstream_user_id,
+            "select coalesce(proxy_enabled, true) as outbound_proxy_enabled, coalesce(max_websocket_connections, 0) as outbound_proxy_max_websocket_connections, coalesce(route_generation, 0) as outbound_proxy_route_generation, auto_location, detected_location_json, location_country, location_region, location_city, location_timezone, outbound_proxy_id, outbound_proxy_url, id, provider_kind, name, notes, email, upstream_user_id,
                     upstream_account_id, plan_type, authentication_kind, credential_revision, has_refresh_token,
                     access_token_expires_at, next_refresh_at, enabled, quota_settings, quota_paused, auto_use_quota_credits, concurrency_limit, weight, model_access_json, credential_state,
                     credential_observed_at, quota_access_state, quota_evidence,
                     quota_access_observed_at, quota_reset_at,
                     quota_observed_at, last_error_reason, last_error_message, created_at, updated_at
                from provider_accounts
-               left join (select id as location_proxy_id, enabled as proxy_enabled, max_websocket_connections, auto_location, detected_location_json, location_country, location_region, location_city, location_timezone from outbound_proxies) proxy_location
+               left join (select id as location_proxy_id, enabled as proxy_enabled, max_websocket_connections, route_generation, auto_location, detected_location_json, location_country, location_region, location_city, location_timezone from outbound_proxies) proxy_location
                  on outbound_proxy_id = location_proxy_id
               where id = any($1::text[]) and exists (
                 select 1 from account_group_accounts membership

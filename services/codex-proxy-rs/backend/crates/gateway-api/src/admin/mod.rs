@@ -21,6 +21,7 @@ mod compression;
 pub(crate) mod diagnostics;
 pub mod engines;
 mod extract;
+mod managed_routes;
 pub mod observability;
 mod plugins;
 pub mod presenter;
@@ -49,6 +50,7 @@ where
     Router::new()
         .merge(account_groups::router::<S>())
         .merge(engines::router::<S>())
+        .merge(managed_routes::router::<S>())
         .merge(proxies::router::<S>())
         .merge(plugins::router::<S>())
         .merge(accounts::router::<S>())

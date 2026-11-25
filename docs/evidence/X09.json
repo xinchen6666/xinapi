@@ -1,0 +1,220 @@
+{
+  "task": "X09",
+  "checked_at": "2026-11-25T19:52:00.888772+00:00",
+  "kind": "real CPR/Mihomo, PostgreSQL, isolated HTTP/TLS/HTTP2/WebSocket and self-made imported accounts",
+  "base_task": "X08 repaired delivery",
+  "result": "passed_scoped",
+  "scenarios": {
+    "candidate": [
+      {
+        "case": "initial_binding",
+        "passed": true,
+        "generation": 1
+      },
+      {
+        "case": "node_observation_separate",
+        "passed": true
+      },
+      {
+        "case": "candidate_failure",
+        "passed": true,
+        "status": 502
+      },
+      {
+        "case": "failed_receipt",
+        "passed": true
+      },
+      {
+        "case": "failed_candidate_keeps_old",
+        "passed": true
+      },
+      {
+        "case": "candidate_ready",
+        "passed": true,
+        "observation": {
+          "success": true,
+          "latency_ms": 38,
+          "exit_ip": "192.168.160.3",
+          "exit_ipv4": "192.168.160.3",
+          "exit_ipv6": null
+        }
+      },
+      {
+        "case": "preparation_keeps_old",
+        "passed": true
+      },
+      {
+        "case": "second_ready_same_generation",
+        "passed": true
+      },
+      {
+        "case": "public_projection_redacted",
+        "passed": true
+      }
+    ],
+    "switching": [
+      {
+        "case": "http2_ws_old_streams_terminated_new_route",
+        "passed": true,
+        "before_protocol": "2.0",
+        "after_protocol": "2.0",
+        "old_http2_error": "ERR_HTTP2_INVALID_SESSION",
+        "http2_closed": true,
+        "websocket_closed": true,
+        "exit_changed": true
+      },
+      {
+        "case": "stable_proxy_endpoint",
+        "passed": true
+      },
+      {
+        "case": "old_candidate_conflict",
+        "passed": true
+      },
+      {
+        "case": "repeated_approval",
+        "passed": true
+      },
+      {
+        "case": "credential_revision_preserved",
+        "passed": true
+      }
+    ],
+    "recovery": [
+      {
+        "case": "restart_reports_reconcile",
+        "passed": true
+      },
+      {
+        "case": "restart_reconcile",
+        "passed": true
+      },
+      {
+        "case": "proxy_update",
+        "passed": true,
+        "status": 409
+      },
+      {
+        "case": "proxy_delete",
+        "passed": true,
+        "status": 409
+      },
+      {
+        "case": "cross_account",
+        "passed": true,
+        "status": 409
+      },
+      {
+        "case": "export_private_entry_denied",
+        "passed": true,
+        "status": 409
+      },
+      {
+        "case": "unbound_candidate_ready",
+        "passed": true
+      },
+      {
+        "case": "ready_abort",
+        "passed": true
+      },
+      {
+        "case": "generation_consistent",
+        "passed": true
+      },
+      {
+        "case": "applying_receipt",
+        "passed": true
+      },
+      {
+        "case": "publish_source_conflict",
+        "passed": true,
+        "status": 409
+      },
+      {
+        "case": "conflict_reconcile_releases",
+        "passed": true,
+        "reason": "route_candidate_superseded"
+      },
+      {
+        "case": "conflict_restores_old",
+        "passed": true
+      },
+      {
+        "case": "restore_fixed_historical_version",
+        "passed": true,
+        "status": 200
+      },
+      {
+        "case": "lost_response_readback",
+        "passed": true
+      },
+      {
+        "case": "lost_response_idempotent",
+        "passed": true
+      },
+      {
+        "case": "interrupted_applying_readback",
+        "passed": true
+      },
+      {
+        "case": "interrupted_applying_reconciled",
+        "passed": true,
+        "generation": 4
+      },
+      {
+        "case": "completed",
+        "passed": true
+      },
+      {
+        "case": "deleted_unbound_account_keeps_operation_receipt",
+        "passed": true,
+        "route": null,
+        "engine": null
+      }
+    ],
+    "guards": [
+      {
+        "case": "aborted_unbound_account_deletable",
+        "passed": true,
+        "status": 200
+      },
+      {
+        "case": "published_managed_account_delete_guard",
+        "passed": true,
+        "status": 409
+      },
+      {
+        "case": "ordinary_proxy_applying_update_guard",
+        "passed": true,
+        "status": 409
+      },
+      {
+        "case": "ordinary_proxy_applying_delete_guard",
+        "passed": true,
+        "status": 409
+      },
+      {
+        "case": "applying_account_rebind_guard",
+        "passed": true,
+        "status": 409
+      },
+      {
+        "case": "initial_binding_after_guards",
+        "passed": true,
+        "status": 200
+      },
+      {
+        "case": "new_unique_binding",
+        "passed": true
+      }
+    ]
+  },
+  "passed_count": 41,
+  "limits": [
+    "Synthetic private-network exits only; public IP/real account traffic not_run",
+    "Fixed-entry inflight streams terminate explicitly during approved publication",
+    "Candidate validation requires one free engine slot",
+    "End-to-end inference provider payloads and billing belong to later tasks",
+    "Formal tests unchanged; root snapshot hash checks excluded per current agreement"
+  ]
+}

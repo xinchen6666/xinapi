@@ -3644,7 +3644,7 @@ URL、规范连接、待审核事实和批准历史整体加密保存在 Postgre
 
 `EngineView` 包含 `entry_id,owner,source_id,node_id,version_id,node_name,protocol,listen_host,listen_port,state,pid,started_at,rss_bytes,cpu_seconds,cold_start_ms,last_error`。状态取 `starting/running/stopped/failed`，CPU为累计秒数。v1节点登记升级后保留原端口占位，`owner=null`、`version_id`为空；新归属拥有独立入口。
 
-同owner重复启动复用存活实例。所属来源、节点或连接版本变化返回 `engine_binding_conflict`，显式换路由后续流程处理。停止可取消正在启动的实例，回执在该实例回收后完成；停止中的重复启动返回取消状态。各入口的进程等待相互独立。Host关闭统一发送终止信号并等待回收，异常退出主动回收，重启后登记和入口凭据保持、进程状态为stopped。
+同owner重复启动复用存活实例。所属来源、节点或连接版本变化返回 `engine_binding_conflict`，显式换路见第16节的受管路由流程。停止可取消正在启动的实例，回执在该实例回收后完成；停止中的重复启动返回取消状态。各入口的进程等待相互独立。Host关闭统一发送终止信号并等待回收，异常退出主动回收，重启后登记和入口凭据保持、进程状态为stopped。
 
 | HTTP | reason | 场景 |
 | ---: | --- | --- |
@@ -3663,3 +3663,31 @@ URL、规范连接、待审核事实和批准历史整体加密保存在 Postgre
 `running` 表示已完成本机controller与数据入口认证握手；上游代理认证、目标可达性和公网出口验证属于节点检测与绑定流程。真实上游拒绝时数据请求失败。
 
 部署参数为 `CPR_MIHOMO_BIN`（默认 `/app/bin/mihomo`）、`CPR_ENGINE_MAX`（默认2，1–4）、`CPR_ENGINE_PORT_BASE/CPR_ENGINE_PORT_SPAN`（24000/200）和 `CPR_ENGINE_START_TIMEOUT_MS`（15000，1000–30000）。登记上限256含旧占位项，实际端口范围也限制可登记数量。运行数据卷 `engines/entries.json` 保存稳定归属和私有认证材料，目录0700、文件0600；登记故障时停止分配。stdout/stderr每次启动各保留至多1MiB，超额内容持续排空。
+
+
+## 16. 账号受管路由与换路
+
+账号通过原生 `outboundProxyId` 绑定专用代理。受管路由记录节点版本、出口代次和操作回执；候选准备期间当前入口继续工作，管理员批准后才发布。
+
+| 方法与路径 | 输入 | 行为 |
+| --- | --- | --- |
+| GET `/api/admin/managed-routes` | `account_id` | 当前节点、generation、代理ID、账号实际代理ID、脱敏endpoint与观测 |
+| GET `/api/admin/managed-routes/operations` | `operation_id` | 操作及当前路由／引擎事实，含requires_reconciliation |
+| POST `/api/admin/managed-routes/prepare` | `{operation_id,account_id,expected_generation,source_id,node_id}` | 创建候选，旁路启动并验证出口；原入口保持 |
+| POST `/api/admin/managed-routes/approve` | `{operation_id}` | 校验来源／账号绑定／代次，终止旧连接并发布候选 |
+| POST `/api/admin/managed-routes/reconcile` | `{operation_id}` | 对账中断操作，或按已发布固定版本恢复重启后的入口 |
+| POST `/api/admin/managed-routes/abort` | `{operation_id}` | 显式终结候选；applying阶段尝试恢复原已发布节点并释放操作 |
+
+全部接口要求管理员身份。operation_id为调用方生成的UUID，相同输入复用原回执；复用标识但输入改变返回409。初次expected_generation为0，随后使用读取到的generation。多个ready候选可以共存，同一路由同时只接受一个applying操作；旧候选批准返回冲突。
+
+操作phase为 `preparing/ready/applying/applied/failed`。响应包含 `operation`、`route`、公开 `engine` 观测和 `requires_reconciliation`。节点名称与出口IP分开保存。phase=applying表示数据库与外部引擎之间仍需确认，响应丢失时先GET读回，随后显式reconcile。已applied的重复批准复用回执并补齐配置发布。
+
+候选验证需要一个空闲引擎槽，结束后释放候选登记与私有目录；容量满时返回429。默认探测沿用双栈出口服务；部署可用 `CPR_PROXY_PROBE_URL` 指定受信单一JSON端点，其响应为 `{ip:"地址"}`，用于自建探测服务或隔离验证。该配置属于部署者输入，API调用方只选择节点。
+
+发布策略为明确终止旧引擎及其全部在途HTTP/2、SSE和WS隧道，随后用原端口与凭据启动新版本。成功发布推进专用代理的route_generation、账号URL投影、全局配置版本及操作回执。新请求按出口代次选连接池；旧WS连接级续接可能得到原有continuation错误，调用方按现行重建会话语义处理。
+
+候选失败保持原出口。claim后来源或账号事实冲突时，对账会恢复原固定历史连接并终结候选；恢复受阻时入口停止并报告requires_reconciliation。来源后来批准新连接只影响新的候选，已发布路由重启恢复使用其固定历史版本。已applied操作保留确认历史，后续换路使用新operation。
+
+受管代理的普通编辑、删除、测试结果写入及通用导入预留受到保护；其他账号借用该代理返回冲突。发布期间普通账号改绑和原普通代理修改也返回冲突。已发布受管账号的通用删除保持拒绝，后续需专门退役流程；仅候选已终结且尚无发布绑定的账号可按普通流程删除；操作历史继续可读，此时route和engine为null。账号敏感导出拒绝携带受管入口的私有认证材料。
+
+错误原因：400 `managed_route_invalid`，404 `managed_route_missing`，409 `managed_route_conflict`，429 `managed_route_capacity`，502 `managed_route_candidate_failed`，503 `managed_route_unavailable`。失败时读取operation与route判断当前绑定，避免把数据库与引擎视为同一事务。

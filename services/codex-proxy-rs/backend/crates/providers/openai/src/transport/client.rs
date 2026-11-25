@@ -107,7 +107,12 @@ fn egress_key(account_id: &str, proxy: Option<&gateway_core::account::OutboundPr
             .map_or("deployment", |proxy| proxy.expose_url())
             .as_bytes(),
     );
-    hex::encode(hash.finalize())
+    // 稳定代理地址下的节点发布代次另入池键，保留凭据版本的原有职责
+    format!(
+        "{}:route:{}",
+        hex::encode(hash.finalize()),
+        proxy.map_or(0, gateway_core::account::OutboundProxy::route_generation),
+    )
 }
 
 // ---------------------------------------------------------------------------

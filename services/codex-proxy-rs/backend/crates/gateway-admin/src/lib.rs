@@ -36,6 +36,7 @@ pub use use_case::{
     credentials::{CredentialsService, ProviderCredentials},
     engines::EnginesService,
     import_tasks::ImportTasksService,
+    managed_routes::ManagedRoutesService,
     observability::{ObservabilityService, ProviderUsageBillingProjector},
     proxies::ProxiesService,
     settings::SettingsService,
@@ -210,6 +211,7 @@ pub struct AdminServices {
     proxies: Arc<dyn ProxiesService>,
     subscriptions: Arc<dyn SubscriptionsService>,
     engines: Arc<dyn EnginesService>,
+    managed_routes: Arc<dyn ManagedRoutesService>,
     auth: Arc<dyn AuthService>,
     key_usage: Arc<dyn KeyUsageService>,
     peer_link: Arc<dyn PeerLinkService>,
@@ -271,6 +273,11 @@ impl AdminServices {
     #[must_use]
     pub fn subscriptions(&self) -> &dyn SubscriptionsService {
         self.subscriptions.as_ref()
+    }
+
+    #[must_use]
+    pub fn managed_routes(&self) -> &dyn ManagedRoutesService {
+        self.managed_routes.as_ref()
     }
 
     #[must_use]

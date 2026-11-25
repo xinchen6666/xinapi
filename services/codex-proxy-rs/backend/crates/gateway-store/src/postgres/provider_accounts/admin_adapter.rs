@@ -554,6 +554,18 @@ impl AccountStore for PgAdminAccountStore {
                     "one or more exported credentials belong to another Provider",
                 ));
             }
+            if record
+                .summary
+                .outbound_proxy
+                .as_ref()
+                .is_some_and(|proxy| proxy.route_generation() > 0)
+            {
+                return Err(AdminStoreError::new(
+                    AdminStoreErrorKind::Conflict,
+                    ENTITY,
+                    "managed entry credentials stay server-side",
+                ));
+            }
             credentials.push(ProviderExportCredentialInput {
                 account: admin_account_record(record.summary)?,
                 provider_material: ProviderDocument::new(OpaqueProviderData::new(

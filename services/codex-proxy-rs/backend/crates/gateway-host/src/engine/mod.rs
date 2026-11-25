@@ -43,6 +43,7 @@ pub(super) struct EngineSupervisor {
     inner: Mutex<Inner>,
     capacity: Arc<Semaphore>,
     cancellation: CancellationToken,
+    transitions: std::sync::Mutex<std::collections::BTreeSet<String>>,
 }
 
 impl EngineSupervisor {
@@ -60,6 +61,7 @@ impl EngineSupervisor {
             }),
             capacity,
             cancellation,
+            transitions: std::sync::Mutex::new(std::collections::BTreeSet::new()),
         }
     }
     pub(super) async fn shutdown(&self) {
@@ -94,9 +96,12 @@ impl Drop for CancelOnDrop {
     }
 }
 
-#[async_trait]
-impl EngineHost for EngineSupervisor {
-    async fn start(&self, facts: EngineFacts) -> Result<EngineSnapshot, Error> {
+impl EngineSupervisor {
+    async fn start_entry(
+        &self,
+        facts: EngineFacts,
+        allow_transition: bool,
+    ) -> Result<EngineSnapshot, Error> {
         let settings = self.settings()?;
         config::validate_connection(&facts)?;
         let deadline = Instant::now() + settings.start_timeout;
@@ -104,6 +109,15 @@ impl EngineHost for EngineSupervisor {
             let mut inner = timeout_at(deadline, self.inner.lock())
                 .await
                 .map_err(|_| Error::StartTimeout)?;
+            if !allow_transition
+                && self
+                    .transitions
+                    .lock()
+                    .map_err(|_| Error::Unavailable)?
+                    .contains(&facts.entry_id)
+            {
+                return Err(Error::BindingConflict);
+            }
             if self.cancellation.is_cancelled() {
                 return Err(Error::ShuttingDown);
             }
@@ -196,6 +210,13 @@ impl EngineHost for EngineSupervisor {
             }
         }
     }
+}
+
+#[async_trait]
+impl EngineHost for EngineSupervisor {
+    async fn start(&self, facts: EngineFacts) -> Result<EngineSnapshot, Error> {
+        self.start_entry(facts, false).await
+    }
     async fn stop(&self, entry_id: &str) -> Result<EngineSnapshot, Error> {
         let (record, run) = {
             let inner = self.inner.lock().await;
@@ -229,6 +250,76 @@ impl EngineHost for EngineSupervisor {
             Ok(stopped(&record))
         }
     }
+    async fn endpoint(
+        &self,
+        entry_id: &str,
+    ) -> Result<gateway_core::account::OutboundProxy, Error> {
+        let inner = self.inner.lock().await;
+        let record = inner
+            .registry
+            .as_ref()
+            .map_err(|e| *e)?
+            .records()
+            .iter()
+            .find(|r| r.entry_id == entry_id)
+            .ok_or(Error::UnknownEntry)?;
+        if record.owner.is_none() {
+            return Err(Error::OwnerInvalid);
+        }
+        gateway_core::account::OutboundProxy::parse(&format!(
+            "http://{}:{}@127.0.0.1:{}",
+            record.username, record.password, record.listen_port
+        ))
+        .map_err(|_| Error::Configuration)
+    }
+
+    async fn replace(&self, facts: EngineFacts) -> Result<EngineSnapshot, Error> {
+        config::validate_connection(&facts)?;
+        let entry_id = facts.entry_id.clone();
+        let _transition = Transition::begin(&self.transitions, &entry_id)?;
+        let exists = {
+            let inner = self.inner.lock().await;
+            inner
+                .registry
+                .as_ref()
+                .map_err(|e| *e)?
+                .records()
+                .iter()
+                .any(|r| r.entry_id == entry_id)
+        };
+        if exists {
+            self.stop(&entry_id).await?;
+            let mut inner = self.inner.lock().await;
+            inner.registry.as_mut().map_err(|e| *e)?.rebind(&facts)?;
+        }
+        self.start_entry(facts, true).await
+    }
+
+    async fn discard_candidate(&self, entry_id: &str) -> Result<(), Error> {
+        let _transition = Transition::begin(&self.transitions, entry_id)?;
+        match self.stop(entry_id).await {
+            Ok(_) | Err(Error::UnknownEntry) => {}
+            Err(error) => return Err(error),
+        }
+        let mut inner = self.inner.lock().await;
+        inner
+            .registry
+            .as_mut()
+            .map_err(|e| *e)?
+            .discard_candidate(entry_id)?;
+        drop(inner);
+        let directory = self.root.join(entry_id);
+        if directory.exists() {
+            let root = self.root.canonicalize().map_err(|_| Error::Unavailable)?;
+            let target = directory.canonicalize().map_err(|_| Error::Unavailable)?;
+            if target.parent() != Some(root.as_path()) || !entry_id.starts_with("reservation-") {
+                return Err(Error::OwnerInvalid);
+            }
+            std::fs::remove_dir_all(target).map_err(|_| Error::Unavailable)?;
+        }
+        Ok(())
+    }
+
     async fn list(&self) -> Result<Vec<EngineSnapshot>, Error> {
         let inner = self.inner.lock().await;
         let registry = inner.registry.as_ref().map_err(|e| *e)?;
@@ -278,5 +369,36 @@ fn stopped(record: &EntryRecord) -> EngineSnapshot {
         cpu_seconds: None,
         cold_start_ms: None,
         last_error: None,
+    }
+}
+
+/// 切换只占用所属入口的标识，取消时也会释放对后续操作的阻挡
+struct Transition<'a> {
+    entries: &'a std::sync::Mutex<std::collections::BTreeSet<String>>,
+    id: String,
+}
+impl<'a> Transition<'a> {
+    fn begin(
+        entries: &'a std::sync::Mutex<std::collections::BTreeSet<String>>,
+        id: &str,
+    ) -> Result<Self, Error> {
+        if !entries
+            .lock()
+            .map_err(|_| Error::Unavailable)?
+            .insert(id.to_owned())
+        {
+            return Err(Error::BindingConflict);
+        }
+        Ok(Self {
+            entries,
+            id: id.to_owned(),
+        })
+    }
+}
+impl Drop for Transition<'_> {
+    fn drop(&mut self) {
+        if let Ok(mut entries) = self.entries.lock() {
+            entries.remove(&self.id);
+        }
     }
 }

@@ -184,7 +184,10 @@ impl HostBundle {
         + Sync
         + 'static,
     ) -> Arc<dyn gateway_admin::ports::proxy::ProxyProbe> {
-        Arc::new(proxy_probe::HttpProxyProbe::default().with_client_builder(build_client))
+        let probe = std::env::var("CPR_PROXY_PROBE_URL")
+            .map(proxy_probe::HttpProxyProbe::new)
+            .unwrap_or_default();
+        Arc::new(probe.with_client_builder(build_client))
     }
 
     /// 订阅预览使用的受控下载能力；网络请求只在管理 API 调用时发生

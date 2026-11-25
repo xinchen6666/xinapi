@@ -9,6 +9,7 @@ use crate::upstream::ProxyEndpoint;
 pub struct OutboundProxy {
     url: Url,
     max_websocket_connections: u32,
+    route_generation: u64,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, thiserror::Error)]
@@ -33,6 +34,7 @@ impl OutboundProxy {
         Ok(Self {
             url,
             max_websocket_connections: 0,
+            route_generation: 0,
         })
     }
 
@@ -46,6 +48,18 @@ impl OutboundProxy {
     #[must_use]
     pub const fn max_websocket_connections(&self) -> u32 {
         self.max_websocket_connections
+    }
+
+    /// 受管入口发布的新代次参与连接身份，零值用于普通代理
+    #[must_use]
+    pub fn with_route_generation(mut self, generation: u64) -> Self {
+        self.route_generation = generation;
+        self
+    }
+
+    #[must_use]
+    pub const fn route_generation(&self) -> u64 {
+        self.route_generation
     }
 
     #[must_use]
