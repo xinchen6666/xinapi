@@ -1082,6 +1082,14 @@ client，OIDC 的 JWKS 缓存与单飞归属对应出口状态。凭据变更后
 代理认证信息仅通过敏感账号导出返回，列表、详情、Debug 和普通审计不得暴露；数据库及备份按凭据保护。
 输入字段、协议支持与导入校验见 [账号 API](api.md#5-账号)
 
+### 受管路由发布与连接代次
+
+受管路由由Admin协调，Store保存候选、操作回执、节点版本和generation。账号代理关系仍只认outboundProxyId；专用代理持有route_generation，账号URL作为Provider读取投影同步提交。Host拥有稳定端口、私有入口认证与外部进程；PG提交和引擎生效分别读回。
+
+准备候选先旁路验证，当前入口保持。批准以expected_generation、账号绑定和来源revision为条件，先claim再调用Host替换；发布明确终止旧引擎全部在途连接，随后以原地址和凭据启动新节点。数据库提交一次推进route_generation、账号投影、审计和operation回执，保持credential_revision原语义。
+
+OpenAI HTTP和WS的出口键包含route_generation；xAI及Host客户端按OutboundProxy值比较隔离代次。WS物理预算仍共享稳定URL。重启使用已发布历史连接恢复，applying回执通过显式对账完成或恢复原版本；来源的新批准版本只供新候选使用。详情见[受管路由API](api.md#16-账号受管路由与换路)。
+
 ### CPR 互联观测
 
 推理转发路径随请求作用域继承。部署标记持久化于 PostgreSQL，同库副本共用，启动后从内存读取。

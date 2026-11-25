@@ -196,6 +196,13 @@ async fn initialize_inner(
             )
             .with_store(store.subscriptions()),
         ),
+        managed_routes: Arc::new(use_case::managed_routes::DefaultManagedRoutesService::new(
+            store.managed_routes(),
+            store.subscriptions(),
+            engines.clone(),
+            proxy_probe.clone(),
+            snapshot.clone(),
+        )),
         engines: Arc::new(use_case::engines::DefaultEnginesService::new(
             store.subscriptions(),
             store.accounts(),

@@ -214,6 +214,52 @@ impl EntryRegistry {
         Ok(record)
     }
 
+    /// 发布明确批准的版本，端口与入口认证保持原值
+    pub(super) fn rebind(
+        &mut self,
+        facts: &EngineFacts,
+    ) -> Result<EntryRecord, EngineServiceError> {
+        let mut records = self.records.clone();
+        let Some(record) = records.iter_mut().find(|r| r.entry_id == facts.entry_id) else {
+            return Err(EngineServiceError::UnknownEntry);
+        };
+        if record.owner.as_ref() != Some(&facts.owner) {
+            return Err(EngineServiceError::BindingConflict);
+        }
+        record.source_id = facts.source_id.clone();
+        record.node_id = facts.node_id.clone();
+        record.version_id = facts.version_id.clone();
+        record.node_name = facts.node_name.clone();
+        record.protocol = facts.protocol.clone();
+        let result = record.clone();
+        validate_records(&records)?;
+        self.persist(&records)?;
+        self.records = records;
+        Ok(result)
+    }
+
+    /// 候选仅借用预留项入口，验证完成后显式释放端口登记
+    pub(super) fn discard_candidate(&mut self, entry_id: &str) -> Result<(), EngineServiceError> {
+        if let Some(record) = self.records.iter().find(|r| r.entry_id == entry_id) {
+            if record.owner.as_ref().is_none_or(|owner| {
+                owner.kind != gateway_admin::model::engines::EngineOwnerKind::Reservation
+            }) {
+                return Err(EngineServiceError::OwnerInvalid);
+            }
+        } else {
+            return Ok(());
+        }
+        let records: Vec<_> = self
+            .records
+            .iter()
+            .filter(|r| r.entry_id != entry_id)
+            .cloned()
+            .collect();
+        self.persist(&records)?;
+        self.records = records;
+        Ok(())
+    }
+
     fn allocate(&self, base: u16, span: u16) -> Result<(u16, u16), EngineServiceError> {
         let end = u32::from(base) + u32::from(span);
         if base == 0 || span < 2 || end > u32::from(u16::MAX) + 1 {

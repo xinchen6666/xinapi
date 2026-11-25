@@ -236,10 +236,12 @@ async fn connect(
     let admin_ports = if read_only {
         admin_ports
     } else {
-        admin_ports.with_subscriptions(Arc::new(postgres::PgSubscriptionStore::new(
-            pool.clone(),
-            config.subscription_key_path(),
-        )?))
+        admin_ports
+            .with_subscriptions(Arc::new(postgres::PgSubscriptionStore::new(
+                pool.clone(),
+                config.subscription_key_path(),
+            )?))
+            .with_managed_routes(Arc::new(postgres::PgManagedRouteStore::new(pool.clone())))
     };
 
     let execution_repository = Arc::new(postgres::PgExecutionStore::new(pool.clone()));

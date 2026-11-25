@@ -7,6 +7,11 @@ use super::{
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum MutationAuditOperation {
+    ManagedRoutePrepare,
+    ManagedRouteReady,
+    ManagedRouteClaim,
+    ManagedRoutePublish,
+    ManagedRouteFail,
     SubscriptionSourceCreate,
     SubscriptionSourceUpdate,
     SubscriptionSourceReview,
@@ -65,6 +70,11 @@ impl MutationAuditOperation {
     #[must_use]
     pub const fn classification(self) -> (&'static str, &'static str) {
         match self {
+            Self::ManagedRoutePrepare => ("prepare", "managed_route"),
+            Self::ManagedRouteReady => ("ready", "managed_route"),
+            Self::ManagedRouteClaim => ("claim", "managed_route"),
+            Self::ManagedRoutePublish => ("publish", "managed_route"),
+            Self::ManagedRouteFail => ("fail", "managed_route"),
             Self::SubscriptionSourceCreate => ("create", "subscription_source"),
             Self::SubscriptionSourceUpdate => ("update", "subscription_source"),
             Self::SubscriptionSourceReview => ("review", "subscription_source"),

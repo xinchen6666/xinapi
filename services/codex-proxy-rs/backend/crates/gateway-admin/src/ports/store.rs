@@ -681,6 +681,7 @@ impl AdminAccountStorePorts {
 /// 该类型不提供通用拆包入口
 #[derive(Clone)]
 pub struct AdminStorePorts {
+    managed_routes: Option<Arc<dyn super::managed_routes::ManagedRouteStore>>,
     subscriptions: Option<Arc<dyn super::subscription_sources::SubscriptionStore>>,
     accounts: AdminAccountStorePorts,
     auth: Arc<dyn AuthStore>,
@@ -695,6 +696,19 @@ pub struct AdminStorePorts {
 }
 
 impl AdminStorePorts {
+    #[must_use]
+    pub fn with_managed_routes(
+        mut self,
+        store: Arc<dyn super::managed_routes::ManagedRouteStore>,
+    ) -> Self {
+        self.managed_routes = Some(store);
+        self
+    }
+    #[must_use]
+    pub fn managed_routes(&self) -> Option<Arc<dyn super::managed_routes::ManagedRouteStore>> {
+        self.managed_routes.clone()
+    }
+
     #[must_use]
     pub fn with_subscriptions(
         mut self,
@@ -746,6 +760,7 @@ impl AdminStorePorts {
         usage_data: Arc<dyn super::usage_data::UsageDataStore>,
     ) -> Self {
         Self {
+            managed_routes: None,
             subscriptions: None,
             accounts,
             auth,

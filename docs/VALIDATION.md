@@ -276,6 +276,19 @@ E001–E006 是 X01 之前的历史证据，仅支持当时的工作与版本；
 - 格式、改动crate全target严格Clippy、订阅25项、API7项、架构16项及网关构建通过；正式测试文件保持原状。4实例、长期负载及真实公网业务留待验证。
 - 隔离复验服务已停止，原栈保持。[PR CI 45667344429](https://github.com/xinchen6666/xinapi/actions/runs/45667344429)质量检查、CPR镜像与汇总通过，New API镜像按路径跳过。修复已送达原Draft PR，交付状态与后续动作见状态表和交接。
 
+<a id="e028-x09账号绑定及换路"></a>
+### E028 X09：账号绑定及换路
+
+- 2026-11-26（Asia/Shanghai），lead；范围X09，结果passed_scoped。真实CPR/Mihomo、PG/Redis、自造导入账号与独立节点A/B；[工作日志](worklog/X09.md)、[结构化证据](evidence/X09.json)保存运行范围。
+- 账号outboundProxyId唯一持有实际代理关系，候选prepare与ready期间原出口保持。断开候选502／failed；批准后专用代理route_generation推进，credential_revision保持。
+- 固定endpoint及凭据下，切换前HTTP2和WS经A，切换后新连接经B。旧HTTP2流与WS均关闭；旧HTTP2会话再次请求得到ERR_HTTP2_INVALID_SESSION。
+- 旧generation批准409、同operation重复批准保持幂等；客户端丢弃批准响应后GET确认applied；applying中断与CPR重启后显式reconcile完成发布。
+- 来源在applying阶段变动导致发布冲突，对账恢复原节点并清除挂起状态；来源后来批准新版本，旧路由重启仍从固定历史连接恢复。
+- 通用proxy写、跨账号借用、受管账号删除和携带入口凭据的导出受到保护；初次绑定的原普通proxy在applying期间编辑／删除及账号改绑均409。ready候选abort后可终结并释放状态。
+- 格式、相关crate严格Clippy、订阅25、API7、OpenAI代理回归7、架构16与网关构建通过；正式测试文件保持原状。追加0047迁移在隔离既有库执行成功，既有迁移保持原字节。
+- 内网双出口观测只证明受控链路，真实公网IP、真实推理协议和用量留待后续任务。候选验证临时需要一个空闲引擎槽，发布策略为显式终止在途流。
+- 验证服务已停止，原栈保持；交付与下一动作以状态表和交接为准。
+
 ## 未来记录模板
 
 每个run使用唯一证据ID，写：任务ID；checked_at（时区ISO时间）；执行者；证据种类；真实提交/工作区摘要；脱敏环境；实际命令/步骤；预期；实际；`passed/failed/partial/skipped/not_run`；本地持久证据路径；缺口；失效条件。未执行的命令只放计划，不放实际记录。
