@@ -69,7 +69,7 @@ impl PgAdminAccountStore {
 
 async fn commit_authorization_in_transaction(
     transaction: &mut Transaction<'_, Postgres>,
-    command: AuthorizationCommit,
+    mut command: AuthorizationCommit,
     context: &MutationContext,
 ) -> AdminStoreResult<AuthorizationCommitResult> {
     let key = &command.key;
@@ -90,6 +90,58 @@ async fn commit_authorization_in_transaction(
             newly_committed: false,
         });
     }
+    let managed_operation = if let Some(operation_id) =
+        command.pending.managed_authorization().map(str::to_owned)
+    {
+        super::super::oauth_operations::lock_config(transaction).await?;
+        let row = super::super::oauth_operations::locked(transaction, &operation_id).await?;
+        row.check_owner(&context.actor)?;
+        if row.phase != "completing" || row.provider_kind != key.provider_kind().as_str() {
+            return Err(invalid_receipt());
+        }
+        let expected = AuthorizationReceiptKey::new(
+            key.provider_kind().clone(),
+            row.flow_id.as_deref().ok_or_else(invalid_receipt)?,
+            context,
+        )
+        .map_err(|_| invalid_receipt())?;
+        if expected != *key {
+            return Err(invalid_receipt());
+        }
+        super::super::oauth_operations::validate_frozen(transaction, &row).await?;
+        let endpoint = row.endpoint_url.as_deref().ok_or_else(invalid_receipt)?;
+        if command.pending.outbound_proxy().map(|p| p.expose_url()) != Some(endpoint)
+            || command.pending.outbound_proxy_id() != Some(row.proxy_id.as_str())
+        {
+            return Err(invalid_receipt());
+        }
+        if row.is_new {
+            let AuthorizationCredentialCommit::Create(credential) = &mut command.credential else {
+                return Err(invalid_receipt());
+            };
+            if !matches!(
+                command.pending.target(),
+                AuthorizationMutationTarget::Create { .. }
+            ) {
+                return Err(invalid_receipt());
+            }
+            let proxy = gateway_core::account::OutboundProxy::parse(endpoint)
+                .map_err(|_| invalid_receipt())?;
+            credential.account_id = CoreProviderAccountId::new(row.planned_account_id.clone())
+                .map_err(|_| invalid_receipt())?;
+            credential.outbound_proxy = Some(proxy.clone());
+            sqlx::query("insert into outbound_proxies(id,name,proxy_url,enabled,route_generation) values($1,$2,$3,true,0)")
+                .bind(&row.proxy_id).bind(format!("Authorized route {}",row.operation_id.simple())).bind(endpoint)
+                .execute(&mut **transaction).await.map_err(|e|unavailable_receipt().with_source(e))?;
+            command.pending = command.pending.clone().with_outbound_proxy(Some(proxy));
+        } else if !matches!(command.pending.target(),AuthorizationMutationTarget::Reauthorize{account_id} if account_id.as_str()==row.planned_account_id)
+        {
+            return Err(invalid_receipt());
+        }
+        Some(row)
+    } else {
+        None
+    };
     let result = match (command.pending.target(), command.credential) {
         (
             AuthorizationMutationTarget::Create { .. },
@@ -149,6 +201,44 @@ async fn commit_authorization_in_transaction(
         }
         _ => return Err(invalid_receipt()),
     };
+    if let Some(operation) = managed_operation {
+        if result.account_id.as_str() != operation.planned_account_id {
+            return Err(super::super::oauth_operations::conflict());
+        }
+        if operation.is_new {
+            sqlx::query("insert into managed_routes(route_id,account_id,proxy_id,generation,current_node,observation) values($1,$2,$3,1,$4,$5)")
+                .bind(operation.operation_id).bind(&operation.planned_account_id).bind(&operation.proxy_id).bind(&operation.node).bind(&operation.observation)
+                .execute(&mut **transaction).await.map_err(|e|unavailable_receipt().with_source(e))?;
+            sqlx::query("update outbound_proxies set route_generation=1 where id=$1")
+                .bind(&operation.proxy_id)
+                .execute(&mut **transaction)
+                .await
+                .map_err(|e| unavailable_receipt().with_source(e))?;
+            sqlx::query("update provider_accounts set managed_egress_required=true,outbound_proxy_id=$2,outbound_proxy_url=$3 where id=$1")
+                .bind(&operation.planned_account_id).bind(&operation.proxy_id).bind(&operation.endpoint_url)
+                .execute(&mut **transaction).await.map_err(|e|unavailable_receipt().with_source(e))?;
+            let observation = operation
+                .observation
+                .as_ref()
+                .filter(|value| value.success)
+                .ok_or_else(invalid_receipt)?;
+            sqlx::query("insert into managed_route_operations(operation_id,route_id,account_id,expected_generation,expected_source_revision,candidate,phase,observation,context,published_config_revision,published_proxy_url) values($1,$1,$2,0,$3,$4,'applied',$5,$6,$7,$8)")
+                .bind(operation.operation_id).bind(&operation.planned_account_id).bind(operation.expected_source_revision).bind(&operation.node).bind(observation).bind(sqlx::types::Json(context))
+                .bind(i64::try_from(result.config_revision.get()).map_err(|_|invalid_receipt())?).bind(&operation.endpoint_url)
+                .execute(&mut **transaction).await.map_err(|e|unavailable_receipt().with_source(e))?;
+            super::super::managed_routes::audit(
+                transaction,
+                context,
+                gateway_admin::model::audit::MutationAuditOperation::ManagedRoutePublish,
+                &operation.operation_id.to_string(),
+                &["proxy_id", "generation", "current_node"],
+                Some(store_revision(result.config_revision)?),
+            )
+            .await?;
+        }
+        sqlx::query("update managed_oauth_operations set phase='completed',receipt_flow_digest=$2,receipt_owner_digest=$3,reason=null,authorization_url=null,updated_at=now() where operation_id=$1 and phase='completing'")
+            .bind(operation.operation_id).bind(key.flow_digest()).bind(key.owner_digest()).execute(&mut **transaction).await.map_err(|e|unavailable_receipt().with_source(e))?;
+    }
     let accounts = [StoredAccount {
         account_id: result.account_id.to_string(),
         credential_revision: result.credential_revision.map(|revision| revision.get()),

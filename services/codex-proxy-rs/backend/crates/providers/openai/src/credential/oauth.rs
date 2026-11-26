@@ -528,11 +528,15 @@ impl CodexOAuthAdminService {
             .exchange_pending(
                 &pending,
                 callback_url,
-                current
-                    .as_ref()
-                    .map_or(pending.mutation.outbound_proxy(), |current| {
-                        current.account.outbound_proxy()
-                    }),
+                if pending.mutation.managed_authorization().is_some() {
+                    pending.mutation.outbound_proxy()
+                } else {
+                    current
+                        .as_ref()
+                        .map_or(pending.mutation.outbound_proxy(), |current| {
+                            current.account.outbound_proxy()
+                        })
+                },
             )
             .await?;
         let mutation = pending.mutation.clone();
@@ -705,17 +709,19 @@ impl CodexOAuthAdminService {
             .await
             .map_err(CodexOAuthAdminError::Exchange)?;
         let secret = tokens.secret;
-        record_oauth_recovery(
-            CodexOAuthRecoveryOperation::AuthorizationCode,
-            pending
-                .reauthorization()
-                .map(|account_id| account_id.as_str()),
-            secret.access_token.expose_secret(),
-            secret
-                .refresh_token
-                .as_ref()
-                .map(ExposeSecret::expose_secret),
-        );
+        if pending.mutation.managed_authorization().is_none() {
+            record_oauth_recovery(
+                CodexOAuthRecoveryOperation::AuthorizationCode,
+                pending
+                    .reauthorization()
+                    .map(|account_id| account_id.as_str()),
+                secret.access_token.expose_secret(),
+                secret
+                    .refresh_token
+                    .as_ref()
+                    .map(ExposeSecret::expose_secret),
+            );
+        }
         Ok((secret, tokens.id_token))
     }
 }

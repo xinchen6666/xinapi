@@ -1,6 +1,7 @@
 //! 按 Provider 分派凭据管理服务，组合授权与导入流程
 
 mod flow;
+mod managed;
 
 use std::sync::Arc;
 
@@ -15,6 +16,7 @@ pub use flow::ProviderCredentials;
 
 /// 所有 Provider 共用凭据用例；每次操作从已发布目录冻结自己的管理实现
 pub struct CredentialsService {
+    managed: Option<managed::ManagedAuthorizationPorts>,
     providers: ProviderAdminRegistry,
     accounts: Arc<dyn AccountStore>,
     proxies: Arc<dyn ProxyStore>,
@@ -32,6 +34,7 @@ impl CredentialsService {
         upstream_info: Option<Arc<dyn crate::ports::peer::PeerUpstreamService>>,
     ) -> Self {
         Self {
+            managed: None,
             providers,
             accounts,
             proxies,

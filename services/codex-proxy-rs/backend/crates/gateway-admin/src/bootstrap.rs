@@ -137,13 +137,22 @@ async fn initialize_inner(
         system.clone(),
         timezone,
     ));
-    let credentials = Arc::new(CredentialsService::new(
-        providers.clone(),
-        store.accounts(),
-        store.proxies(),
-        snapshot.clone(),
-        upstream_info.clone(),
-    ));
+    let credentials = Arc::new(
+        CredentialsService::new(
+            providers.clone(),
+            store.accounts(),
+            store.proxies(),
+            snapshot.clone(),
+            upstream_info.clone(),
+        )
+        .with_managed_authorization(
+            store.oauth_operations(),
+            store.subscriptions(),
+            store.managed_routes(),
+            engines.clone(),
+            proxy_probe.clone(),
+        ),
+    );
     let plugin_accounts = plugin_accounts.unwrap_or_else(|| {
         initialize_plugin_accounts(
             providers.clone(),

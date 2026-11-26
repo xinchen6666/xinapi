@@ -216,7 +216,7 @@ async fn verify_expected(
     }
     Ok(())
 }
-async fn audit(
+pub(crate) async fn audit(
     tx: &mut Transaction<'_, Postgres>,
     context: &MutationContext,
     action: MutationAuditOperation,

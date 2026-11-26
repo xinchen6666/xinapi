@@ -922,11 +922,15 @@ impl XaiAdminProvider {
                 Some(current)
             }
         };
-        let proxy = current
-            .as_ref()
-            .map_or(stored.mutation.outbound_proxy(), |current| {
-                current.account.outbound_proxy()
-            });
+        let proxy = if stored.mutation.managed_authorization().is_some() {
+            stored.mutation.outbound_proxy()
+        } else {
+            current
+                .as_ref()
+                .map_or(stored.mutation.outbound_proxy(), |current| {
+                    current.account.outbound_proxy()
+                })
+        };
         let mut oauth = self.oauth.with_outbound_proxy(proxy.cloned());
         if let Some(current) = &current {
             oauth = oauth.with_account_id(current.account.id());

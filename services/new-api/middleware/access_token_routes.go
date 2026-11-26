@@ -41,6 +41,11 @@ func accessTokenScopeRule(scope string) accessTokenRouteRule {
 // Casbin-guarded routes declare themselves through
 // DeclareAccessTokenPermissionRoute when they are registered.
 var accessTokenRouteRules = map[string]accessTokenRouteRule{
+	"GET /api/account-egress/oauth/operations":                         accessTokenSessionRule,
+	"POST /api/account-egress/oauth/operations":                        accessTokenSessionRule,
+	"GET /api/account-egress/oauth/operations/:operation_id":           accessTokenSessionRule,
+	"POST /api/account-egress/oauth/operations/:operation_id/complete": accessTokenSessionRule,
+	"POST /api/account-egress/oauth/operations/:operation_id/cancel":   accessTokenSessionRule,
 	// 来源管理写入由超级管理员的登录会话执行，读取令牌保持只读职责
 	"POST /api/account-egress/subscription-sources/create":  accessTokenSessionRule,
 	"POST /api/account-egress/subscription-sources/update":  accessTokenSessionRule,

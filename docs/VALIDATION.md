@@ -299,6 +299,16 @@ E001–E006 是 X01 之前的历史证据，仅支持当时的工作与版本；
 - xAI交换与JWKS验证夹具刻意拒绝验证，部分目录／订阅响应只用于发送观测；business_completed与发送通过分别记账。背压队列撤权位置经过源码复核与既有回归，真实撤权观测使用空闲原连接控制消息
 - 0048新增sticky要求并回填既有受管账号；故障后的字段、来源与数据库关系名均已恢复，验证引擎与专用服务已停止。公共发行／DNS／OIDC预热沿用部署语义；X11承接初次授权预留归属。交付与下一动作以状态表和交接为准
 
+### E030 X11：管理员OAuth与回执恢复
+
+- 2026-11-26（Asia/Shanghai），lead；结果passed_scoped_with_known_regression_difference。[日志](worklog/X11.md)与[结构化结果](evidence/X11.json)记录真实New API／CPR／Mihomo及自造OAuth上游与丢响应中继
+- 38项运行检查通过：双管理员与多登录会话隔离、角色撤销、单次并发兑换、CPR提交后断响应恢复、BFF／CPR重启读回、缺失／过期回执unknown、代理版本变化拒绝交换、错误state、过期／未知／重复取消及入口回收；安全会话跨源POST403
+- SQLite／MySQL8.4.13／PostgreSQL18.7各fresh与upgrade共6条真实路径，每条28项，共168项通过，含两次迁移、既有数据、owner／权限／期限、并发领取与重连接保留
+- 浏览器完成来源／节点选择、授权单次确认、回调清空及完成回执、取消确认与终态。截图：[表单](evidence/X11-form.png)、[待完成](evidence/X11-pending.png)、[完成](evidence/X11-completed.png)、[深色](evidence/X11-completed-dark.png)、[窄屏](evidence/X11-mobile.png)、[取消](evidence/X11-cancelled.png)
+- Rust格式、严格Clippy、构建及既有凭据31／OAuth8／架构16项通过；Go构建及相关middleware回归通过；Web1530文件类型检查、限定lint与生产构建通过。正式测试文件修改数零
+- 已有Go回归TestSetUserPermissionsStoresOnlyOverrides固定期待旧权限映射，当前新增authorize:true导致1项断言失败，作为明确回归差异交付。xAI真实发现与交换后刻意拒绝自造签名，unknown保持单次；真实公网授权、同出口浏览器与长期负载仍待验证
+- 0049在隔离既有库执行成功，凭据／代理／route／X09确认历史／完成回执原子提交。GET保持纯读，授权10分钟与确认回执24小时分别判断。交付及资源收尾以交接与状态表为准
+
 ## 未来记录模板
 
 每个run使用唯一证据ID，写：任务ID；checked_at（时区ISO时间）；执行者；证据种类；真实提交/工作区摘要；脱敏环境；实际命令/步骤；预期；实际；`passed/failed/partial/skipped/not_run`；本地持久证据路径；缺口；失效条件。未执行的命令只放计划，不放实际记录。

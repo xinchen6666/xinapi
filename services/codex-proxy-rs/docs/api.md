@@ -3695,3 +3695,24 @@ URL、规范连接、待审核事实和批准历史整体加密保存在 Postgre
 受管代理的普通编辑、删除、测试结果写入及通用导入预留受到保护；其他账号借用该代理返回冲突。发布期间普通账号改绑和原普通代理修改也返回冲突。已发布受管账号的通用删除保持拒绝，后续需专门退役流程；仅候选已终结且尚无发布绑定的账号可按普通流程删除；操作历史继续可读，此时route和engine为null。账号敏感导出拒绝携带受管入口的私有认证材料。
 
 错误原因：400 `managed_route_invalid`，404 `managed_route_missing`，409 `managed_route_conflict`，429 `managed_route_capacity`，502 `managed_route_candidate_failed`，503 `managed_route_unavailable`。失败时读取operation与route判断当前绑定，避免把数据库与引擎视为同一事务。
+
+## 17. 管理员托管OAuth与只读回执
+
+托管OAuth操作要求CPR管理员身份，由受信New API服务端调用。新账号先选择已批准来源与节点，建立未来账号专用入口并验证出口；重新授权指定已有受管账号并冻结当前路由。
+
+| 方法与路径 | 输入 | 结果 |
+| --- | --- | --- |
+| POST `/api/admin/oauth-operations/start` | `{operation_id,provider,name,source_id?,node_id?,account_id?}` | 同操作固定归属与路由；pending时包含authorization_url |
+| GET `/api/admin/oauth-operations` | `operation_id` | 纯只读脱敏操作与完成回执 |
+| POST `/api/admin/oauth-operations/complete` | `{operation_id,callback_url}` | 领取一次交换，重复请求只读已有结果 |
+| POST `/api/admin/oauth-operations/cancel` | `{operation_id}` | 显式终结并回收零引用预留，可重复补齐清理 |
+
+operation_id使用UUID，provider为openai或xai，name为1–100字符。新授权提供source_id／node_id；重新授权提供account_id并沿用当前路由。响应成功均为200，公开字段为operation_id、status、provider、account_id、expires_at、source_id、node_id、version_id、proxy_id、route_generation；新授权的目标generation为1，授权成功后保持同一组冻结字段。
+
+status为pending、completed、failed、cancelled或unknown。preparing与completing等确认尚缺的内部状态显示unknown。授权期限为10分钟，完成回执沿用24小时保留期：授权期限之后仍可读取有效完成回执，真正回执缺失或过期显示unknown。GET保持纯读取，交换、引擎恢复和资源清理均由明确POST操作执行。未知结果的兑换保持关闭，新授权需要新操作ID。
+
+完成事务同时保存凭据、专用代理、必须出口要求、路由、操作和完成回执。已发布新账号可用同operation_id调用受管路由reconcile恢复入口。取消仅回收零账号／代理／路由引用的新入口；正在交换且尚有效的操作保持保护，过期或明确结束的未知操作可显式终结，原交换领取事实继续保留。
+
+New API浏览器入口要求真实登录会话、管理员角色及account_egress.authorize权限：POST／GET `/api/account-egress/oauth/operations`，GET `/:operation_id`，POST `/:operation_id/complete`与`/:operation_id/cancel`。列表仅返回当前会话记录。管理员与登录会话及两级认证版本由服务端保存；跨管理员或登录会话返回404，角色和会话撤销立即影响后续操作。回调文本仅POST给固定CPR，由Provider校验state／PKCE；浏览器第三方登录使用浏览器网络。公开部署按New API要求配置HTTPS、安全Cookie与精确可信Origin。
+
+错误reason为oauth_operation_invalid、oauth_operation_conflict、oauth_operation_missing、oauth_operation_egress_failed或oauth_operation_unavailable。服务端错误只返回安全提示，flow、state、令牌与入口认证保持服务端持有；授权链接仅启动响应返回。

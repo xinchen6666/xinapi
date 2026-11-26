@@ -44,7 +44,8 @@ impl ManagedEgressGate for StrictEgressGate {
             proxy.ensure_sendable()?;
             let target = match proxy.managed_requirement() {
                 Some(ManagedEgressRequirement::Blocked { .. }) => return Err(ManagedEgressDenied),
-                Some(ManagedEgressRequirement::Reservation { .. })
+                Some(ManagedEgressRequirement::Authorization { .. })
+                | Some(ManagedEgressRequirement::Reservation { .. })
                 | Some(ManagedEgressRequirement::Account { .. }) => tokio::time::timeout(
                     std::time::Duration::from_secs(3),
                     self.state.authorize(proxy),

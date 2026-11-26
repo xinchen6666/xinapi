@@ -251,6 +251,7 @@ async fn connect(
                 config.subscription_key_path(),
             )?))
             .with_managed_routes(Arc::new(postgres::PgManagedRouteStore::new(pool.clone())))
+            .with_oauth_operations(Arc::new(postgres::PgOAuthOperationStore::new(pool.clone())))
     };
 
     let execution_repository = Arc::new(postgres::PgExecutionStore::new(pool.clone()));

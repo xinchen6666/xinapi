@@ -154,6 +154,16 @@ impl ManagedEgressState for PgManagedEgressState {
         proxy: Option<&'a OutboundProxy>,
     ) -> BoxFuture<'a, Result<Option<ManagedEgressTarget>, ManagedEgressDenied>> {
         Box::pin(async move {
+            if let Some(proxy) = proxy
+                && let Some(ManagedEgressRequirement::Authorization {
+                    account_id: owner, ..
+                }) = proxy.managed_requirement()
+            {
+                if owner != account_id {
+                    return Err(ManagedEgressDenied);
+                }
+                return self.authorize(proxy).await.map(Some);
+            }
             let facts = self.account_facts(account_id).await?;
             if !facts.required {
                 return Ok(None);
@@ -172,6 +182,45 @@ impl ManagedEgressState for PgManagedEgressState {
         Box::pin(async move {
             proxy.ensure_sendable()?;
             match proxy.managed_requirement() {
+                Some(ManagedEgressRequirement::Authorization {
+                    operation_id,
+                    account_id,
+                }) => {
+                    let mut tx = self.pool.begin().await.map_err(|_| ManagedEgressDenied)?;
+                    let row: super::oauth_operations::OperationRow = sqlx::query_as(
+                        "select * from managed_oauth_operations where operation_id=$1",
+                    )
+                    .bind(uuid::Uuid::parse_str(operation_id).map_err(|_| ManagedEgressDenied)?)
+                    .fetch_optional(&mut *tx)
+                    .await
+                    .map_err(|_| ManagedEgressDenied)?
+                    .ok_or(ManagedEgressDenied)?;
+                    if row.planned_account_id != *account_id
+                        || !matches!(row.phase.as_str(), "preparing" | "pending" | "completing")
+                        || row.endpoint_url.as_deref() != Some(proxy.expose_url())
+                        || u64::try_from(row.route_generation).ok()
+                            != Some(proxy.route_generation())
+                    {
+                        return Err(ManagedEgressDenied);
+                    }
+                    super::oauth_operations::validate_frozen(&mut tx, &row)
+                        .await
+                        .map_err(|_| ManagedEgressDenied)?;
+                    let owner = EngineOwner {
+                        kind: EngineOwnerKind::Account,
+                        id: row.planned_account_id,
+                    }
+                    .normalize()
+                    .map_err(|_| ManagedEgressDenied)?;
+                    let target = ManagedEgressTarget {
+                        entry_id: owner.entry_id(),
+                        source_id: row.node.source_id.clone(),
+                        node_id: row.node.node_id.clone(),
+                        version_id: row.node.version_id.clone(),
+                    };
+                    self.source_available(&target).await?;
+                    Ok(target)
+                }
                 Some(ManagedEgressRequirement::Account { account_id, .. }) => {
                     let facts = self.account_facts(account_id).await?;
                     self.authorize_bound(account_id, facts, proxy).await

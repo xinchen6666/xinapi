@@ -26,7 +26,7 @@ use super::super::{
 };
 
 pub struct ProviderCredentials {
-    provider: Arc<dyn ProviderAdmin>,
+    pub(super) provider: Arc<dyn ProviderAdmin>,
     accounts: Arc<dyn AccountStore>,
     proxies: Arc<dyn crate::ports::proxy::ProxyStore>,
     snapshot: Arc<dyn SnapshotControl>,
@@ -205,6 +205,17 @@ impl super::CredentialsService {
         kind: &gateway_core::routing::ProviderKind,
         mut command: CompleteAuthorization,
     ) -> Result<CredentialMutationResult, AdminError> {
+        if let Some(managed) = &self.managed
+            && managed
+                .store
+                .owns_flow(&command.flow_id)
+                .await
+                .map_err(|e| map_store_error(e, "oauth operation"))?
+        {
+            return Err(AdminError::conflict(
+                "此授权由专用操作入口持有，请读取操作回执",
+            ));
+        }
         let context = command.context.clone();
         let key = AuthorizationReceiptKey::new(kind.clone(), &command.flow_id, &context)?;
         if let Some(result) = self
@@ -241,7 +252,7 @@ impl super::CredentialsService {
         Ok(result)
     }
 
-    async fn publish_authorization(
+    pub(super) async fn publish_authorization(
         &self,
         provider: &Arc<dyn ProviderAdmin>,
         outcome: AuthorizationCommitResult,

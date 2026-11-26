@@ -260,6 +260,30 @@ impl EntryRegistry {
         Ok(())
     }
 
+    pub(super) fn discard_authorization(
+        &mut self,
+        entry_id: &str,
+    ) -> Result<(), EngineServiceError> {
+        if let Some(record) = self.records.iter().find(|r| r.entry_id == entry_id) {
+            if record.owner.as_ref().is_none_or(|owner| {
+                owner.kind != gateway_admin::model::engines::EngineOwnerKind::Account
+            }) {
+                return Err(EngineServiceError::OwnerInvalid);
+            }
+        } else {
+            return Ok(());
+        }
+        let records: Vec<_> = self
+            .records
+            .iter()
+            .filter(|r| r.entry_id != entry_id)
+            .cloned()
+            .collect();
+        self.persist(&records)?;
+        self.records = records;
+        Ok(())
+    }
+
     fn allocate(&self, base: u16, span: u16) -> Result<(u16, u16), EngineServiceError> {
         let end = u32::from(base) + u32::from(span);
         if base == 0 || span < 2 || end > u32::from(u16::MAX) + 1 {

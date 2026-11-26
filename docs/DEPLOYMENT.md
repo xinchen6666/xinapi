@@ -32,6 +32,14 @@ X09通过prepare→approve发布账号出口，operation_id用于读回结果。
 
 CPR重启后先GET读取operation与当前引擎事实，再显式reconcile恢复已发布固定版本。applying表示数据库与引擎提交边界待确认；abort可终结候选并尝试恢复原入口。换路采用明确终止旧HTTP2／WS在途连接的策略，后续请求按新出口代次选连接池。已发布受管账号的普通删除与账号敏感导出受保护；退役流程另行安排。接口见[受管路由](../services/codex-proxy-rs/docs/api.md#16-账号受管路由与换路)。
 
+### 管理员OAuth与回执
+
+管理员在New API账号与出口页面的授权页签选择provider、名称和已批准节点，系统先验证独立入口再返回第三方授权链接。已有受管账号通过重新授权沿用当前专用路由。浏览器回调只提交一次，页面刷新或网络中断后使用同登录会话读取回执；unknown需要确认已有结果或显式发起新操作。授权期限10分钟，完成回执保留24小时，两个期限分别判断。
+
+过期或明确结束的未知预留可显式取消，系统核对零账号／代理／路由引用后回收。授权完成已保存的账号保持保护；服务重启后使用对应operation_id执行受管路由reconcile恢复入口。CPR执行追加0049迁移，New API沿既有AutoMigrate创建CprOAuthOperation表。
+
+公开部署使用HTTPS、SESSION_COOKIE_SECURE=true与精确SESSION_COOKIE_TRUSTED_URL。真实管理员身份与登录会话由New API保存，CPR服务Key留服务端，授权表单沿既有Origin与权限检查。第三方浏览器登录与服务器交换的网络出口分别确认；回调、state与令牌始终保留在私有调用范围。接口详见[授权操作](../services/codex-proxy-rs/docs/api.md#17-管理员托管oauth与只读回执)。
+
 ## 计划交付物
 
 X02–X04：两个可独立构建的源码树、锁文件、应用镜像构建定义、根 `compose.yaml`、不含有效凭据的 `.env.example` 和初始化流程。X08 增加 Mihomo 平台制品清单、摘要验证、第三方许可/对应源码资料。X16 补齐 HTTPS 反代示例、干净主机安装步骤、管理员首次使用与故障排查。X17 补齐备份恢复演练；X18 提供 release 说明、确切提交、镜像标识与已验证的平台。

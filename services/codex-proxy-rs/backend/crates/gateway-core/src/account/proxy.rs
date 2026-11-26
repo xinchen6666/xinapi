@@ -15,6 +15,10 @@ pub enum ManagedEgressRequirement {
         proxy_id: String,
         generation: u64,
     },
+    Authorization {
+        operation_id: String,
+        account_id: String,
+    },
     Reservation {
         entry_id: String,
         source_id: String,

@@ -383,6 +383,31 @@ impl EngineHost for EngineSupervisor {
         Ok(())
     }
 
+    async fn discard_authorization(&self, entry_id: &str) -> Result<(), Error> {
+        let _transition = Transition::begin(&self.transitions, entry_id)?;
+        match self.stop(entry_id).await {
+            Ok(_) | Err(Error::UnknownEntry) => {}
+            Err(error) => return Err(error),
+        }
+        let mut inner = self.inner.lock().await;
+        inner
+            .registry
+            .as_mut()
+            .map_err(|e| *e)?
+            .discard_authorization(entry_id)?;
+        drop(inner);
+        let directory = self.root.join(entry_id);
+        if directory.exists() {
+            let root = self.root.canonicalize().map_err(|_| Error::Unavailable)?;
+            let target = directory.canonicalize().map_err(|_| Error::Unavailable)?;
+            if target.parent() != Some(root.as_path()) || !entry_id.starts_with("account-") {
+                return Err(Error::OwnerInvalid);
+            }
+            std::fs::remove_dir_all(target).map_err(|_| Error::Unavailable)?;
+        }
+        Ok(())
+    }
+
     async fn list(&self) -> Result<Vec<EngineSnapshot>, Error> {
         let inner = self.inner.lock().await;
         let registry = inner.registry.as_ref().map_err(|e| *e)?;

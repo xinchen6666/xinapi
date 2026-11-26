@@ -211,6 +211,7 @@ pub struct PendingAuthorizationMutation {
     owner_binding: AuthorizationOwnerBinding,
     outbound_proxy: Option<gateway_core::account::OutboundProxy>,
     outbound_proxy_id: Option<String>,
+    managed_authorization: Option<String>,
 }
 
 impl PendingAuthorizationMutation {
@@ -226,6 +227,7 @@ impl PendingAuthorizationMutation {
             owner_binding,
             outbound_proxy: None,
             outbound_proxy_id: None,
+            managed_authorization: None,
         }
     }
 
@@ -261,6 +263,15 @@ impl PendingAuthorizationMutation {
     pub fn with_outbound_proxy_id(mut self, id: Option<String>) -> Self {
         self.outbound_proxy_id = id;
         self
+    }
+
+    #[must_use]
+    pub fn with_managed_authorization(mut self, id: String) -> Self {
+        self.managed_authorization = Some(id);
+        self
+    }
+    pub fn managed_authorization(&self) -> Option<&str> {
+        self.managed_authorization.as_deref()
     }
 
     pub fn outbound_proxy_id(&self) -> Option<&str> {
@@ -322,6 +333,9 @@ impl PendingAuthorizationMutation {
                     Value::from(proxy.max_websocket_connections()),
                 );
             }
+        }
+        if let Some(id) = &self.managed_authorization {
+            document.insert("managed_authorization".into(), Value::String(id.clone()));
         }
         if let Some(id) = &self.outbound_proxy_id {
             document.insert("outbound_proxy_id".to_owned(), Value::String(id.clone()));
@@ -395,7 +409,8 @@ impl PendingAuthorizationMutation {
             (None, Some(_)) => return Err(invalid()),
             (proxy, None) => proxy,
         };
-        Ok(Self::new(
+        let managed_authorization = document.managed_authorization;
+        let mut restored = Self::new(
             provider_kind,
             target,
             AuthorizationOwnerBinding {
@@ -404,7 +419,11 @@ impl PendingAuthorizationMutation {
             },
         )
         .with_outbound_proxy(proxy)
-        .with_outbound_proxy_id(document.outbound_proxy_id))
+        .with_outbound_proxy_id(document.outbound_proxy_id);
+        if let Some(id) = managed_authorization {
+            restored = restored.with_managed_authorization(id);
+        }
+        Ok(restored)
     }
 }
 
@@ -425,6 +444,8 @@ struct StoredAuthorizationMutationV1 {
     managed_egress: Option<gateway_core::account::ManagedEgressRequirement>,
     #[serde(default)]
     outbound_proxy_route_generation: Option<u64>,
+    #[serde(default)]
+    managed_authorization: Option<String>,
 }
 
 #[derive(Deserialize)]

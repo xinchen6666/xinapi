@@ -1096,6 +1096,14 @@ provider_accounts.managed_egress_required独立保存已发布账号的必须出
 
 Provider和Host实际send之前调用gateway-egress准入，已持有的普通客户端也按账号ID检查后来收紧的要求。HTTP缓存命中、目录分页、OAuth交换／刷新、额度与资料请求均保留完整出口事实。WS握手在排队和拨号后复核；控制队列携带冻结账号／代理并在实际writer前再核对。准入失败返回发送错误并释放相应连接，恢复通过当前持久绑定和真实引擎再次确认；凭据revision继续只用于凭据事务。
 
+### 专用出口OAuth操作
+
+Admin凭据服务持有托管授权用例，冻结provider、未来账号ID或已有目标、来源revision、固定节点版本和代理代次。Host以计划账号owner启动独立入口并验证，Provider继续生成state／PKCE、解析回调与交换令牌。Core Authorization要求将发送关联到当前持久授权操作，Store与Host复核许可和实际入口。
+
+Store将一次领取与凭据提交分开：pending→completing先确定唯一交换资格，凭据／proxy／sticky要求／route／X09确认历史／完成回执／operation completed同事务保存。新入口从预留开始即使用未来账号owner，保存后沿用同一认证与地址。重新授权只使用冻结出口，原有普通OAuth合同保持。
+
+GET操作只查询持久记录和有效完成回执，暂时失联与确认尚缺显示unknown。取消是独立显式资源收尾，逐次核对账号、代理和路由引用，已完成账号保持保护；重复取消可补齐Host回收，原交换领取事实持续保留。New API拥有真实管理员与登录会话四元组，CPR管理Key继续代表受信服务主体；回调与令牌始终沿固定内部边界传递。合同见[托管OAuth](api.md#17-管理员托管oauth与只读回执)。
+
 ### CPR 互联观测
 
 推理转发路径随请求作用域继承。部署标记持久化于 PostgreSQL，同库副本共用，启动后从内存读取。

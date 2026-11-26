@@ -23,6 +23,10 @@ pub trait EngineHost: Send + Sync {
     async fn replace(&self, _facts: EngineFacts) -> Result<EngineSnapshot, EngineServiceError> {
         Err(EngineServiceError::Unavailable)
     }
+    /// 授权服务确认零账号引用后，回收预留的未来账号入口
+    async fn discard_authorization(&self, _entry_id: &str) -> Result<(), EngineServiceError> {
+        Err(EngineServiceError::Unavailable)
+    }
     /// 候选验证结束后回收其临时入口，账号入口继续保留
     async fn discard_candidate(&self, _entry_id: &str) -> Result<(), EngineServiceError> {
         Err(EngineServiceError::Unavailable)

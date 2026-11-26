@@ -15,6 +15,7 @@ pub mod engines;
 pub mod import_tasks;
 pub mod key_usage;
 pub mod managed_routes;
+pub mod oauth_operations;
 pub mod observability;
 pub mod peer_link;
 pub mod plugin_client_keys;
