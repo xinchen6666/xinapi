@@ -73,6 +73,10 @@ impl DefaultManagedRoutesService {
             active: Mutex::new(BTreeSet::new()),
         }
     }
+    pub(crate) fn lock_account(&self, account_id: &str) -> Result<Active<'_>, AdminError> {
+        Active::begin(&self.active, account_id)
+    }
+
     fn store(&self) -> Result<&Arc<dyn ManagedRouteStore>, AdminError> {
         self.store.as_ref().ok_or_else(unavailable)
     }
@@ -536,7 +540,7 @@ impl ManagedRoutesService for DefaultManagedRoutesService {
             .ok_or_else(|| AdminError::new(AdminErrorKind::NotFound, "受管路由记录缺失"))
     }
 }
-struct Active<'a> {
+pub(crate) struct Active<'a> {
     entries: &'a Mutex<BTreeSet<String>>,
     id: String,
 }

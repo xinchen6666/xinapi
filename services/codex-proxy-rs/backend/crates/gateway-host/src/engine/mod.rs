@@ -61,7 +61,18 @@ impl EngineSupervisor {
         let root = data.join("engines");
         let settings = EngineSettings::from_env().map(Arc::new);
         let capacity = Arc::new(Semaphore::new(settings.as_ref().map_or(0, |s| s.capacity)));
-        let registry = EntryRegistry::load(&root);
+        let registry = EntryRegistry::load(&root).and_then(|registry| {
+            let tests = root.join("node-tests");
+            // 进程启动时回收上一实例遗留的临时连接配置
+            match std::fs::symlink_metadata(&tests) {
+                Ok(info) if info.is_dir() => {
+                    std::fs::remove_dir_all(&tests).map_err(|_| Error::Registry)?;
+                }
+                Err(error) if error.kind() == std::io::ErrorKind::NotFound => {}
+                _ => return Err(Error::Registry),
+            }
+            Ok(registry)
+        });
         Self {
             settings,
             root,

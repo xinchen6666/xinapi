@@ -7,7 +7,7 @@ use uuid::Uuid;
 
 use crate::{
     model::{
-        MutationContext,
+        AdminErrorKind, MutationContext,
         audit::{MutationAuditIntent, MutationAuditOperation},
         engines::{
             EngineFacts, EngineList, EngineOwner, EngineOwnerKind, EngineServiceError, EngineView,
@@ -16,13 +16,14 @@ use crate::{
     },
     ports::{
         engine::EngineHost,
-        managed_routes::ManagedRouteStore,
         oauth_operations::OAuthOperationStore,
         proxy::ProxyProbe,
         store::{AccountStore, AdminStoreErrorKind, AuthStore},
         subscription_sources::SubscriptionStore,
     },
 };
+
+use super::managed_routes::{DefaultManagedRoutesService, ManagedRoutesService};
 
 #[async_trait]
 pub trait EnginesService: Send + Sync {
@@ -52,7 +53,7 @@ pub(crate) struct DefaultEnginesService {
     store: Option<Arc<dyn SubscriptionStore>>,
     accounts: Arc<dyn AccountStore>,
     host: Arc<dyn EngineHost>,
-    routes: Option<Arc<dyn ManagedRouteStore>>,
+    routes: Arc<DefaultManagedRoutesService>,
     oauth: Option<Arc<dyn OAuthOperationStore>>,
     probe: Arc<dyn ProxyProbe>,
     audit: Arc<dyn AuthStore>,
@@ -63,7 +64,7 @@ impl DefaultEnginesService {
         store: Option<Arc<dyn SubscriptionStore>>,
         accounts: Arc<dyn AccountStore>,
         host: Arc<dyn EngineHost>,
-        routes: Option<Arc<dyn ManagedRouteStore>>,
+        routes: Arc<DefaultManagedRoutesService>,
         oauth: Option<Arc<dyn OAuthOperationStore>>,
         probe: Arc<dyn ProxyProbe>,
         audit: Arc<dyn AuthStore>,
@@ -163,21 +164,16 @@ impl DefaultEnginesService {
         &self,
         account_id: &str,
     ) -> Result<Option<RouteNode>, EngineServiceError> {
-        let Some(routes) = &self.routes else {
-            return Ok(None);
+        let route = match self.routes.route(account_id).await {
+            Ok(route) => route,
+            Err(error) if error.kind() == AdminErrorKind::NotFound => return Ok(None),
+            Err(_) => return Err(EngineServiceError::Store),
         };
-        let route = routes
-            .route(account_id)
-            .await
-            .map_err(|_| EngineServiceError::Store)?;
-        Ok(route.and_then(|route| {
-            (route.generation > 0
-                && route.proxy_id.is_some()
-                && route.account_proxy_id == route.proxy_id
-                && route.applying_operation_id.is_none())
-            .then_some(route.current)
-            .flatten()
-        }))
+        let matches = route.generation > 0
+            && route.proxy_id.is_some()
+            && route.account_proxy_id == route.proxy_id
+            && route.applying_operation_id.is_none();
+        Ok(matches.then_some(route.current).flatten())
     }
 
     async fn audit(
@@ -232,6 +228,10 @@ impl EnginesService for DefaultEnginesService {
             .as_ref()
             .filter(|owner| owner.kind == EngineOwnerKind::Account)
             .ok_or(EngineServiceError::StopForbidden)?;
+        let _active = self
+            .routes
+            .lock_account(&owner.id)
+            .map_err(|_| EngineServiceError::BindingConflict)?;
         let node = self
             .published_node(&owner.id)
             .await?

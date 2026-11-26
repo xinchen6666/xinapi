@@ -5,7 +5,7 @@ use chrono::{DateTime, Utc};
 use gateway_admin::{
     model::{
         MutationActor, MutationContext,
-        audit::{MutationAuditIntent, MutationAuditOperation},
+        audit::MutationAuditOperation,
         managed_routes::{RouteNode, RouteObservation},
         oauth_operations::{OAuthOperation, StartOAuthOperation},
         provider_credentials::AuthorizationStarted,
@@ -62,9 +62,7 @@ impl OperationRow {
     }
 
     fn expired_reservation(&self) -> bool {
-        self.is_new
-            && self.expires_at <= Utc::now()
-            && reclaimable_phase(&self.phase, self.reason.as_deref())
+        self.is_new && self.expires_at <= Utc::now() && reclaimable_phase(&self.phase)
     }
 
     pub(crate) fn view(self, receipt_confirmed: bool) -> AdminStoreResult<OAuthOperation> {
@@ -88,9 +86,12 @@ impl OperationRow {
         })
     }
 }
-fn reclaimable_phase(phase: &str, reason: Option<&str>) -> bool {
-    matches!(phase, "pending" | "failed" | "cancelled")
-        || (phase == "completing" && reason == Some("completion_unknown"))
+// 到期操作沿用同一取消边界，旧交换已失去持久提交资格
+fn reclaimable_phase(phase: &str) -> bool {
+    matches!(
+        phase,
+        "preparing" | "pending" | "completing" | "failed" | "cancelled"
+    )
 }
 
 pub(crate) fn conflict() -> AdminStoreError {
@@ -354,28 +355,25 @@ impl OAuthOperationStore for PgOAuthOperationStore {
             return Ok(Vec::new());
         }
         let sql = format!(
-            "select o.operation_id, o.planned_account_id, o.expires_at, o.phase, o.reason,
+            "select o.operation_id, o.planned_account_id, o.expires_at, o.phase,
                     {RESERVATION_HAS_REFERENCES}
              from managed_oauth_operations o where o.is_new and o.phase <> 'completed'
              and o.planned_account_id = any($1)"
         );
-        let rows: Vec<(Uuid, String, DateTime<Utc>, String, Option<String>, bool)> =
-            sqlx::query_as(&sql)
-                .bind(account_ids)
-                .fetch_all(&self.pool)
-                .await
-                .map_err(unavailable)?;
+        let rows: Vec<(Uuid, String, DateTime<Utc>, String, bool)> = sqlx::query_as(&sql)
+            .bind(account_ids)
+            .fetch_all(&self.pool)
+            .await
+            .map_err(unavailable)?;
         let now = Utc::now();
         Ok(rows
             .into_iter()
             .map(
-                |(id, account_id, expires_at, phase, reason, referenced)| OAuthEngineReservation {
+                |(id, account_id, expires_at, phase, referenced)| OAuthEngineReservation {
                     operation_id: id.to_string(),
                     account_id,
                     expires_at,
-                    reclaimable: expires_at <= now
-                        && !referenced
-                        && reclaimable_phase(&phase, reason.as_deref()),
+                    reclaimable: expires_at <= now && !referenced && reclaimable_phase(&phase),
                 },
             )
             .collect())
@@ -404,11 +402,12 @@ impl OAuthOperationStore for PgOAuthOperationStore {
         let changed = row.phase != "cancelled";
         let row = set_cancelled(&mut tx, row).await?;
         if changed {
-            let audit = MutationAuditIntent {
-                operation: MutationAuditOperation::OAuthReservationReclaim,
-                entity_ref: operation_id,
-            }
-            .event(context, vec!["phase".to_owned()]);
+            let audit = crate::mutation_audit(
+                context,
+                MutationAuditOperation::OAuthReservationReclaim,
+                operation_id,
+                vec!["phase".to_owned()],
+            );
             super::admin_security_audit::append_admin_audit_event_in_transaction(
                 &mut tx, audit, None,
             )
