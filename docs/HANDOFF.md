@@ -1,12 +1,12 @@
 # 当前交接
 
-## 当前：X11 管理员OAuth实现与复验完成，正在交付
+## 当前：X11 管理员OAuth与回执已交付，保留复审入口
 
 2026-11-26（Asia/Shanghai），X11接通New API会话归属操作、授权表单与CPR独立入口预留／单次交换／只读完成回执，见[X11日志](worklog/X11.md)和[E030](VALIDATION.md#e030-x11管理员oauth与回执恢复)。凭据、专用代理、路由、X09确认历史和完成回执同事务保存，响应丢失及两应用重启后只GET恢复。
 
 38项真实运行检查、三数据库6条路径共168项、浏览器选择节点／完成／取消及浅深窄屏通过。Rust严格Clippy、构建与既有回归通过，Go构建与middleware相关回归通过，Web类型／lint／构建通过。既有Go TestSetUserPermissionsStoresOnlyOverrides期待旧权限映射，新增authorize:true导致一项断言失配；正式测试文件保持原状，此项作为明确交付差异。
 
-分支task/X11-admin-oauth，以X10为base交付Draft。真实第三方公网授权与同出口浏览器保持待验证；xAI使用真实发送与签名拒绝路径，完整成功授权仍待验证。用户AGENTS.md、MEMORY.md和独立资源维护报告留在工作树；公开提交只含X11源码、说明与脱敏结果。
+[Draft PR #10](https://github.com/xinchen6666/xinapi/pull/10)已交付，分支task/X11-admin-oauth以X10为base。远端质量与镜像状态见[PR检查](https://github.com/xinchen6666/xinapi/pull/10/checks)，生产部署另行安排。真实第三方公网授权与同出口浏览器保持待验证；xAI已验证真实发送与签名拒绝路径，完整成功授权仍待验证。专用联调服务已停止，自建中继和临时MySQL容器已移除；数据卷、私有资料与可复用镜像保留。用户AGENTS.md、MEMORY.md和独立资源维护报告留在工作树。
 
 下一动作：复审本步授权归属、回执及取消收尾，随后X12完善管理员页面闭环。已完成账号入口恢复使用同operation_id的managed-route reconcile；unknown继续只读确认，显式新授权使用新操作ID。授权期限10分钟、完成回执24小时分别判断。
 

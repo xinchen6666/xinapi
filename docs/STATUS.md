@@ -14,7 +14,7 @@
 | X08 | done | lead；审核修复已交付 | R1–R9及DNS语义修复完成；61项真实引擎场景、既有回归与[PR CI](https://github.com/xinchen6666/xinapi/actions/runs/45667344429)通过，见 [修复记录](worklog/X08-fix.md)与[E027](VALIDATION.md#e027-x08审核修复复验)；[Draft PR #7](https://github.com/xinchen6666/xinapi/pull/7) 保留修复后审阅入口 |
 | X09 | done | lead；账号绑定与换路已交付 | 41项真实运行场景、既有回归及[PR CI](https://github.com/xinchen6666/xinapi/actions/runs/45690896769)通过；[Draft PR #8](https://github.com/xinchen6666/xinapi/pull/8)保留复审入口，见[X09日志](worklog/X09.md)与[E028](VALIDATION.md#e028-x09账号绑定及换路) |
 | X10 | done | lead；严格出口已交付 | 331次实际请求观测、12项网关场景及124项既有回归通过；165次故障调用的上游／默认出口增量均零，已交付[Draft PR #9](https://github.com/xinchen6666/xinapi/pull/9)，见[X10日志](worklog/X10.md)与[E029](VALIDATION.md#e029-x10严格出口与故障停发) |
-| X11 | in_progress | lead；OAuth已验证待交付 | 38项运行、168项三数据库检查与浏览器完成／取消通过；保留1项旧权限字段断言差异，见[X11日志](worklog/X11.md)和[E030](VALIDATION.md#e030-x11管理员oauth与回执恢复) |
+| X11 | done | lead；OAuth与只读回执已交付 | [Draft PR #10](https://github.com/xinchen6666/xinapi/pull/10)以X10为base；38项运行、168项三数据库检查与浏览器完成／取消通过，保留1项旧权限字段断言差异，见[X11日志](worklog/X11.md)与[E030](VALIDATION.md#e030-x11管理员oauth与回执恢复) |
 | X12 | pending | New API 管理后台 | 完整管理员工作流与权限证据 |
 | X13 | pending | 成员和授权映射 | 注册无默认上游权限、改组与撤销 |
 | X14 | pending | 模型转发 | Responses、SSE／WS、工具及用量 |
