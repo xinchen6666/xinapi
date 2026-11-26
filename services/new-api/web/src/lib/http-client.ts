@@ -41,6 +41,7 @@ declare module 'axios' {
     authRetry?: boolean
     acceptAuthRotation?: boolean
     singleUseAuthorization?: boolean
+    expectedDashboardSession?: string
   }
 }
 
@@ -150,6 +151,14 @@ api.interceptors.request.use(async (config) => {
     config.skipAuthRefresh = true
     try {
       const headers = await getFreshAuthHeaders()
+      if (
+        config.expectedDashboardSession !== undefined &&
+        (!config.expectedDashboardSession ||
+          useAuthStore.getState().auth.session?.sid !==
+            config.expectedDashboardSession)
+      ) {
+        throw new axios.CanceledError('Dashboard session changed', config)
+      }
       for (const [name, value] of Object.entries(headers)) {
         config.headers.set(name, value)
       }

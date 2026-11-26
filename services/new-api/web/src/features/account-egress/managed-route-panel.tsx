@@ -42,6 +42,7 @@ import {
 
 import {
   getEngines,
+  isEgressCapacityError,
   getRouteOperation,
   operateManagedRoute,
   prepareManagedRoute,
@@ -131,6 +132,7 @@ export function ManagedRoutePanel(props: RoutePanelProps) {
       )
     },
     onSuccess: (receipt) => {
+      setUnknownId('')
       setRecentId(receipt.operation.operation_id)
       queryClient.setQueryData(
         operationKey(receipt.operation.operation_id),
@@ -139,7 +141,8 @@ export function ManagedRoutePanel(props: RoutePanelProps) {
     },
     onError: (error, command) => {
       const status = getServerErrorStatus(error)
-      if (command.kind === 'prepare' && status === 429) {
+      if (command.kind === 'prepare' && isEgressCapacityError(error)) {
+        setUnknownId('')
         setCapacitySince(Date.now())
       } else if (
         status == null ||
@@ -248,6 +251,21 @@ export function ManagedRoutePanel(props: RoutePanelProps) {
     }
     await props.route.refetch()
   }
+  const canContinueSavedPrepare =
+    !!prepared &&
+    prepared.id === unknownId &&
+    operationQuery.isError &&
+    getServerErrorStatus(operationQuery.error) === 404 &&
+    getServerErrorSources(operationQuery.error).some(
+      (source) => source.code === 'managed_route_missing'
+    ) &&
+    props.canManage &&
+    !busy &&
+    !operationQuery.isFetching &&
+    freshRoute &&
+    generation === prepared.generation &&
+    !activeId
+
   const prepare = (node: RouteNode) => {
     if (!canWrite || !availableAfterRelease || activeId || pending) return
     let id: string
@@ -437,6 +455,20 @@ export function ManagedRoutePanel(props: RoutePanelProps) {
           >
             {t('Check operation status')}
           </Button>
+          {canContinueSavedPrepare && prepared && (
+            <>
+              <RouteNodeSummary node={prepared.candidate} />
+              <Button
+                size='sm'
+                variant='outline'
+                onClick={() => {
+                  if (canContinueSavedPrepare) change.mutate(prepared)
+                }}
+              >
+                {t('Continue preparing route')}
+              </Button>
+            </>
+          )}
         </div>
       )}
       {operationQuery.isError && (
@@ -485,7 +517,10 @@ export function ManagedRoutePanel(props: RoutePanelProps) {
       )}
       {change.isError && !unknownId && capacitySince === null && (
         <p role='alert' className='text-destructive text-sm'>
-          {getServerErrorMessage(change.error)}
+          {getServerErrorStatus(change.error) === 429 &&
+          !isEgressCapacityError(change.error)
+            ? t('Too many requests')
+            : getServerErrorMessage(change.error)}
         </p>
       )}
       {confirm && props.canManage && (

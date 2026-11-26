@@ -32,7 +32,11 @@ import {
 } from '@/lib/server-error-message'
 import { useAuthStore } from '@/stores/auth-store'
 
-import { testApprovedNode, type ApprovedNodeTarget } from './console-api'
+import {
+  testApprovedNode,
+  isEgressCapacityError,
+  type ApprovedNodeTarget,
+} from './console-api'
 import { EnginePanel } from './engine-panel'
 
 type TestTarget = ApprovedNodeTarget & { name: string }
@@ -68,6 +72,7 @@ export function NodeTestDialog(props: {
         queryKey: ['account-egress', userId, 'engines'],
       })
     },
+    networkMode: 'always',
     meta: { errorToast: false },
     retry: false,
     gcTime: 0,
@@ -104,13 +109,17 @@ export function NodeTestDialog(props: {
             message={t('Verifying the approved node connection…')}
           />
         )}
-        {test.isError && getServerErrorStatus(test.error) === 429 && (
+        {test.isError && isEgressCapacityError(test.error) && (
           <EnginePanel occupantsOnly />
         )}
-        {test.isError && getServerErrorStatus(test.error) !== 429 && (
+        {test.isError && !isEgressCapacityError(test.error) && (
           <ErrorState
             title={t('Node connection verification failed')}
-            description={getServerErrorMessage(test.error)}
+            description={
+              getServerErrorStatus(test.error) === 429
+                ? t('Too many requests')
+                : getServerErrorMessage(test.error)
+            }
           />
         )}
         {test.data && (

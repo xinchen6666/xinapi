@@ -17,7 +17,12 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import { api } from '@/lib/api'
-import { requireServerSuccess } from '@/lib/server-error-message'
+import {
+  getServerErrorSources,
+  getServerErrorStatus,
+  requireServerSuccess,
+} from '@/lib/server-error-message'
+import { useAuthStore } from '@/stores/auth-store'
 
 import type { Account, ListPage } from './types'
 
@@ -143,6 +148,7 @@ async function post<T>(
     signal,
     timeout: 80_000,
     singleUseAuthorization: true,
+    expectedDashboardSession: useAuthStore.getState().auth.session?.sid ?? '',
     skipBusinessError: true,
   })
   return requireServerSuccess(data).data
@@ -204,3 +210,15 @@ export const refreshAccountQuota = (
   accountId: string
 ): Promise<{ account: AccountDetail }> =>
   post('/accounts/quota/refresh', { account_id: accountId })
+
+export function isEgressCapacityError(error: unknown): boolean {
+  return (
+    getServerErrorStatus(error) === 429 &&
+    getServerErrorSources(error).some(
+      (source) =>
+        source.code === 'engine_capacity_reached' ||
+        source.code === 'managed_route_capacity' ||
+        source.code === 'account_egress_capacity'
+    )
+  )
+}
