@@ -1,5 +1,8 @@
 {
   "translation": {
+    "Confirmed usage": "Utilisation confirmée",
+    "Estimated usage": "Utilisation estimée",
+    "Usage unknown": "Utilisation inconnue",
     "Upstream access": "Accès amont",
     "Grant upstream access": "Accorder l’accès amont",
     "Grant CPR model access to the selected account groups.": "Autoriser les modèles CPR avec les groupes sélectionnés.",

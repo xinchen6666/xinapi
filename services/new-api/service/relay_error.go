@@ -93,10 +93,14 @@ func RecordRelayErrorLog(c *gin.Context, channelId int, err *types.NewAPIError, 
 	other := model.NewLogOther()
 	if c.Request != nil && c.Request.URL != nil {
 		other.SetPublic("request_path", c.Request.URL.Path)
+		if c.Request.URL.Path == "/v1/responses" {
+			other.SetPublic("usage_status", relaycommon.ResponsesUsageUnknown)
+		}
 	}
 	other.SetPublic("error_type", err.GetErrorType())
 	other.SetPublic("error_code", err.GetErrorCode())
 	other.SetPublic("status_code", err.StatusCode)
+	appendResponsesUsageStatus(other, relayInfo)
 	AppendRelayLogAdminInfo(c, relayInfo, other)
 	appendRequestPluginRecord(relayInfo, other)
 	AppendResponseModelLogInfo(relayInfo, other)

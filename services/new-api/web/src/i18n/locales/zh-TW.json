@@ -1,5 +1,8 @@
 {
   "translation": {
+    "Confirmed usage": "已確認用量",
+    "Estimated usage": "估算用量",
+    "Usage unknown": "用量待確認",
     "Upstream access": "上游存取",
     "Grant upstream access": "授予上游存取",
     "Grant CPR model access to the selected account groups.": "允許成員使用所選帳號群組呼叫 CPR 模型。",

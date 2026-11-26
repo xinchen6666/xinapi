@@ -79,6 +79,7 @@ import { ModelBadge } from '../model-badge'
 import { RequestPluginLogMarker } from '../request-plugin-record'
 import { TimingMetricsCell, StreamTpsCell } from '../timing-metrics-cell'
 import { useUsageLogsContext } from '../usage-logs-provider'
+import { UsageStatusBadge } from '../usage-status-badge'
 
 interface DetailSegment {
   text: string
@@ -741,7 +742,12 @@ export function useCommonLogsColumns(
           const promptTokens = log.prompt_tokens || 0
           const completionTokens = log.completion_tokens || 0
           if (promptTokens === 0 && completionTokens === 0) {
-            return <span className='text-muted-foreground text-xs'>-</span>
+            return (
+              <div className='flex flex-col gap-0.5'>
+                <span className='text-muted-foreground text-xs'>-</span>
+                <UsageStatusBadge other={other} />
+              </div>
+            )
           }
 
           const cacheReadTokens = other?.cache_tokens || 0
@@ -772,6 +778,7 @@ export function useCommonLogsColumns(
                   )}
                 </div>
               )}
+              <UsageStatusBadge other={other} />
             </div>
           )
         },

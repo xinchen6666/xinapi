@@ -103,6 +103,7 @@ import {
   RequestPluginAdminSteps,
   RequestPluginRecord,
 } from '../request-plugin-record'
+import { UsageStatusBadge } from '../usage-status-badge'
 import { DetailRow, DetailSection } from './log-detail-layout'
 
 // Maps a channel-update changed-field token (as recorded by the backend audit)
@@ -696,6 +697,7 @@ export function DetailsDialog(props: DetailsDialogProps) {
             size='sm'
             copyable={false}
           />
+          <UsageStatusBadge other={other} />
         </>
       }
       description={t('View the complete details for this log entry')}
@@ -705,7 +707,7 @@ export function DetailsDialog(props: DetailsDialogProps) {
         isTieredBilling ? 'sm:max-w-4xl lg:max-w-5xl' : 'sm:max-w-lg'
       )}
       headerClassName='max-sm:gap-1'
-      titleClassName='flex items-center gap-2 text-base'
+      titleClassName='flex flex-wrap items-center gap-2 text-base'
       descriptionClassName='sr-only'
       contentHeight='min(72dvh, 720px)'
       bodyClassName='pr-2 sm:pr-4'
