@@ -19,6 +19,11 @@
 | DEC-013 | proposed／lead，交接复核后收敛 | 新增CPR只读完成回执查询；仅已有确认回执返回completed，缺失/过期为unknown，不触发交换 | X05核对接口边界、X11冻结并实现合同；覆盖响应丢失/BFF重启；不能以账号列表推断flow已完成 |
 | DEC-014 | accepted／用户确认 Docker-only 版本 | 单机 Docker Compose 五服务，Mihomo 随单副本 CPR；两库两套数据库用户、两个 Redis | 为 X04、X16、X17 的部署合同；不交付 Kubernetes/Helm |
 | DEC-015 | accepted／用户指定仓库并确认计划 | 使用 [xinchen6666/xinapi](https://github.com/xinchen6666/xinapi) 存实际源码；X 步骤逐次提交、推送并校验 SHA | X01 开始；不强推，不公布凭据，不把推送说成部署 |
+| DEC-016 | accepted／lead，X06 实施范围内 | 订阅预览按一次性计算提供，复用 `account_egress:read` 权限；返回字段限节点名、协议、可用性与诊断 | 与 X05 同一管理入口，权限模型保持单一来源；快照、节点 UUID 与连接版本由 X07 承担，写操作权限在 X12 评估 |
+| DEC-017 | accepted／用户连续开发授权，lead 落实 X07 | 来源整体认证加密由 CPR Store 单点负责；稳定 UUID 与只追加连接版本通过规范字段直接比较；写入仅由超级管理员登录会话执行 | 2026-11-25；沿用小团队单机职责，数据库与运行数据卷共同保留；来源批准范围与后续引擎/绑定职责分别交付，见 [X07 日志](worklog/X07.md) |
+| DEC-018 | accepted／用户，2026-11-26（Asia/Shanghai） | X02–X11 以一个汇总 PR 普通合入 `main`，原任务分支保留；路线按业务结果整理，持续检查与镜像构建按变更和事件运行 | 原 PR 保留审阅记录；X17 专项演练暂缓。合并、构建与部署分别记录 |
+| DEC-019 | accepted／用户，2026-11-26（Asia/Shanghai） | 账号与出口新增管理写动作默认归 Root，Admin 按动作显式授权；写入及外部订阅预览统一校验登录会话和来源 | 替代 DEC-016／DEC-017 中的预览与来源写授权策略；保留 `read`、`authorize` 原有角色默认值与 OAuth 回执归属 |
+| DEC-020 | accepted／用户，2026-11-26（Asia/Shanghai） | X12 首版包含独立验证已批准节点；X16 使用私有配置目录、预先取得的镜像和 Mihomo 二进制只读挂载 | 部署者仍显式导入首个 CPR 管理 Key；实际代码与运行验证放在各自阶段 |
 | DEC-OLD-01 | superseded／被DEC-001替代 | 上一轮以商业售卖为核心，因Cockpit非商业许可建议避免复制 | 仅商业前提与优先级失效；旧源码、许可证事实不被抹掉 |
 
 ## 依据与替代方案

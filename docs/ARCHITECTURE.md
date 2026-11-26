@@ -52,9 +52,11 @@ BFF 建议白名单：账号列表／详情／分组设置、OAuth start/complet
 
 CPR admin API Key 只在 New API 服务端受保护配置中持有，浏览器使用现有 New API 登录会话。上游 access/refresh token 只留 CPR；普通成员不得得到这些 token。导出凭据、插件安装、系统升级、备份恢复和管理密钥轮换不进入首版管理白名单。
 
-CPR 对 API Key 管理调用的 actor 是同一 `AdminApiKey`，不能区分 New API 的不同管理员。New API 必须保存本地 OAuth 关联：`localFlowId → adminUserId + sessionId + cprFlowId + provider + targetAccountId + proxyId/revision + expiresAt + status`。完成时重检管理员权限、flow 本人归属、有效期和绑定目标；PKCE/state 继续交由 CPR 验证，并在 BFF 串行化提交。未知结果先保留本地 operation 状态，核对已保存的确认结果与账号事实，不能盲目重放授权 code。当前 CPR 没有独立公开的 flow/receipt 查询 API；其 24 小时完成回执属于 complete 内部恢复机制。首版建议明确新增“只读完成回执查询”窄接口：BFF 经本地 owner 校验后按 provider＋flowId 查询，CPR 仅在已有确认回执时返回 completed 和账号标识，不返回凭据，也不触发 token exchange；回执缺失、过期或无法证明结果时返回 unknown。X05 确认既有接口边界，X11 冻结、实现并验收这一新增合同。BFF 在响应丢失或重启后按原 operation 恢复，账号列表只作诊断，不能证明某 flow 已完成；回执过期仍未知时保留状态，管理员另行发起新授权是新的显式操作。回调 URL 含 code/state，不进入普通请求日志。
+CPR的服务Key调用使用共同AdminApiKey主体，New API持久操作保存管理员ID、登录会话ID及两级认证版本，关联provider、目标账号、固定来源／节点／代理与期限。读取、完成和取消都复核当前会话及authorize权限；完成以数据库单次领取后调用固定CPR端点，Provider继续负责state／PKCE。浏览器回调仅在短期内存和本次POST传递，认证材料留在CPR。
 
-新建账号前还没有 accountId，应先创建并验证“待授权出口”：固定节点、保留内部端口、建立 CPR proxy，再把 proxyId 交给 OAuth start；账号保存成功后关联该出口。超时或失败的预留由对账流程回收，先确认没有已成功账号引用，避免响应丢失后误删出口。
+`/api/admin/oauth-operations`提供纯只读完成回执，New API以本地operation归属校验后读取。CPR凭据、专用路由、operation和24小时完成回执同事务提交；查询只在有效回执确认时返回completed，缺失、过期或交换已开始而确认尚缺时返回unknown。BFF响应丢失及重启后只GET恢复，未知操作的兑换保持关闭，管理员显式新授权使用新操作ID。
+
+新账号先生成未来原生accountId，以该owner验证独立入口后开始OAuth。账号保存成功时原子建立proxy及路由绑定，generation为1，沿用入口端口与私有认证，并保存X09路由确认操作供显式对账恢复。过期或明确结束的未知预留可显式取消，回收前核对账号、代理、路由引用；重复取消可补齐外部清理，完成领取事实持续保留。API合同见[授权操作](../services/codex-proxy-rs/docs/api.md#17-管理员托管oauth与只读回执)。
 
 OAuth token exchange 可在服务器经选定出口执行；浏览器首次登录是另一条网络路径。首版由管理员在已配置相同节点代理的授权浏览器中打开链接，并回传授权结果；系统不可声称仅设置服务器代理就保证浏览器 IP 一致。内置远程浏览器或桌面 WebView 为后续可选范围。
 

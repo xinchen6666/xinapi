@@ -1,0 +1,51 @@
+{
+  "schema_version": 1,
+  "component": "codex-proxy-rs",
+  "checked_at": "2026-11-22",
+  "dependencies": [
+    {
+      "name": "cpr-ui",
+      "repository": "https://github.com/zyycn/codex-proxy-ui",
+      "commit": "501495d5b1e9d65840d4cdee5e0e228f361613ee",
+      "git_tree": "0b69759c141d4306364617eb6d856288c89f3c9c",
+      "upstream_commit_resolves": true,
+      "source_vendored": false,
+      "fetched_or_executed_during_x02": false,
+      "declared_tag": "v0.13.1",
+      "resolved_archive": "https://codeload.github.com/zyycn/codex-proxy-ui/tar.gz/501495d5b1e9d65840d4cdee5e0e228f361613ee",
+      "integrity": "sha512-pPner6XWo+saTWErInK+LLSUxbSmTtd274hrWorFnOfLqDNN2cTwl1UwDsPvaRShl7jy4dVxPC5vDWAgszwdZQ==",
+      "evidence": "services/codex-proxy-rs/frontend/pnpm-lock.yaml",
+      "prepack_needed": true,
+      "archive_bytes_not_checked_during_x02": true
+    },
+    {
+      "name": "sqlx",
+      "repository": "https://github.com/transact-rs/sqlx",
+      "commit": "10462fa4414c6c7f1ed1d39bb31678e3b726878c",
+      "git_tree": "89727e5ebfc84cdc3178dce534cc3b71cb1c84e7",
+      "upstream_commit_resolves": true,
+      "source_vendored": false,
+      "fetched_or_executed_during_x02": false
+    },
+    {
+      "name": "tokio-tungstenite",
+      "repository": "https://github.com/openai-oss-forks/tokio-tungstenite",
+      "commit": "7447c427513cfe685f236e1ac0513c4ea3dd9c0b",
+      "git_tree": "b055703e4846bd15c7bed57a299f17f192a32e7f",
+      "upstream_commit_resolves": true,
+      "source_vendored": false,
+      "fetched_or_executed_during_x02": false
+    },
+    {
+      "name": "tungstenite",
+      "repository": "https://github.com/openai-oss-forks/tungstenite-rs",
+      "commit": "bc589d684755a8c02da0fc7e58d0861cbfc306f1",
+      "git_tree": "3a5a39578827796cfd17fbdc79223698b274580d",
+      "upstream_commit_resolves": true,
+      "source_vendored": false,
+      "fetched_or_executed_during_x02": false
+    }
+  ],
+  "registry_dependencies": "unchanged Cargo.lock and frontend/pnpm-lock.yaml; archives not installed or fetched during X02",
+  "build_and_install_not_run": true
+}

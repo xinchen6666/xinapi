@@ -1,0 +1,964 @@
+{
+  "task": "X11",
+  "checked_at": "2026-11-26T08:07:05.010043+00:00",
+  "result": "passed_scoped_with_known_regression_difference",
+  "environment": "Real New API/CPR/Mihomo, Redis, PostgreSQL18.7, MySQL8.4.13 and SQLite with isolated self-made OAuth HTTP/TLS upstream, response-loss relay and Chromium browser",
+  "flow": [
+    {
+      "case": "other_login_session_read_rejected",
+      "passed": true,
+      "status": 404
+    },
+    {
+      "case": "other_login_session_complete_rejected",
+      "passed": true,
+      "status": 404,
+      "token_delta": 0
+    },
+    {
+      "case": "temporary_receipt_read_unknown",
+      "passed": true
+    },
+    {
+      "case": "receipt_get_preserves_persistent_operation",
+      "passed": true
+    },
+    {
+      "case": "pending_recovers_after_read_failure",
+      "passed": true
+    },
+    {
+      "case": "committed_response_loss_recovers_from_receipt",
+      "passed": true,
+      "token_delta": 1
+    },
+    {
+      "case": "single_exchange_after_loss",
+      "passed": true
+    },
+    {
+      "case": "repeat_complete_reads_receipt",
+      "passed": true
+    },
+    {
+      "case": "bff_restart_recovers_owned_receipt",
+      "passed": true
+    },
+    {
+      "case": "credential_and_route_saved_atomically",
+      "passed": true
+    },
+    {
+      "case": "new_authorization_route_reconcile_available",
+      "passed": true
+    },
+    {
+      "case": "expired_completion_receipt_is_unknown",
+      "passed": true
+    },
+    {
+      "case": "expired_receipt_keeps_exchange_closed",
+      "passed": true
+    },
+    {
+      "case": "expired_pending_is_unknown",
+      "passed": true
+    },
+    {
+      "case": "expired_unreferenced_reservation_cancelled",
+      "passed": true
+    },
+    {
+      "case": "expired_reservation_engine_reclaimed",
+      "passed": true
+    },
+    {
+      "case": "wrong_state_rejected_before_exchange",
+      "passed": true
+    },
+    {
+      "case": "settled_unknown_reservation_cancelled",
+      "passed": true
+    },
+    {
+      "case": "explicit_cancel_repairs_idempotently",
+      "passed": true
+    },
+    {
+      "case": "cancelled_keeps_exchange_closed",
+      "passed": true
+    }
+  ],
+  "isolation": [
+    {
+      "case": "other_administrator_completion_rejected",
+      "passed": true,
+      "status": 404
+    },
+    {
+      "case": "other_administrator_read_rejected",
+      "passed": true,
+      "status": 404
+    },
+    {
+      "case": "other_administrator_list_excludes_A",
+      "passed": true
+    },
+    {
+      "case": "current_role_revocation_rejects_read",
+      "passed": true,
+      "status": 403
+    },
+    {
+      "case": "anonymous_authorization_rejected",
+      "passed": true,
+      "status": 401
+    },
+    {
+      "case": "parallel_complete_exchanges_once",
+      "passed": true,
+      "token_delta": 1
+    },
+    {
+      "case": "parallel_completion_confirmed",
+      "passed": true
+    },
+    {
+      "case": "reauthorization_proxy_revision_change_stops_exchange",
+      "passed": true
+    },
+    {
+      "case": "cpr_restart_readonly_completed_receipt",
+      "passed": true
+    },
+    {
+      "case": "authorized_route_recovers_after_cpr_restart",
+      "passed": true
+    },
+    {
+      "case": "missing_receipt_is_unknown",
+      "passed": true
+    },
+    {
+      "case": "missing_receipt_never_reexchanges_code",
+      "passed": true
+    }
+  ],
+  "xai": [
+    {
+      "case": "xai_reserved_route_and_discovery",
+      "passed": true,
+      "status": 200
+    },
+    {
+      "case": "xai_untrusted_id_token_keeps_result_unknown",
+      "passed": true
+    },
+    {
+      "case": "xai_authorization_exchange_sent_once",
+      "passed": true,
+      "token_delta": 1
+    },
+    {
+      "case": "xai_unknown_never_reexchanges",
+      "passed": true
+    },
+    {
+      "case": "xai_unknown_unreferenced_route_cancelled",
+      "passed": true
+    }
+  ],
+  "origin": {
+    "case": "secure_cookie_mode_cross_origin_rejected",
+    "passed": true,
+    "status": 403
+  },
+  "databases": [
+    {
+      "kind": "sqlite",
+      "phase": "fresh",
+      "exit": 0,
+      "report": {
+        "database": "sqlite",
+        "phase": "fresh",
+        "checks": [
+          {
+            "case": "migration_retains_existing_user",
+            "passed": true
+          },
+          {
+            "case": "operation_table_present",
+            "passed": true
+          },
+          {
+            "case": "persisted_owner_binding",
+            "passed": true
+          },
+          {
+            "case": "other_admin_rejected",
+            "passed": true
+          },
+          {
+            "case": "other_session_rejected",
+            "passed": true
+          },
+          {
+            "case": "other_owner_list_empty",
+            "passed": true
+          },
+          {
+            "case": "owner_list_scoped",
+            "passed": true
+          },
+          {
+            "case": "expired_claim_rejected",
+            "passed": true
+          },
+          {
+            "case": "current_role_required_on_read",
+            "passed": true
+          },
+          {
+            "case": "current_role_required_on_claim",
+            "passed": true
+          },
+          {
+            "case": "rejected_claim_rolls_back",
+            "passed": true
+          },
+          {
+            "case": "session_version_revocation",
+            "passed": true
+          },
+          {
+            "case": "current_permission_revocation",
+            "passed": true
+          },
+          {
+            "case": "claim_permission_revocation",
+            "passed": true
+          },
+          {
+            "case": "first_claim_is_durable",
+            "passed": true
+          },
+          {
+            "case": "second_claim_rejected",
+            "passed": true
+          },
+          {
+            "case": "explicit_cancel_after_unknown_exchange",
+            "passed": true
+          },
+          {
+            "case": "cancellation_receipt_saved",
+            "passed": true
+          },
+          {
+            "case": "explicit_cancel_cleanup_can_repeat",
+            "passed": true
+          },
+          {
+            "case": "cleanup_keeps_exchange_closed",
+            "passed": true
+          },
+          {
+            "case": "expired_operation_allows_explicit_cleanup",
+            "passed": true
+          },
+          {
+            "case": "confirmed_receipt_saved",
+            "passed": true
+          },
+          {
+            "case": "stale_receipt_rejected",
+            "passed": true
+          },
+          {
+            "case": "unknown_keeps_exchange_closed",
+            "passed": true
+          },
+          {
+            "case": "unknown_explicit_cancel_claimed",
+            "passed": true
+          },
+          {
+            "case": "concurrent_claim_single_winner",
+            "passed": true
+          },
+          {
+            "case": "confirmed_receipt_survives_reconnect",
+            "passed": true
+          },
+          {
+            "case": "receipt_survives_repeated_migration",
+            "passed": true
+          }
+        ],
+        "passed": true
+      }
+    },
+    {
+      "kind": "sqlite",
+      "phase": "upgrade",
+      "exit": 0,
+      "report": {
+        "database": "sqlite",
+        "phase": "upgrade",
+        "checks": [
+          {
+            "case": "migration_retains_existing_user",
+            "passed": true
+          },
+          {
+            "case": "operation_table_present",
+            "passed": true
+          },
+          {
+            "case": "persisted_owner_binding",
+            "passed": true
+          },
+          {
+            "case": "other_admin_rejected",
+            "passed": true
+          },
+          {
+            "case": "other_session_rejected",
+            "passed": true
+          },
+          {
+            "case": "other_owner_list_empty",
+            "passed": true
+          },
+          {
+            "case": "owner_list_scoped",
+            "passed": true
+          },
+          {
+            "case": "expired_claim_rejected",
+            "passed": true
+          },
+          {
+            "case": "current_role_required_on_read",
+            "passed": true
+          },
+          {
+            "case": "current_role_required_on_claim",
+            "passed": true
+          },
+          {
+            "case": "rejected_claim_rolls_back",
+            "passed": true
+          },
+          {
+            "case": "session_version_revocation",
+            "passed": true
+          },
+          {
+            "case": "current_permission_revocation",
+            "passed": true
+          },
+          {
+            "case": "claim_permission_revocation",
+            "passed": true
+          },
+          {
+            "case": "first_claim_is_durable",
+            "passed": true
+          },
+          {
+            "case": "second_claim_rejected",
+            "passed": true
+          },
+          {
+            "case": "explicit_cancel_after_unknown_exchange",
+            "passed": true
+          },
+          {
+            "case": "cancellation_receipt_saved",
+            "passed": true
+          },
+          {
+            "case": "explicit_cancel_cleanup_can_repeat",
+            "passed": true
+          },
+          {
+            "case": "cleanup_keeps_exchange_closed",
+            "passed": true
+          },
+          {
+            "case": "expired_operation_allows_explicit_cleanup",
+            "passed": true
+          },
+          {
+            "case": "confirmed_receipt_saved",
+            "passed": true
+          },
+          {
+            "case": "stale_receipt_rejected",
+            "passed": true
+          },
+          {
+            "case": "unknown_keeps_exchange_closed",
+            "passed": true
+          },
+          {
+            "case": "unknown_explicit_cancel_claimed",
+            "passed": true
+          },
+          {
+            "case": "concurrent_claim_single_winner",
+            "passed": true
+          },
+          {
+            "case": "confirmed_receipt_survives_reconnect",
+            "passed": true
+          },
+          {
+            "case": "receipt_survives_repeated_migration",
+            "passed": true
+          }
+        ],
+        "passed": true
+      }
+    },
+    {
+      "kind": "mysql",
+      "phase": "fresh",
+      "exit": 0,
+      "report": {
+        "database": "mysql",
+        "phase": "fresh",
+        "checks": [
+          {
+            "case": "migration_retains_existing_user",
+            "passed": true
+          },
+          {
+            "case": "operation_table_present",
+            "passed": true
+          },
+          {
+            "case": "persisted_owner_binding",
+            "passed": true
+          },
+          {
+            "case": "other_admin_rejected",
+            "passed": true
+          },
+          {
+            "case": "other_session_rejected",
+            "passed": true
+          },
+          {
+            "case": "other_owner_list_empty",
+            "passed": true
+          },
+          {
+            "case": "owner_list_scoped",
+            "passed": true
+          },
+          {
+            "case": "expired_claim_rejected",
+            "passed": true
+          },
+          {
+            "case": "current_role_required_on_read",
+            "passed": true
+          },
+          {
+            "case": "current_role_required_on_claim",
+            "passed": true
+          },
+          {
+            "case": "rejected_claim_rolls_back",
+            "passed": true
+          },
+          {
+            "case": "session_version_revocation",
+            "passed": true
+          },
+          {
+            "case": "current_permission_revocation",
+            "passed": true
+          },
+          {
+            "case": "claim_permission_revocation",
+            "passed": true
+          },
+          {
+            "case": "first_claim_is_durable",
+            "passed": true
+          },
+          {
+            "case": "second_claim_rejected",
+            "passed": true
+          },
+          {
+            "case": "explicit_cancel_after_unknown_exchange",
+            "passed": true
+          },
+          {
+            "case": "cancellation_receipt_saved",
+            "passed": true
+          },
+          {
+            "case": "explicit_cancel_cleanup_can_repeat",
+            "passed": true
+          },
+          {
+            "case": "cleanup_keeps_exchange_closed",
+            "passed": true
+          },
+          {
+            "case": "expired_operation_allows_explicit_cleanup",
+            "passed": true
+          },
+          {
+            "case": "confirmed_receipt_saved",
+            "passed": true
+          },
+          {
+            "case": "stale_receipt_rejected",
+            "passed": true
+          },
+          {
+            "case": "unknown_keeps_exchange_closed",
+            "passed": true
+          },
+          {
+            "case": "unknown_explicit_cancel_claimed",
+            "passed": true
+          },
+          {
+            "case": "concurrent_claim_single_winner",
+            "passed": true
+          },
+          {
+            "case": "confirmed_receipt_survives_reconnect",
+            "passed": true
+          },
+          {
+            "case": "receipt_survives_repeated_migration",
+            "passed": true
+          }
+        ],
+        "passed": true
+      }
+    },
+    {
+      "kind": "mysql",
+      "phase": "upgrade",
+      "exit": 0,
+      "report": {
+        "database": "mysql",
+        "phase": "upgrade",
+        "checks": [
+          {
+            "case": "migration_retains_existing_user",
+            "passed": true
+          },
+          {
+            "case": "operation_table_present",
+            "passed": true
+          },
+          {
+            "case": "persisted_owner_binding",
+            "passed": true
+          },
+          {
+            "case": "other_admin_rejected",
+            "passed": true
+          },
+          {
+            "case": "other_session_rejected",
+            "passed": true
+          },
+          {
+            "case": "other_owner_list_empty",
+            "passed": true
+          },
+          {
+            "case": "owner_list_scoped",
+            "passed": true
+          },
+          {
+            "case": "expired_claim_rejected",
+            "passed": true
+          },
+          {
+            "case": "current_role_required_on_read",
+            "passed": true
+          },
+          {
+            "case": "current_role_required_on_claim",
+            "passed": true
+          },
+          {
+            "case": "rejected_claim_rolls_back",
+            "passed": true
+          },
+          {
+            "case": "session_version_revocation",
+            "passed": true
+          },
+          {
+            "case": "current_permission_revocation",
+            "passed": true
+          },
+          {
+            "case": "claim_permission_revocation",
+            "passed": true
+          },
+          {
+            "case": "first_claim_is_durable",
+            "passed": true
+          },
+          {
+            "case": "second_claim_rejected",
+            "passed": true
+          },
+          {
+            "case": "explicit_cancel_after_unknown_exchange",
+            "passed": true
+          },
+          {
+            "case": "cancellation_receipt_saved",
+            "passed": true
+          },
+          {
+            "case": "explicit_cancel_cleanup_can_repeat",
+            "passed": true
+          },
+          {
+            "case": "cleanup_keeps_exchange_closed",
+            "passed": true
+          },
+          {
+            "case": "expired_operation_allows_explicit_cleanup",
+            "passed": true
+          },
+          {
+            "case": "confirmed_receipt_saved",
+            "passed": true
+          },
+          {
+            "case": "stale_receipt_rejected",
+            "passed": true
+          },
+          {
+            "case": "unknown_keeps_exchange_closed",
+            "passed": true
+          },
+          {
+            "case": "unknown_explicit_cancel_claimed",
+            "passed": true
+          },
+          {
+            "case": "concurrent_claim_single_winner",
+            "passed": true
+          },
+          {
+            "case": "confirmed_receipt_survives_reconnect",
+            "passed": true
+          },
+          {
+            "case": "receipt_survives_repeated_migration",
+            "passed": true
+          }
+        ],
+        "passed": true
+      }
+    },
+    {
+      "kind": "postgres",
+      "phase": "fresh",
+      "exit": 0,
+      "report": {
+        "database": "postgres",
+        "phase": "fresh",
+        "checks": [
+          {
+            "case": "migration_retains_existing_user",
+            "passed": true
+          },
+          {
+            "case": "operation_table_present",
+            "passed": true
+          },
+          {
+            "case": "persisted_owner_binding",
+            "passed": true
+          },
+          {
+            "case": "other_admin_rejected",
+            "passed": true
+          },
+          {
+            "case": "other_session_rejected",
+            "passed": true
+          },
+          {
+            "case": "other_owner_list_empty",
+            "passed": true
+          },
+          {
+            "case": "owner_list_scoped",
+            "passed": true
+          },
+          {
+            "case": "expired_claim_rejected",
+            "passed": true
+          },
+          {
+            "case": "current_role_required_on_read",
+            "passed": true
+          },
+          {
+            "case": "current_role_required_on_claim",
+            "passed": true
+          },
+          {
+            "case": "rejected_claim_rolls_back",
+            "passed": true
+          },
+          {
+            "case": "session_version_revocation",
+            "passed": true
+          },
+          {
+            "case": "current_permission_revocation",
+            "passed": true
+          },
+          {
+            "case": "claim_permission_revocation",
+            "passed": true
+          },
+          {
+            "case": "first_claim_is_durable",
+            "passed": true
+          },
+          {
+            "case": "second_claim_rejected",
+            "passed": true
+          },
+          {
+            "case": "explicit_cancel_after_unknown_exchange",
+            "passed": true
+          },
+          {
+            "case": "cancellation_receipt_saved",
+            "passed": true
+          },
+          {
+            "case": "explicit_cancel_cleanup_can_repeat",
+            "passed": true
+          },
+          {
+            "case": "cleanup_keeps_exchange_closed",
+            "passed": true
+          },
+          {
+            "case": "expired_operation_allows_explicit_cleanup",
+            "passed": true
+          },
+          {
+            "case": "confirmed_receipt_saved",
+            "passed": true
+          },
+          {
+            "case": "stale_receipt_rejected",
+            "passed": true
+          },
+          {
+            "case": "unknown_keeps_exchange_closed",
+            "passed": true
+          },
+          {
+            "case": "unknown_explicit_cancel_claimed",
+            "passed": true
+          },
+          {
+            "case": "concurrent_claim_single_winner",
+            "passed": true
+          },
+          {
+            "case": "confirmed_receipt_survives_reconnect",
+            "passed": true
+          },
+          {
+            "case": "receipt_survives_repeated_migration",
+            "passed": true
+          }
+        ],
+        "passed": true
+      }
+    },
+    {
+      "kind": "postgres",
+      "phase": "upgrade",
+      "exit": 0,
+      "report": {
+        "database": "postgres",
+        "phase": "upgrade",
+        "checks": [
+          {
+            "case": "migration_retains_existing_user",
+            "passed": true
+          },
+          {
+            "case": "operation_table_present",
+            "passed": true
+          },
+          {
+            "case": "persisted_owner_binding",
+            "passed": true
+          },
+          {
+            "case": "other_admin_rejected",
+            "passed": true
+          },
+          {
+            "case": "other_session_rejected",
+            "passed": true
+          },
+          {
+            "case": "other_owner_list_empty",
+            "passed": true
+          },
+          {
+            "case": "owner_list_scoped",
+            "passed": true
+          },
+          {
+            "case": "expired_claim_rejected",
+            "passed": true
+          },
+          {
+            "case": "current_role_required_on_read",
+            "passed": true
+          },
+          {
+            "case": "current_role_required_on_claim",
+            "passed": true
+          },
+          {
+            "case": "rejected_claim_rolls_back",
+            "passed": true
+          },
+          {
+            "case": "session_version_revocation",
+            "passed": true
+          },
+          {
+            "case": "current_permission_revocation",
+            "passed": true
+          },
+          {
+            "case": "claim_permission_revocation",
+            "passed": true
+          },
+          {
+            "case": "first_claim_is_durable",
+            "passed": true
+          },
+          {
+            "case": "second_claim_rejected",
+            "passed": true
+          },
+          {
+            "case": "explicit_cancel_after_unknown_exchange",
+            "passed": true
+          },
+          {
+            "case": "cancellation_receipt_saved",
+            "passed": true
+          },
+          {
+            "case": "explicit_cancel_cleanup_can_repeat",
+            "passed": true
+          },
+          {
+            "case": "cleanup_keeps_exchange_closed",
+            "passed": true
+          },
+          {
+            "case": "expired_operation_allows_explicit_cleanup",
+            "passed": true
+          },
+          {
+            "case": "confirmed_receipt_saved",
+            "passed": true
+          },
+          {
+            "case": "stale_receipt_rejected",
+            "passed": true
+          },
+          {
+            "case": "unknown_keeps_exchange_closed",
+            "passed": true
+          },
+          {
+            "case": "unknown_explicit_cancel_claimed",
+            "passed": true
+          },
+          {
+            "case": "concurrent_claim_single_winner",
+            "passed": true
+          },
+          {
+            "case": "confirmed_receipt_survives_reconnect",
+            "passed": true
+          },
+          {
+            "case": "receipt_survives_repeated_migration",
+            "passed": true
+          }
+        ],
+        "passed": true
+      }
+    }
+  ],
+  "browser": {
+    "real_login": true,
+    "approved_node_selected": true,
+    "pending_receipt_visible": true,
+    "callback_confirmed_once": true,
+    "completed_visible": true,
+    "callback_form_cleared": true,
+    "light_dark_mobile_captured": true
+  },
+  "browser_cancel": {
+    "pending_displayed": true,
+    "cancel_confirmation": true,
+    "cancelled_displayed": true
+  },
+  "checks": {
+    "rustfmt": "passed",
+    "strict_clippy": "passed for affected crates/all targets",
+    "rust_existing_tests": {
+      "admin_credentials": 31,
+      "openai_oauth": 8,
+      "architecture": 16
+    },
+    "go_build": "passed",
+    "go_middleware_relevant": "passed",
+    "frontend_typecheck": "1530 files / 2 projects passed",
+    "frontend_lint": "zero errors and warnings in affected scope",
+    "frontend_build": "passed",
+    "formal_test_files_changed": false
+  },
+  "known_regression_difference": {
+    "case": "TestSetUserPermissionsStoresOnlyOverrides",
+    "expected": "account_egress.read only",
+    "actual": "account_egress.read plus authorize:true",
+    "result": "failed existing fixed permission map assertion; production authorization kept and formal test file left unchanged"
+  },
+  "limits": [
+    "Third-party public authorization and same-egress browser path not run; synthetic OpenAI completion validates local control-plane behavior",
+    "xAI discovery and token transport used the real verifier; deliberately untrusted ID token was rejected, so successful third-party xAI authorization is not claimed",
+    "Secure-cookie origin mode was explicitly exercised; local HTTP development mode preserves the existing origin behavior",
+    "Cancellation race ordering was source-reviewed; expired/settled-unknown/duplicate cleanup was executed, every possible interleaving was not simulated",
+    "Current root/user rule edits and independent resource maintenance report remain user-owned workspace material"
+  ]
+}

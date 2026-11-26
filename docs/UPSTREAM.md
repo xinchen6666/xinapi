@@ -2,14 +2,14 @@
 
 更新：2026-11-22 UTC。下列提交是本轮证据基线，不代表运行中的部署，也不承诺未来 main 仍有相同行为。升级必须重新核对受影响接口与许可。
 
-| 组件 | 固定基线 | 可选研究缓存（非仓库依赖） | 采用目的 |
+| 组件 | 固定基线 | 仓库内采用内容 | 采用目的 |
 | --- | --- | --- | --- |
-| [New API](https://github.com/QuantumNous/new-api) | `8542c9d6490b4330fe18160930f81ae7428bc777` | `research/checkouts/new-api`，独立 Git | 统一 React 页面、Go 身份入口、成员 Key、配额和日志 |
-| [codex-proxy-rs](https://github.com/zyycn/codex-proxy-rs) | `58cbb607505dda4a1cee6e01b9f76e267ad3c261` | `research/checkouts/codex-proxy-rs-58cbb607505dda4a1cee6e01b9f76e267ad3c261`，固定提交源码归档 | Rust账号池、OAuth、协议转发和标准账号代理 |
-| [Cockpit Tools](https://github.com/jlcodes99/cockpit-tools) | `c004bf71be250cc2536fc91ef90638837f0013a0` | `research/checkouts/cockpit-tools`，Git及按commit补充的读取材料 | 订阅、节点、引擎和稳定入口的选择性抽离参考 |
-| [Mihomo](https://github.com/MetaCubeX/mihomo) | Cockpit基线使用 `v1.19.33` | 本轮未安装二进制、未建立运行实例 | 外部网络代理引擎，后续固定平台制品与校验和 |
+| [New API](https://github.com/QuantumNous/new-api) | `8542c9d6490b4330fe18160930f81ae7428bc777` | [完整源码](../services/new-api/README.md)；[来源清单](../third_party/new-api.provenance.json) | 原样引入2,840文件，Go／React及锁文件，尚未构建 |
+| [codex-proxy-rs](https://github.com/zyycn/codex-proxy-rs) | `58cbb607505dda4a1cee6e01b9f76e267ad3c261` | [宿主源码](../services/codex-proxy-rs/README.md)；[来源清单](../third_party/codex-proxy-rs.provenance.json) | 原样引入2,074文件；两个可选联调gitlink明确省略，正式构建用锁定依赖 |
+| [Cockpit Tools](https://github.com/jlcodes99/cockpit-tools) | `c004bf71be250cc2536fc91ef90638837f0013a0` | [抽离清单](../third_party/cockpit-adoption.md)及许可声明；未复制业务代码 | 区分纯解析、适配及桌面层，混合许可待确认 |
+| [Mihomo](https://github.com/MetaCubeX/mihomo) | `v1.19.33` → `3f27ef39f8c96bbfbc8b0b9bb10f5c9ef60149d8` | [平台制品锁](../third_party/mihomo.lock.json)；GPL文本；无二进制 | 记录Linux amd64-compatible／arm64的官方压缩包摘要，不等于已运行验证 |
 
-已有研究副本可能包含未完整 checkout 的历史获取尝试，不能仅凭 `.git/HEAD` 认定每个文件齐全。实际采用前重新验证文件树、状态和版本。新文档位于项目根，不受上游子目录规则的写入限制；修改上游 fork 时需重新匹配其规则与技能。
+X02 用上游 Git 对象及固定提交树验证实际导入，不依赖研究工作树中的临时改动。两套业务源码保持原样，许可和品牌保留；根仓库没有嵌套 `.git` 或gitlink。完整口径和复查命令见[第三方来源索引](../third_party/README.md)。来源验证通过仅证明字节、模式和构建输入清单，不表示X03构建或运行通过。
 
 ## 关键源码证据入口
 
@@ -34,23 +34,16 @@
 - Cockpit：[CC BY-NC-SA 4.0声明](https://github.com/jlcodes99/cockpit-tools/blob/c004bf71be250cc2536fc91ef90638837f0013a0/README.md#L515-L521)。按用户明确的非商业朋友团队场景研究复用；分享改编代码时保留来源、修改与同许可义务，不将抽离代码重新标成仅 Apache-2.0。
 - Mihomo：[GPLv3](https://github.com/MetaCubeX/mihomo/blob/v1.19.33/LICENSE)。分发引擎／镜像时处理源码获取和相应分发资料；使用独立进程不自动免除许可义务。
 
-混合仓库或独立 crate 的边界不是自动的许可兼容结论。X02 应形成逐文件复用和分发说明；保留各自许可，必要时以独立组件方式交付。未来用途改变时重新核实，不沿用本轮非商业前提。
+混合仓库或独立 crate 的边界不是自动的许可兼容结论。X02 已形成逐文件复用和分发说明；保留各自许可，尚未明确的组合实现暂不复制。未来用途改变时重新核实，不沿用本轮非商业前提。
 
 本轮不重复商业售卖论证；开源源码许可仍不等同于上游账号服务授权。实际联调使用有权使用的账号，遵守适用服务合同，不把独立 IP 描述为不受限承诺。
 
-## 规划中的源码与部署布局（不表示服务已交付）
+## 源码与后续部署布局
 
-```text
-项目根/
-  README.md / AGENTS.md
-  docs/                     持久规划、状态、决策和证据
-  research/                 固定版本调研；checkouts不当作产品
-  services/
-    new-api/                固定版本fork；React + Go适配
-    codex-proxy-rs/          固定版本fork；新增无界面出口模块
-  deploy/                   固定镜像/二进制版本与内部网络
-  tests/integration/        跨服务验证与脱敏样本
-  .runtime/                 被忽略的临时运行材料；不存长期事实
-```
+- `services/new-api/` 和 `services/codex-proxy-rs/`：已导入固定版本的实际源码，构建未执行；源码自带协作规则适用于后续相应模块修改。
+- `third_party/`：已加入逐文件来源、可选子模块决定、Git构建依赖、Cockpit抽离和Mihomo制品资料。
+- `tools/verify_upstream.py`：离线核对worktree、Git index或历史提交的来源完整性；后续改源码时按原始X02提交验证基线，不回写上游哈希。
+- `deploy/`、根 Compose和跨服务业务测试：尚未交付，分别由后续X步骤完成。
+- `research/checkouts/` 和 `.runtime/`：可选本地缓存，不随仓库公开。
 
-采用用户指定的 [xinchen6666/xinapi](https://github.com/xinchen6666/xinapi) 单一源码仓库。X01 建立文档基线，X02 按固定 SHA 引入可追踪的实际产品源码和必要锁文件，保留各组件路径、归属及许可；不使用意外 gitlink、不可得的个人 fork 或研究 `.git` 代替源码。上面的服务和部署目录都是未来交付。
+采用用户指定的 [xinchen6666/xinapi](https://github.com/xinchen6666/xinapi) 单一源码仓库。原有上游包依赖依然按锁文件从公开源取得；此项目不声称是离线依赖镜像。工作分支是否已同步或合入以[状态](STATUS.md)和[X02日志](worklog/X02.md)为准。

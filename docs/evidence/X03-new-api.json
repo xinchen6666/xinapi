@@ -1,0 +1,470 @@
+{
+  "schema_version": 1,
+  "task_id": "X03",
+  "component": "new-api",
+  "executor": "x03-new-api",
+  "checked_at_utc": "2026-11-23T02:07:21.444429+00:00",
+  "result": "passed",
+  "evidence_kind": "actual Docker build and offline CLI/artifact checks",
+  "static_only": false,
+  "source": {
+    "repository": "https://github.com/QuantumNous/new-api",
+    "commit": "8542c9d6490b4330fe18160930f81ae7428bc777",
+    "import_tree_sha": "11dbbb8a51210a38b84d9f9358c56c9d0415f5e8",
+    "file_count": 2840,
+    "files_modified": false,
+    "business_logic_modified": false,
+    "version_blob_bytes": 0,
+    "version_note": "The upstream VERSION blob is empty; --version exits 0 and prints only a newline. No version was invented."
+  },
+  "build_recipe": {
+    "upstream": "services/new-api/Dockerfile",
+    "adapted": "deploy/docker/new-api.Dockerfile",
+    "upstream_sha256": "39a2a908cb8ce5a33bb4012f38e2c943d4df7137dddce76615e6f341298ad1f2",
+    "adapted_sha256": "d143c622aad63a7646dc57f7d56c602f74ae85d430980c8b6b48d8625e647126",
+    "changes": [
+      "Registry host configurable; all three upstream version tags and content digests unchanged",
+      "Go module transport configurable with official default, checksums and GOSUMDB left enabled",
+      "Go compiler concurrency bounded using BUILD_JOBS=2",
+      "Runtime labels identify upstream commit and imported tree"
+    ],
+    "source_inputs": {
+      "Dockerfile": {
+        "sha256": "39a2a908cb8ce5a33bb4012f38e2c943d4df7137dddce76615e6f341298ad1f2",
+        "bytes": 1552
+      },
+      ".dockerignore": {
+        "sha256": "3cefc00f4aa15c5f84fe7f20841fc25784ccda6f595f2c9dcd73089560c984b1",
+        "bytes": 126
+      },
+      "VERSION": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "go.mod": {
+        "sha256": "23f2b6275d1b30ef03a98994dbb826c430c2e7a23e4b9e97e721181e597318fc",
+        "bytes": 7224
+      },
+      "go.sum": {
+        "sha256": "1bced0ab8100b9de2289b5ba6062275dca31669398e063597a16248e616ce9df",
+        "bytes": 310901
+      },
+      "relaykit/go.mod": {
+        "sha256": "470435391e3907f590f5a38b344e3f541827a55967a4fddadcaa4904d2be708a",
+        "bytes": 617
+      },
+      "relaykit/go.sum": {
+        "sha256": "ed54f187e94424365fd25348da82c3a8f3bd22a2af7eb99c7edbccf7b2dda35a",
+        "bytes": 2804
+      },
+      "tokenkit/go.mod": {
+        "sha256": "777e1255af323cfbb020ff90aa670c925d6dbb985e9fe3002aeb4a2e02656c37",
+        "bytes": 344
+      },
+      "tokenkit/go.sum": {
+        "sha256": "07c04d9a5d3030c3831ffa45ff8cd2787164375af523a46c498f99951edfed99",
+        "bytes": 1243
+      },
+      "web/package.json": {
+        "sha256": "a6e0f495149b53b53481ac69f0d9407cb353e8e228c499b7d076e9ab726b01a0",
+        "bytes": 4089
+      },
+      "web/bun.lock": {
+        "sha256": "2cf9c934aedd2380842893ff1fb96ce159d87bc5d14868b3d5758f8499aceb9b",
+        "bytes": 362627
+      }
+    }
+  },
+  "toolchain": {
+    "docker_engine": "29.1.3",
+    "docker_cli": "29.1.3",
+    "buildx": "0.30.1",
+    "buildkit": "v0.26.2",
+    "builder_driver": "docker",
+    "target_platform": "linux/amd64",
+    "bun_observed": "1.4.4 (38afee6c8)",
+    "rsbuild_observed": "2.2.0",
+    "go_compiler_observed": "go1.26.10",
+    "go_build_settings": [
+      "build\t-buildmode=exe",
+      "build\t-compiler=gc",
+      "build\t-ldflags=\"-s -w -X 'github.com/QuantumNous/new-api/common.Version='\"",
+      "build\t-pgo=/go/pkg/mod/github.com/!moe!forge/moejs@v0.1.0/default.pgo",
+      "build\tCGO_ENABLED=0",
+      "build\tGOAMD64=v1",
+      "build\tGOARCH=amd64",
+      "build\tGOEXPERIMENT=greenteagc",
+      "build\tGOOS=linux"
+    ],
+    "goproxy_effective": "https://goproxy.cn,direct",
+    "gosumdb_disabled": false,
+    "host_go_installed": false,
+    "frozen_frontend_lockfile": true,
+    "version_tags_or_dependency_locks_changed": false
+  },
+  "attempts": [
+    {
+      "id": "original-upstream-dockerfile",
+      "command": [
+        "docker",
+        "--config",
+        "/data/projects/project002/.runtime/x03/docker-config",
+        "buildx",
+        "build",
+        "--progress",
+        "plain",
+        "--load",
+        "--platform",
+        "linux/amd64",
+        "--metadata-file",
+        ".runtime/x03/new-api-build-baseline.metadata.json",
+        "-f",
+        "services/new-api/Dockerfile",
+        "-t",
+        "xinapi/new-api:x03-baseline",
+        "services/new-api"
+      ],
+      "started_at_utc": "2026-11-23T01:41:38Z",
+      "finished_at_utc": "2026-11-23T01:42:38Z",
+      "exit_code": 1,
+      "result": "failed",
+      "phase": "resolve base image metadata",
+      "cause": "Docker daemon registry-1.docker.io HTTPS HEAD timed out for all three pinned manifests; no compiler or install stage ran",
+      "log": ".runtime/x03/new-api-build-baseline.log",
+      "versions_proven_unavailable": false
+    },
+    {
+      "id": "same-digest-registry-transport",
+      "command": [
+        "docker",
+        "--config",
+        "/data/projects/project002/.runtime/x03/docker-config",
+        "buildx",
+        "build",
+        "--progress",
+        "plain",
+        "--load",
+        "--platform",
+        "linux/amd64",
+        "--build-arg",
+        "IMAGE_REGISTRY=docker.m.daocloud.io",
+        "--build-arg",
+        "BUILD_JOBS=2",
+        "--metadata-file",
+        ".runtime/x03/new-api-build-mirror.metadata.json",
+        "-f",
+        "deploy/docker/new-api.Dockerfile",
+        "-t",
+        "xinapi/new-api:x03-baseline",
+        "services/new-api"
+      ],
+      "started_at_utc": "2026-11-23T01:47:38Z",
+      "exit_code": null,
+      "termination_signal": "SIGTERM",
+      "result": "cancelled",
+      "cause": "Stopped by agent after official Go proxy download stalled, before checksum-preserving module-proxy retry",
+      "completed_stages": [
+        "All three pinned base layers downloaded and verified",
+        "bun install --frozen-lockfile",
+        "bun run build",
+        "Debian runtime packages installed"
+      ],
+      "log": ".runtime/x03/new-api-build-mirror.log"
+    },
+    {
+      "id": "same-digest-registry-and-go-proxy",
+      "command": [
+        "docker",
+        "--config",
+        "/data/projects/project002/.runtime/x03/docker-config",
+        "buildx",
+        "build",
+        "--progress",
+        "plain",
+        "--load",
+        "--platform",
+        "linux/amd64",
+        "--build-arg",
+        "IMAGE_REGISTRY=docker.m.daocloud.io",
+        "--build-arg",
+        "BUILD_JOBS=2",
+        "--build-arg",
+        "GOPROXY=https://goproxy.cn,direct",
+        "--metadata-file",
+        ".runtime/x03/new-api-build-proxy.metadata.json",
+        "-f",
+        "deploy/docker/new-api.Dockerfile",
+        "-t",
+        "xinapi/new-api:x03-baseline",
+        "services/new-api"
+      ],
+      "started_at_utc": "2026-11-23T01:55:58Z",
+      "finished_at_utc": "2026-11-23T02:00:02Z",
+      "exit_code": 0,
+      "result": "passed",
+      "go_mod_download_seconds": 38.1,
+      "go_build_seconds": 185.0,
+      "frontend_build_seconds_from_prior_attempt": 24.7,
+      "cache_reused": true,
+      "image_digest": "sha256:b793c519ce27493f6263369e758e6894ed24b7c96f98778db708f25a86f268f4",
+      "build_ref": "default/default/5f0jxxuqylc3i7kh28e0qgjur",
+      "metadata": ".runtime/x03/new-api-build-proxy.metadata.json",
+      "log": ".runtime/x03/new-api-build-proxy.log"
+    },
+    {
+      "id": "upstream-labels-final",
+      "command": [
+        "docker",
+        "--config",
+        "/data/projects/project002/.runtime/x03/docker-config",
+        "buildx",
+        "build",
+        "--progress",
+        "plain",
+        "--load",
+        "--platform",
+        "linux/amd64",
+        "--build-arg",
+        "IMAGE_REGISTRY=docker.m.daocloud.io",
+        "--build-arg",
+        "BUILD_JOBS=2",
+        "--build-arg",
+        "GOPROXY=https://goproxy.cn,direct",
+        "--metadata-file",
+        ".runtime/x03/new-api-build-final.metadata.json",
+        "-f",
+        "deploy/docker/new-api.Dockerfile",
+        "-t",
+        "xinapi/new-api:x03-baseline",
+        "services/new-api"
+      ],
+      "started_at_utc": "2026-11-23T02:04:26Z",
+      "finished_at_utc": "2026-11-23T02:04:27Z",
+      "exit_code": 0,
+      "result": "passed",
+      "cache_reused": true,
+      "note": "Adds upstream identity labels; completed compiler and frontend artifacts reused unchanged",
+      "build_ref": "default/default/f56ifaplswv1wwo1mppc7slzx",
+      "metadata": ".runtime/x03/new-api-build-final.metadata.json",
+      "log": ".runtime/x03/new-api-build-final.log"
+    }
+  ],
+  "registry_manifest_verification": {
+    "method": "Public mirror manifest GET with scoped ephemeral pull bearer; recomputed SHA256 matches each upstream digest; subsequent Docker build actually fetched layers",
+    "mirror": "docker.m.daocloud.io",
+    "all_content_digests_identical": true,
+    "manifests": [
+      {
+        "repository": "oven/bun",
+        "expected_digest": "sha256:1d22548f177f4ff38e0c15baa3c2c46c6c2060ba2d1bc573bb4720b407548f1d",
+        "manifest_sha256": "sha256:1d22548f177f4ff38e0c15baa3c2c46c6c2060ba2d1bc573bb4720b407548f1d",
+        "http_status": 200,
+        "digest_matches": true
+      },
+      {
+        "repository": "library/golang",
+        "expected_digest": "sha256:9ce231b28998b32e116927c61aa5c406183061d4f3f2d61b292c88e7f6bdf7ca",
+        "manifest_sha256": "sha256:9ce231b28998b32e116927c61aa5c406183061d4f3f2d61b292c88e7f6bdf7ca",
+        "http_status": 200,
+        "digest_matches": true
+      },
+      {
+        "repository": "library/debian",
+        "expected_digest": "sha256:f06537653ac770703bc45b4b113475bd402f451e85223f0f2837acbf89ab020a",
+        "manifest_sha256": "sha256:f06537653ac770703bc45b4b113475bd402f451e85223f0f2837acbf89ab020a",
+        "http_status": 200,
+        "digest_matches": true
+      }
+    ],
+    "nanjing_mirror_result": "403; not used",
+    "public_pull_tokens_saved": false
+  },
+  "image": {
+    "tag": "xinapi/new-api:x03-baseline",
+    "id": "sha256:0013ce97c44f35483e51fb77b8932eb0060eeb3e4ea1d245ab4e097d175dec34",
+    "digest": "sha256:0013ce97c44f35483e51fb77b8932eb0060eeb3e4ea1d245ab4e097d175dec34",
+    "config_digest": "sha256:87d091edc7e30f20ca02ccf68a91276ecd93f84b906a5268f14ad40489dcd216",
+    "manifest_digest": "sha256:8a781d0b0f5d3c819f3269aa3c2e064a38e2d317e43c8a463aab545437f835fe",
+    "digest_scope": "local OCI image index including provenance attestation; not a published registry release",
+    "pushed_to_registry": false,
+    "platform": "linux/amd64",
+    "size_bytes_reported_by_docker": 80646671,
+    "entrypoint": [
+      "/new-api"
+    ],
+    "labels": {
+      "io.xinapi.upstream.revision": "8542c9d6490b4330fe18160930f81ae7428bc777",
+      "io.xinapi.upstream.tree": "11dbbb8a51210a38b84d9f9358c56c9d0415f5e8",
+      "org.opencontainers.image.source": "https://github.com/QuantumNous/new-api"
+    }
+  },
+  "artifact": {
+    "path_in_image": "/new-api",
+    "sha256": "9f884a66ef8ba4e532be6487f65cb36a8473d1509f652b0460397818ed95bd3d",
+    "size_bytes": 143278242,
+    "executable_checked": true,
+    "go_compiler_observed": "go1.26.10",
+    "embedded_frontend_compiled": true,
+    "license_files_match_source": true,
+    "upstream_credits_preserved": true
+  },
+  "offline_checks": [
+    {
+      "name": "help",
+      "command": [
+        "docker",
+        "--config",
+        "/data/projects/project002/.runtime/x03/docker-config",
+        "run",
+        "--rm",
+        "--pull",
+        "never",
+        "--network",
+        "none",
+        "--read-only",
+        "--cpus",
+        "1",
+        "--memory",
+        "512m",
+        "--pids-limit",
+        "128",
+        "--cap-drop",
+        "ALL",
+        "--security-opt",
+        "no-new-privileges=true",
+        "sha256:0013ce97c44f35483e51fb77b8932eb0060eeb3e4ea1d245ab4e097d175dec34",
+        "--help"
+      ],
+      "started_at_utc": "2026-11-23T02:06:10.805907+00:00",
+      "finished_at_utc": "2026-11-23T02:06:11.513874+00:00",
+      "exit_code": 0,
+      "stdout": "NewAPI(Based OneAPI)  - The next-generation LLM gateway and AI asset management system supports multiple languages.\nOriginal Project: OneAPI by JustSong - https://github.com/songquanpeng/one-api\nMaintainer: QuantumNous - https://github.com/QuantumNous/new-api\nUsage: newapi [--port <port>] [--log-dir <log directory>] [--version] [--help]\n",
+      "stderr": "",
+      "network": "none",
+      "read_only": true,
+      "result": "passed"
+    },
+    {
+      "name": "version",
+      "command": [
+        "docker",
+        "--config",
+        "/data/projects/project002/.runtime/x03/docker-config",
+        "run",
+        "--rm",
+        "--pull",
+        "never",
+        "--network",
+        "none",
+        "--read-only",
+        "--cpus",
+        "1",
+        "--memory",
+        "512m",
+        "--pids-limit",
+        "128",
+        "--cap-drop",
+        "ALL",
+        "--security-opt",
+        "no-new-privileges=true",
+        "sha256:0013ce97c44f35483e51fb77b8932eb0060eeb3e4ea1d245ab4e097d175dec34",
+        "--version"
+      ],
+      "started_at_utc": "2026-11-23T02:06:11.513934+00:00",
+      "finished_at_utc": "2026-11-23T02:06:12.126835+00:00",
+      "exit_code": 0,
+      "stdout": "\n",
+      "stderr": "",
+      "network": "none",
+      "read_only": true,
+      "result": "passed"
+    },
+    {
+      "name": "artifact",
+      "command": [
+        "docker",
+        "--config",
+        "/data/projects/project002/.runtime/x03/docker-config",
+        "run",
+        "--rm",
+        "--pull",
+        "never",
+        "--network",
+        "none",
+        "--read-only",
+        "--cpus",
+        "1",
+        "--memory",
+        "512m",
+        "--pids-limit",
+        "128",
+        "--cap-drop",
+        "ALL",
+        "--security-opt",
+        "no-new-privileges=true",
+        "--entrypoint",
+        "/bin/sh",
+        "sha256:0013ce97c44f35483e51fb77b8932eb0060eeb3e4ea1d245ab4e097d175dec34",
+        "-c",
+        "test -x /new-api && sha256sum /new-api /licenses/LICENSE /licenses/NOTICE /licenses/THIRD-PARTY-LICENSES.md && stat -c \"%s\" /new-api"
+      ],
+      "started_at_utc": "2026-11-23T02:06:12.126879+00:00",
+      "finished_at_utc": "2026-11-23T02:06:13.638402+00:00",
+      "exit_code": 0,
+      "stdout": "9f884a66ef8ba4e532be6487f65cb36a8473d1509f652b0460397818ed95bd3d  /new-api\n8486a10c4393cee1c25392769ddd3b2d6c242d6ec7928e1414efff7dfb2f07ef  /licenses/LICENSE\n528067fcdf4f9d7e3fdb489d02cbdd36a0efa63fc2eb1686340612c26beb9f33  /licenses/NOTICE\nd0655ed528466fc2bdade15dfcfe40d33e1ec24a235e28b262efbfa20ba64d25  /licenses/THIRD-PARTY-LICENSES.md\n143278242\n",
+      "stderr": "",
+      "network": "none",
+      "read_only": true,
+      "result": "passed"
+    }
+  ],
+  "isolation": {
+    "no_port_published": true,
+    "network": "none",
+    "read_only_root": true,
+    "memory_limit": "512m",
+    "cpus": 1,
+    "pids_limit": 128,
+    "all_capabilities_dropped": true,
+    "no_new_privileges": true,
+    "real_accounts_or_credentials_supplied": false,
+    "business_service_started": false,
+    "db_started": false,
+    "container_checks_removed": true
+  },
+  "not_run": [
+    "Full New API unit/typecheck/lint suites",
+    "SQLite/MySQL/PostgreSQL integration tests",
+    "Compose deployment",
+    "Business request forwarding",
+    "OAuth or real account login",
+    "Clash subscription or proxy exit validation",
+    "linux/arm64 build",
+    "No-cache repeat or bit-for-bit image reproducibility test",
+    "Registry push, release or GitHub CI conclusion"
+  ],
+  "limitations": [
+    "Official Docker Hub and official Go module endpoint were unreachable from this environment; transport-only mirrors were needed",
+    "Final image used prior successful BuildKit layers; it is not an independent no-cache build",
+    "Debian apt repositories are live repositories; package versions and final artifact digest recorded rather than claiming package archive immutability",
+    "--help and --version only prove executable CLI exit behavior, not service readiness or integration"
+  ],
+  "runtime_packages_observed": {
+    "ca-certificates": "20250419~deb12u2",
+    "libasan8": "12.2.0-14+deb12u1",
+    "tzdata": "2026f-0+deb12u1",
+    "wget": "1.21.3-1+deb12u1"
+  },
+  "background_jobs": {
+    "completed": [
+      "bash-eb13abade71c432a",
+      "bash-dba20d86122f496d",
+      "bash-f06a6a4b0ac543bd",
+      "bash-aaad1f4eb2b74af3"
+    ],
+    "cancelled_and_collected": [
+      "bash-d1f18fa6859e4628"
+    ],
+    "still_running": []
+  }
+}

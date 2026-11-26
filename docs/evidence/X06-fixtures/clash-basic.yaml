@@ -1,0 +1,44 @@
+# X06 自造样本：Clash 兼容文档，节点参数均为演示用假值
+mixed-port: 7890
+mode: rule
+proxies:
+  - name: 演示-香港-01
+    type: ss
+    server: 192.0.2.11
+    port: 8388
+    cipher: aes-128-gcm
+    password: demo-password-01
+  - name: 演示-日本-02
+    type: vmess
+    server: 192.0.2.12
+    port: 443
+    uuid: 11111111-2222-3333-4444-555555555555
+    alterId: 0
+    cipher: auto
+    tls: true
+  - name: 演示-新加坡-03
+    type: trojan
+    server: 192.0.2.13
+    port: 443
+    password: demo-password-03
+    sni: demo.example.com
+  - name: 演示-示例不可用协议
+    type: wireguard
+    server: 192.0.2.14
+    port: 51820
+  - name: 演示-美国-05
+    type: hysteria2
+    server: 192.0.2.15
+    port: 8443
+    password: demo-password-05
+  - name: 演示-出口-06
+    type: http
+    server: 192.0.2.16
+    port: 8080
+  - name: 演示-出口-07
+    type: socks5
+    server: 192.0.2.17
+    port: 1080
+rules:
+  - DOMAIN-SUFFIX,example.com,DIRECT
+  - MATCH,演示-香港-01

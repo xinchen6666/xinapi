@@ -1,0 +1,193 @@
+name: X03 source checks and image builds
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: x03-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  changes:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    outputs:
+      new_api: ${{ steps.paths.outputs.new_api }}
+      new_api_web: ${{ steps.paths.outputs.new_api_web }}
+      cpr: ${{ steps.paths.outputs.cpr }}
+      cpr_web: ${{ steps.paths.outputs.cpr_web }}
+      compose: ${{ steps.paths.outputs.compose }}
+      images: ${{ steps.paths.outputs.images }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - id: paths
+        env:
+          CI_BASE: ${{ github.event.pull_request.base.sha || github.event.before || '' }}
+        run: python3 -B tools/check_ci.py select
+
+  quality:
+    needs: changes
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Project links and credential checks
+        env:
+          CI_BASE: ${{ github.event.pull_request.base.sha || github.event.before || '' }}
+          # Apply only while bringing the already reviewed X02–X11 stack into main.
+          CI_STACK_CONSOLIDATION: >-
+            ${{ github.repository == 'xinchen6666/xinapi' &&
+                ((github.event_name == 'pull_request' &&
+                  github.event.pull_request.head.repo.full_name == github.repository &&
+                  github.head_ref == 'integration/x02-x11') || github.ref == 'refs/heads/main') }}
+        run: python3 -B tools/check_ci.py check
+      - name: Project lint and relevant tool regressions
+        run: |
+          python3 -m venv "$RUNNER_TEMP/check-tools"
+          "$RUNNER_TEMP/check-tools/bin/python" -m pip install --disable-pip-version-check --require-hashes -r .github/requirements-checks.txt
+          "$RUNNER_TEMP/check-tools/bin/ruff" format --check tools/check_ci.py tools/check_project.py tools/select_checks.py
+          "$RUNNER_TEMP/check-tools/bin/ruff" check --select E9,F63,F7,F82 tools/check_ci.py tools/check_project.py tools/select_checks.py
+          python3 -B -m unittest tests.test_check_project.ProjectChecksTests tests.test_select_checks -v
+      - name: Validate Compose configuration without starting services
+        if: needs.changes.outputs.compose == 'true'
+        run: |
+          export XINAPI_CONFIG_DIR="$RUNNER_TEMP/xinapi-compose"
+          python3 -B tools/init_compose.py --directory "$XINAPI_CONFIG_DIR"
+          docker compose config --quiet
+
+  new_api_checks:
+    needs: changes
+    if: github.event_name == 'pull_request' && needs.changes.outputs.new_api == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16
+        with:
+          go-version-file: services/new-api/go.mod
+          cache-dependency-path: |
+            services/new-api/go.sum
+            services/new-api/relaykit/go.sum
+            services/new-api/tokenkit/go.sum
+      - name: Check account egress permission defaults
+        working-directory: services/new-api
+        env:
+          GOMAXPROCS: '2'
+          GOWORK: 'off'
+        run: go test -mod=readonly -p 2 ./service/authz -run '^TestSetUserPermissionsStoresOnlyOverrides$' -count=1 -v
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6
+        if: needs.changes.outputs.new_api_web == 'true'
+        with:
+          bun-version: '1.4.4'
+      - name: Check New API web types
+        if: needs.changes.outputs.new_api_web == 'true'
+        working-directory: services/new-api/web
+        run: |
+          bun install --frozen-lockfile
+          bun run typecheck
+
+  cpr_checks:
+    needs: changes
+    if: github.event_name == 'pull_request' && needs.changes.outputs.cpr == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Check CPR Rust formatting
+        working-directory: services/codex-proxy-rs/backend
+        run: cargo fmt --all --check
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
+        if: needs.changes.outputs.cpr_web == 'true'
+        with:
+          node-version: '26.13.1'
+          package-manager-cache: false
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115
+        if: needs.changes.outputs.cpr_web == 'true'
+        with:
+          package_json_file: services/codex-proxy-rs/frontend/package.json
+      - name: Check CPR web types
+        if: needs.changes.outputs.cpr_web == 'true'
+        working-directory: services/codex-proxy-rs/frontend
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm run typecheck
+
+  images:
+    needs: [changes, quality]
+    if: github.event_name != 'pull_request' && needs.changes.outputs.images != '[]'
+    strategy:
+      fail-fast: false
+      matrix:
+        component: ${{ fromJSON(needs.changes.outputs.images) }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f
+        with:
+          version: v0.30.1
+          driver-opts: image=moby/buildkit:v0.26.2@sha256:de10faf919fc71ba4eb1dd7bd6449566d012b0c9436b1c61bfee21d621b009aa
+      - name: Build and run the component CLI
+        env:
+          COMPONENT: ${{ matrix.component }}
+        run: |
+          recipe="$RUNNER_TEMP/xinapi-build/Dockerfile"
+          mkdir -p "$(dirname "$recipe")"
+          cp "deploy/docker/$COMPONENT.Dockerfile" "$recipe"
+          tag="xinapi/$COMPONENT:ci"
+          build=(--load --platform linux/amd64 --file "$recipe" --tag "$tag"
+            --label "org.opencontainers.image.source=https://github.com/$GITHUB_REPOSITORY"
+            --label "org.opencontainers.image.revision=$GITHUB_SHA")
+          check=(--rm --network none --read-only --cpus 1 --memory 512m)
+          case "$COMPONENT" in
+            new-api)
+              context=services/new-api
+              cp "$context/.dockerignore" "$recipe.dockerignore"
+              docker buildx build "${build[@]}" "$context"
+              docker run "${check[@]}" --entrypoint /new-api "$tag" --help
+              ;;
+            cpr)
+              context=services/codex-proxy-rs
+              cp "$context/deploy/Dockerfile.dockerignore" "$recipe.dockerignore"
+              version=$(python3 - "$context/release/version.yaml" <<'PY'
+          from pathlib import Path
+          import re
+          import sys
+
+          for line in Path(sys.argv[1]).read_text(encoding="utf-8").splitlines():
+              if line.startswith("version:"):
+                  version = line.partition(":")[2].partition("#")[0].strip().strip("\"'")
+                  if re.fullmatch(r"\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?", version):
+                      print(version)
+                      break
+          else:
+              sys.exit("CPR release version is missing or invalid.")
+          PY
+              )
+              docker buildx build "${build[@]}" --target runtime \
+                --build-arg "CPR_VERSION=$version" --build-arg "CPR_GIT_SHA=$GITHUB_SHA" "$context"
+              actual=$(docker run "${check[@]}" --entrypoint /app/bin/codex-proxy-rs "$tag" --version)
+              test "$actual" = "$version"
+              printf 'CPR release version verified: %s\n' "$actual"
+              ;;
+            *) exit 1 ;;
+          esac

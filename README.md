@@ -1,14 +1,16 @@
 # xinapi
 
-给朋友小团队私用的 Codex 订阅网关：管理员在 New API 后台导入 Clash 订阅、确认出口、授权上游账号并给成员分组。成员使用自己的平台 Key。**本仓库目前是开发与部署文档基线，还不是可启动的成品。** 发布位置：[xinchen6666/xinapi](https://github.com/xinchen6666/xinapi)。
+给朋友小团队私用的 Codex 订阅网关。当前已具备本机五服务运行、订阅预览与来源审批、受管账号出口、管理员 OAuth 与回执。统一管理员工作流、成员授组和正式首次安装按[项目状态](docs/STATUS.md)继续交付。发布位置：[xinchen6666/xinapi](https://github.com/xinchen6666/xinapi)。
 
 ## 阅读入口
 
 | 想做什么 | 去哪里 |
 | --- | --- |
 | 查看每一步如何开发、如何验证 | [Docker 开发计划 X01–X18](docs/PLAN.md) |
+| 在本机启动五服务 | [Compose 运行手册](docs/COMPOSE.md)、[X04 联调日志](docs/worklog/X04.md) |
 | 了解五个服务、首次安装和恢复设计 | [Docker 部署设计](docs/DEPLOYMENT.md) |
-| 看现在完成了什么、推送到哪 | [任务状态](docs/STATUS.md)、[X01 工作日志](docs/worklog/X01.md) |
+| 看现在完成了什么、推送到哪 | [任务状态](docs/STATUS.md)、[X02 工作日志](docs/worklog/X02.md)、[X03 构建日志](docs/worklog/X03.md) |
+| 构建镜像和运行持续检查 | [构建入口与边界](docs/BUILD.md) |
 | 换人／换 agent 继续 | [协作入口](AGENTS.md)、[当前交接](docs/HANDOFF.md) |
 | 查产品范围和设计依据 | [项目需求](docs/PROJECT.md)、[架构](docs/ARCHITECTURE.md)、[决策](docs/DECISIONS.md) |
 | 查长期约束、来源、许可证和证据 | [项目记忆](docs/MEMORY.md)、[固定上游清单](docs/UPSTREAM.md)、[验收记录](docs/VALIDATION.md) |
@@ -17,7 +19,7 @@
 
 只交付单机 Linux Docker Compose。New API 提供 React 管理界面和 Go 后端；内部 CPR（codex-proxy-rs）处理账号授权、刷新和模型请求，监督 Mihomo 子进程。PostgreSQL 18 分库分用户，两个应用各用独立 Redis。账号默认不得在代理故障后改走直连；公网 IP 能否真正独立取决于提供商和实际验证。没有支付、K8s 或 Helm 工作项。
 
-第一个可见里程碑是 **X06：管理员粘贴自造的订阅链接能预览节点**，不必先提供真实账号。将来从本仓库取得实际业务源码、Compose 配置和测试，不额外依赖个人 fork；当前运行状态和验收情况以状态表为准。
+第一个订阅演示里程碑是 **X06：管理员粘贴自造的订阅链接能预览节点**。[New API 源码](services/new-api/README.md)、[CPR 源码](services/codex-proxy-rs/README.md)及[第三方来源索引](third_party/README.md)已随本仓库维护。X04 交付五服务本机运行环境，管理页面和业务集成按后续步骤开发。
 
 ## 研究材料
 

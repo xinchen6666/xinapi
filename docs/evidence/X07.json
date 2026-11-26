@@ -1,0 +1,224 @@
+{
+  "task": "X07 source management first increment",
+  "checked_at": "2026-11-25T12:51:44+08:00",
+  "result": "passed_scoped",
+  "environment": {
+    "compose_project": "xinapi-x07-dev",
+    "data": "synthetic source and local-only credentials",
+    "images": [
+      "xinapi/cpr:x07-local",
+      "xinapi/new-api:x07-local"
+    ],
+    "toolchains": {
+      "Rust": "1.99.1",
+      "Go": "1.26.10",
+      "Bun": "1.4.4"
+    },
+    "source_network": "isolated Docker internal network"
+  },
+  "business_cases": [
+    {
+      "case": "create_private_source",
+      "passed": true,
+      "revision": 1
+    },
+    {
+      "case": "refresh_requires_approval",
+      "passed": true
+    },
+    {
+      "case": "complete_recognized_protocols_save_without_partial_override",
+      "passed": true
+    },
+    {
+      "case": "initial_approval",
+      "passed": true,
+      "nodes": 2
+    },
+    {
+      "case": "rename_and_reorder_preserve_identity_and_connection_version",
+      "passed": true
+    },
+    {
+      "case": "connection_change_requires_identity_decision",
+      "passed": true
+    },
+    {
+      "case": "manual_identity_retention_creates_immutable_new_connection_version",
+      "passed": true
+    },
+    {
+      "case": "failed_refresh_preserves_approved_nodes_and_version",
+      "passed": true
+    },
+    {
+      "case": "explicit_partial_acceptance_keeps_previous_missing_nodes",
+      "passed": true
+    },
+    {
+      "case": "duplicate_connections_have_no_automatic_identity_and_reused_id_rejected",
+      "passed": true
+    },
+    {
+      "case": "confirmed_complete_missing_node_marks_projection_unavailable",
+      "passed": true
+    },
+    {
+      "case": "late_refresh_cannot_overwrite_new_approval",
+      "passed": true,
+      "late_status": 409
+    },
+    {
+      "case": "stale_edit_or_refresh_rejected",
+      "passed": true
+    },
+    {
+      "case": "explicit_empty_complete_approval_preserves_identity_history_and_marks_missing",
+      "passed": true
+    },
+    {
+      "case": "source_list_has_public_metadata_only",
+      "passed": true
+    }
+  ],
+  "additional_cases": [
+    {
+      "case": "root_owned_read_token_remains_read_only",
+      "passed": true,
+      "denied_write_routes": 4
+    },
+    {
+      "case": "admin_read_only_member_denied_and_root_session_writes",
+      "passed": true
+    },
+    {
+      "case": "canonical_defaults_hostcase_and_numeric_port_preserve_identity",
+      "passed": true
+    },
+    {
+      "case": "unchanged_approval_reuses_approved_version_beyond_previous_64_limit",
+      "passed": true,
+      "iterations": 65,
+      "approved_version": 2
+    },
+    {
+      "case": "duplicate_relationship_budget_ends_before_commit",
+      "passed": true,
+      "nodes": 512,
+      "status": 400
+    },
+    {
+      "case": "database_contains_authenticated_ciphertext_and_private_deployment_key",
+      "passed": true,
+      "sources": 4,
+      "key_mode": "0600",
+      "key_bytes": 32
+    }
+  ],
+  "browser": {
+    "sourceCreate": true,
+    "mihomoStoredWithCompleteReview": true,
+    "renameSuggested": true,
+    "renameStable": true,
+    "failurePreservesApproved": true,
+    "savedURLHidden": true,
+    "explicitPartialDialog": true,
+    "mobileWithinViewport": true,
+    "partialKeepsPrior": true,
+    "adminReadOnly": true,
+    "adminWritesHidden": true,
+    "publicResponsesSafe": true,
+    "errors": [],
+    "sourceId": "8f915b83-3b74-451d-a966-4d28e70a0e60"
+  },
+  "key_cases": {
+    "cases": [
+      {
+        "phase": "missing",
+        "operation": "read",
+        "status": 503,
+        "passed": true
+      },
+      {
+        "phase": "missing",
+        "operation": "create",
+        "status": 503,
+        "passed": true
+      },
+      {
+        "phase": "different_deployment_key",
+        "operation": "read",
+        "status": 503,
+        "passed": true
+      },
+      {
+        "phase": "different_deployment_key",
+        "operation": "create",
+        "status": 503,
+        "passed": true
+      }
+    ],
+    "missing_key_generation_count": 0,
+    "source_count_preserved": true
+  },
+  "restart": {
+    "source_count": 5,
+    "same_public_details": true,
+    "approved_nodes_and_connection_versions_retained": true
+  },
+  "migration": {
+    "fresh_database": true,
+    "upgrade_from_x06": true,
+    "old_proxy_preserved": true,
+    "source_table_created": true,
+    "migration_manifest": "original frozen records retained; no manual digest operation",
+    "upgrade_restart_preserves_data": true
+  },
+  "checks": {
+    "rust_clippy_libraries": [
+      "gateway-admin",
+      "gateway-api",
+      "gateway-store"
+    ],
+    "rust_existing_subscriptions": 25,
+    "rust_existing_api_subscriptions": 7,
+    "rust_architecture": 16,
+    "go_build_and_vet": "passed",
+    "go_packages_passed": [
+      "service/authz",
+      "router",
+      "middleware"
+    ],
+    "frontend_typecheck": {
+      "files": 1520,
+      "projects": 2,
+      "result": "passed"
+    },
+    "frontend_changed_lint": "passed",
+    "frontend_build": "passed",
+    "existing_dialog_tests": 3,
+    "existing_table_tests": 7
+  },
+  "broader_suite_observations": {
+    "frontend": {
+      "passed": 2235,
+      "failed": 56,
+      "skipped": 15,
+      "reported_failures": "existing component and hook test timeouts"
+    },
+    "controller_package": "test process terminated after approximately 11 minutes in existing Responses WebSocket cancellation scenario"
+  },
+  "scope_limits": [
+    "Availability is the approved source-node projection; actual account binding/egress belongs to subsequent tasks",
+    "Source envelope limit 32MiB and relationship limit 32768 bound retained history/review representation",
+    "Existing provider and plugin secrets retain their prior storage behavior",
+    "Formal test files retain original content; migration digest inventory retained per current user constraints",
+    "Runtime validation uses current source binaries and production frontend on existing local runtime images"
+  ],
+  "screenshots": [
+    "X07-source-review.png",
+    "X07-source-stale.png",
+    "X07-source-approval.png",
+    "X07-source-mobile.png"
+  ]
+}

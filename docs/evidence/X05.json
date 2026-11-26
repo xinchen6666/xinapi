@@ -1,0 +1,187 @@
+{
+  "task": "X05",
+  "checked_at": "2026-11-23T17:58:46.924842+00:00",
+  "result": "partial",
+  "versions": {
+    "Go": "1.26.10",
+    "Bun": "1.4.4",
+    "CPR": "3.54.2",
+    "PostgreSQL": "18.7",
+    "Redis": "8.10.3",
+    "Chromium": "159.0.8154.6"
+  },
+  "scenarios": {
+    "real-api-results": {
+      "accounts_real_empty": {
+        "http": 200,
+        "page": {
+          "page": 1,
+          "pageSize": 20,
+          "total": 0,
+          "totalPages": 0
+        }
+      },
+      "accounts_anonymous": 401,
+      "accounts_member": 403,
+      "accounts_pagination_rejections": 5,
+      "proxies_real_empty": {
+        "http": 200,
+        "page": {
+          "page": 1,
+          "pageSize": 20,
+          "total": 0,
+          "totalPages": 0
+        }
+      },
+      "proxies_anonymous": 401,
+      "proxies_member": 403,
+      "proxies_pagination_rejections": 5,
+      "invalid_key": 503,
+      "public_key_mode": 503,
+      "key_recovery_without_restart": 200
+    },
+    "adapter-results": {
+      "accounts_anonymous": 401,
+      "accounts_member": 403,
+      "accounts_model": 401,
+      "accounts_denied": 403,
+      "proxies_anonymous": 401,
+      "proxies_member": 403,
+      "proxies_model": 401,
+      "proxies_denied": 403,
+      "rejected_identities_management_calls": 0,
+      "arbitrary_path_and_write_calls": 0,
+      "accounts_allowlist": [
+        "enabled",
+        "id",
+        "name",
+        "outboundProxyId",
+        "planType",
+        "provider",
+        "status"
+      ],
+      "proxies_allowlist": [
+        "accountCount",
+        "enabled",
+        "hasAuthentication",
+        "id",
+        "name"
+      ],
+      "account_page2_items": 3,
+      "upstream_failure": {
+        "http": 503,
+        "seconds": 0.0
+      },
+      "upstream_redirect": {
+        "http": 503,
+        "seconds": 0.0
+      },
+      "upstream_malformed": {
+        "http": 503,
+        "seconds": 0.0
+      },
+      "upstream_delay": {
+        "http": 503,
+        "seconds": 5.0
+      },
+      "followed_redirects": 0
+    },
+    "browser-results": {
+      "email_name_alias": true,
+      "page1": 20,
+      "page2": 3,
+      "proxies": 3,
+      "mobile": {
+        "client": 390,
+        "scroll": 390,
+        "long_id_visible": true
+      },
+      "error_hides_data": true,
+      "retry": true,
+      "loading": true,
+      "simulated_revoke_hides_rows_tabs_menu": true,
+      "anonymous": {
+        "route": "/sign-in",
+        "calls": 0
+      },
+      "member": {
+        "route": "/403",
+        "calls": 0
+      },
+      "denied": {
+        "route": "/403",
+        "calls": 0
+      },
+      "runtime_errors": [],
+      "management_secret_leaks": []
+    },
+    "real-final-results": {
+      "accounts": {
+        "http": 200,
+        "items": 0,
+        "page": {
+          "page": 1,
+          "pageSize": 20,
+          "total": 0,
+          "totalPages": 0
+        }
+      },
+      "proxies": {
+        "http": 200,
+        "items": 1,
+        "page": {
+          "page": 1,
+          "pageSize": 20,
+          "total": 1,
+          "totalPages": 1
+        }
+      },
+      "temporary_fixtures_removed": true
+    },
+    "language-results": {
+      "en": {
+        "heading": true,
+        "real_empty": true,
+        "real_proxy": true
+      },
+      "zhCN": {
+        "heading": true,
+        "real_empty": true,
+        "real_proxy": true
+      },
+      "zhTW": {
+        "heading": true,
+        "real_empty": true,
+        "real_proxy": true
+      },
+      "fr": {
+        "heading": true,
+        "real_empty": true,
+        "real_proxy": true
+      },
+      "ja": {
+        "heading": true,
+        "real_empty": true,
+        "real_proxy": true
+      },
+      "ru": {
+        "heading": true,
+        "real_empty": true,
+        "real_proxy": true
+      },
+      "vi": {
+        "heading": true,
+        "real_empty": true,
+        "real_proxy": true
+      }
+    }
+  },
+  "existing_tests": {
+    "shared_table_tests": 7,
+    "middleware": "passed",
+    "router": "passed",
+    "authz_except_named_test": "passed",
+    "authz_full": "failed: TestSetUserPermissionsStoresOnlyOverrides expects the old three-resource permission map at two assertions; test source retained"
+  },
+  "coverage": "Local real five-service topology and synthetic business data; simulated CPR faults and browser HTTP 403 are labeled separately. Real upstream accounts and external egress traffic belong to later tasks."
+}

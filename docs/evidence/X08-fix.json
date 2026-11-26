@@ -1,0 +1,376 @@
+{
+  "task": "X08-fix",
+  "checked_at": "2026-11-25T17:24:10.029459+00:00",
+  "scope": "R1-R9 and SOCKS DNS semantics; real Mihomo v1.19.33 in isolated CPR stack",
+  "synthetic_accounts": "Created through admin account import; enabled=false and internal synthetic upstream",
+  "formal_test_files_changed": false,
+  "code_generation": "repair working tree on task/X08-engine-supervision",
+  "suites": {
+    "functional": [
+      {
+        "case": "same_account_serial",
+        "passed": true,
+        "pid": 83
+      },
+      {
+        "case": "different_accounts_same_node",
+        "passed": true,
+        "ports": [
+          25112,
+          25114
+        ]
+      },
+      {
+        "case": "authentication_a",
+        "passed": true,
+        "responses": {
+          "valid": "200",
+          "wrong": "403",
+          "cross": "403",
+          "empty": "407"
+        }
+      },
+      {
+        "case": "authentication_b",
+        "passed": true,
+        "responses": {
+          "valid": "200",
+          "wrong": "403",
+          "cross": "403",
+          "empty": "407"
+        }
+      },
+      {
+        "case": "controller_valid",
+        "passed": true,
+        "status": "200"
+      },
+      {
+        "case": "controller_wrong",
+        "passed": true,
+        "status": "401"
+      },
+      {
+        "case": "controller_cross",
+        "passed": true,
+        "status": "401"
+      },
+      {
+        "case": "canonical_identity",
+        "passed": true
+      },
+      {
+        "case": "binding_conflict",
+        "passed": true,
+        "status": 409
+      },
+      {
+        "case": "capacity",
+        "passed": true,
+        "status": 429
+      },
+      {
+        "case": "bounded_log_drain",
+        "passed": true,
+        "stdout_bytes": 1048576
+      },
+      {
+        "case": "resource_observation",
+        "passed": true,
+        "instances": [
+          {
+            "pid": 83,
+            "rss_bytes": 45883392,
+            "cpu_seconds": 0.07,
+            "cold_start_ms": 503
+          },
+          {
+            "pid": 90,
+            "rss_bytes": 45633536,
+            "cpu_seconds": 0.07,
+            "cold_start_ms": 519
+          }
+        ]
+      },
+      {
+        "case": "normal_sigterm_stop",
+        "passed": true,
+        "seconds": 0.049
+      },
+      {
+        "case": "stop_list_consistency",
+        "passed": true
+      },
+      {
+        "case": "start_tls",
+        "passed": true,
+        "status": 200,
+        "reason": null
+      },
+      {
+        "case": "traffic_tls",
+        "passed": true,
+        "response": {
+          "http": "200",
+          "exit": 0
+        },
+        "tls": true
+      },
+      {
+        "case": "tls_preserved_tls",
+        "passed": true
+      },
+      {
+        "case": "start_trap",
+        "passed": true,
+        "status": 200,
+        "reason": null
+      },
+      {
+        "case": "traffic_trap",
+        "passed": true,
+        "response": {
+          "http": "502",
+          "exit": 0
+        },
+        "tls": true
+      },
+      {
+        "case": "tls_preserved_trap",
+        "passed": true
+      },
+      {
+        "case": "start_bad",
+        "passed": true,
+        "status": 200,
+        "reason": null
+      },
+      {
+        "case": "traffic_bad",
+        "passed": true,
+        "response": {
+          "http": "502",
+          "exit": 0
+        },
+        "tls": null
+      },
+      {
+        "case": "admin_required",
+        "passed": true
+      },
+      {
+        "case": "account_exists",
+        "passed": true,
+        "status": 422
+      },
+      {
+        "case": "resource_limits",
+        "passed": true,
+        "memory": 1073741824,
+        "nano_cpus": 2000000000,
+        "pids": 256
+      },
+      {
+        "case": "legacy_reserved",
+        "passed": true,
+        "legacy_count": 6
+      }
+    ],
+    "lifecycle": [
+      {
+        "case": "crash_reaped_without_api",
+        "passed": true
+      },
+      {
+        "case": "crash_state",
+        "passed": true
+      },
+      {
+        "case": "crash_no_restart",
+        "passed": true
+      },
+      {
+        "case": "stop_failed_state_consistent",
+        "passed": true
+      },
+      {
+        "case": "conflict_listener",
+        "passed": true,
+        "status": 409,
+        "reason": "engine_port_conflict"
+      },
+      {
+        "case": "fixed_port_listener",
+        "passed": true
+      },
+      {
+        "case": "conflict_controller",
+        "passed": true,
+        "status": 409,
+        "reason": "engine_port_conflict"
+      },
+      {
+        "case": "fixed_port_controller",
+        "passed": true
+      },
+      {
+        "case": "artifact_rejected",
+        "passed": true,
+        "status": 503,
+        "reason": "engine_artifact_identity"
+      },
+      {
+        "case": "artifact_no_pid",
+        "passed": true
+      },
+      {
+        "case": "timeout_reaps",
+        "passed": true,
+        "seconds": 5.045,
+        "status": 504
+      },
+      {
+        "case": "other_entry_responsive",
+        "passed": true,
+        "list_seconds": 0.034,
+        "stop_seconds": 0.034
+      },
+      {
+        "case": "stop_cancels_start",
+        "passed": true,
+        "seconds": 0.033,
+        "start_status": 409
+      },
+      {
+        "case": "cancel_afterward_restart",
+        "passed": true
+      },
+      {
+        "case": "client_disconnect_reaps",
+        "passed": true,
+        "seconds": 0.217
+      },
+      {
+        "case": "stop_start_race",
+        "passed": true,
+        "status": 409
+      },
+      {
+        "case": "host_shutdown_cleanup",
+        "passed": true,
+        "seconds": 0.759
+      },
+      {
+        "case": "ports_survive_restart",
+        "passed": true
+      },
+      {
+        "case": "credentials_survive_restart",
+        "passed": true
+      },
+      {
+        "case": "completed",
+        "passed": true
+      }
+    ],
+    "persistence": [
+      {
+        "case": "corrupt_registry_fail_closed",
+        "passed": true,
+        "status": 503
+      },
+      {
+        "case": "registry_restored_ports",
+        "passed": true
+      },
+      {
+        "case": "missing_registry_fail_closed",
+        "passed": true
+      },
+      {
+        "case": "write_failure",
+        "passed": true,
+        "status": 503
+      },
+      {
+        "case": "write_failure_no_memory_entry",
+        "passed": true
+      },
+      {
+        "case": "retry_persisted",
+        "passed": true
+      },
+      {
+        "case": "retry_survives_restart",
+        "passed": true
+      },
+      {
+        "case": "same_size_artifact_rejected",
+        "passed": true,
+        "bytes": 62079102,
+        "status": 503
+      },
+      {
+        "case": "invalid_config_rejected",
+        "passed": true,
+        "reason": "engine_configuration_invalid"
+      },
+      {
+        "case": "public_projection_private",
+        "passed": true
+      },
+      {
+        "case": "working_after_faults",
+        "passed": true
+      }
+    ],
+    "dns": [
+      {
+        "case": "local_dns_explicit_rejection",
+        "passed": true,
+        "status": 422
+      },
+      {
+        "case": "invalid_connection_not_reserved",
+        "passed": true
+      },
+      {
+        "case": "remote_dns_start",
+        "passed": true,
+        "status": 200
+      },
+      {
+        "case": "remote_dns_domain_transmitted",
+        "passed": true,
+        "response": {
+          "http": "200",
+          "exit": 0
+        },
+        "observation": {
+          "address_type": 3,
+          "host": "remote.x08.test",
+          "port": 80
+        }
+      }
+    ]
+  },
+  "passed_cases": 61,
+  "limits": {
+    "platform": "linux/amd64",
+    "max_observed_engines": 2,
+    "configured_max": 2,
+    "memory_bytes": 1073741824,
+    "nano_cpus": 2000000000,
+    "pids": 256,
+    "log_bytes_per_stream": 1048576,
+    "larger_scale": "not_run",
+    "public_upstream_traffic": "not_run",
+    "socks": "explicit remote TCP only; local/default and UDP rejected; upstream localhost mapping retained"
+  },
+  "artifact": {
+    "version": "v1.19.33",
+    "unpacked_sha256": "817f50b3ac6a8b1c4360c5cf2961906057f3a883d970ebbcb0028a01632b620f",
+    "tampered_appended": "rejected",
+    "tampered_same_size": "rejected"
+  }
+}
