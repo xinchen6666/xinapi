@@ -145,24 +145,30 @@ async fn locked_operation(
         .map_err(unavailable)
 }
 
-const RESERVATION_HAS_REFERENCES: &str = "(
+// 三处查询共用同一引用判定，SQL 文本在编译期拼接
+macro_rules! reservation_has_references {
+    () => {
+        "(
     exists(select 1 from provider_accounts a where a.id=o.planned_account_id or a.outbound_proxy_id=o.proxy_id)
     or exists(select 1 from managed_routes r where r.account_id=o.planned_account_id or r.proxy_id=o.proxy_id)
     or exists(select 1 from outbound_proxies p where p.id=o.proxy_id)
-)";
+)"
+    };
+}
 
 async fn require_zero_references(
     tx: &mut Transaction<'_, Postgres>,
     operation_id: Uuid,
 ) -> AdminStoreResult<()> {
-    let sql = format!(
-        "select {RESERVATION_HAS_REFERENCES} from managed_oauth_operations o where o.operation_id=$1"
-    );
-    let referenced: bool = sqlx::query_scalar(&sql)
-        .bind(operation_id)
-        .fetch_one(&mut **tx)
-        .await
-        .map_err(unavailable)?;
+    let referenced: bool = sqlx::query_scalar(concat!(
+        "select ",
+        reservation_has_references!(),
+        " from managed_oauth_operations o where o.operation_id=$1",
+    ))
+    .bind(operation_id)
+    .fetch_one(&mut **tx)
+    .await
+    .map_err(unavailable)?;
     if referenced {
         return Err(conflict());
     }
@@ -354,17 +360,16 @@ impl OAuthOperationStore for PgOAuthOperationStore {
         if account_ids.is_empty() {
             return Ok(Vec::new());
         }
-        let sql = format!(
-            "select o.operation_id, o.planned_account_id, o.expires_at, o.phase,
-                    {RESERVATION_HAS_REFERENCES}
-             from managed_oauth_operations o where o.is_new and o.phase <> 'completed'
-             and o.planned_account_id = any($1)"
-        );
-        let rows: Vec<(Uuid, String, DateTime<Utc>, String, bool)> = sqlx::query_as(&sql)
-            .bind(account_ids)
-            .fetch_all(&self.pool)
-            .await
-            .map_err(unavailable)?;
+        let rows: Vec<(Uuid, String, DateTime<Utc>, String, bool)> = sqlx::query_as(concat!(
+            "select o.operation_id, o.planned_account_id, o.expires_at, o.phase, ",
+            reservation_has_references!(),
+            " from managed_oauth_operations o where o.is_new and o.phase <> 'completed'
+              and o.planned_account_id = any($1)",
+        ))
+        .bind(account_ids)
+        .fetch_all(&self.pool)
+        .await
+        .map_err(unavailable)?;
         let now = Utc::now();
         Ok(rows
             .into_iter()
@@ -430,14 +435,16 @@ impl OAuthOperationStore for PgOAuthOperationStore {
         operation_id: &str,
         owner: &MutationActor,
     ) -> AdminStoreResult<bool> {
-        let sql = format!(
-            "select exists(select 1 from managed_oauth_operations o where operation_id=$1 and owner=$2 and is_new and phase in ('failed','cancelled') and not {RESERVATION_HAS_REFERENCES})"
-        );
-        sqlx::query_scalar(&sql)
-            .bind(id(operation_id)?)
-            .bind(Json(owner))
-            .fetch_one(&self.pool)
-            .await
-            .map_err(unavailable)
+        sqlx::query_scalar(concat!(
+            "select exists(select 1 from managed_oauth_operations o where operation_id=$1
+             and owner=$2 and is_new and phase in ('failed','cancelled') and not ",
+            reservation_has_references!(),
+            ")",
+        ))
+        .bind(id(operation_id)?)
+        .bind(Json(owner))
+        .fetch_one(&self.pool)
+        .await
+        .map_err(unavailable)
     }
 }
