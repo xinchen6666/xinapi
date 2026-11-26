@@ -545,6 +545,12 @@ impl DefaultExecutionService {
                             return Err(GatewayError::new(GatewayErrorKind::PolicyDenied, "Continuation account is outside the client account scope."));
                         }
                         Some(pin) => ContinuationBinding::Pinned(pin),
+                        None if request.client.policy.plaintext_key().expose_for_auth().starts_with("xinapi_member_") => {
+                            return Err(GatewayError::new(
+                                GatewayErrorKind::PolicyDenied,
+                                "Continuation ownership is unavailable. Start a new response with the full history.",
+                            ));
+                        }
                         None => ContinuationBinding::External(previous.clone()),
                     })
                 }

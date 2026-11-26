@@ -131,7 +131,14 @@ func Distribute() func(c *gin.Context) {
 			}
 		}
 		common.SetContextKey(c, constant.ContextKeyRequestStartTime, time.Now())
-		SetupContextForSelectedChannel(c, channel, modelRequest.Model)
+		if channel != nil {
+			if setupErr := SetupContextForSelectedChannel(c, channel, modelRequest.Model); setupErr != nil {
+				abortWithOpenAiMessage(c, setupErr.StatusCode, setupErr.Error(), setupErr.GetErrorCode())
+				return
+			}
+		} else {
+			c.Set("original_model", modelRequest.Model)
+		}
 		c.Next()
 		if channel != nil && c.Writer != nil && c.Writer.Status() < http.StatusBadRequest {
 			service.RecordChannelAffinity(c, channel.Id)
@@ -623,6 +630,10 @@ func SetupContextForSelectedChannel(c *gin.Context, channel *model.Channel, mode
 		logTaskPluginChannelDecision(c, nil, modelName, "channel_rejected", "nil_channel")
 		return types.NewError(errors.New("channel is nil"), types.ErrorCodeGetChannelFailed, types.ErrOptionWithSkipRetry())
 	}
+	managedMember, memberErr := service.SetupCprMemberRelay(c, channel)
+	if memberErr != nil {
+		return memberErr
+	}
 	if expectedPlugin != "" && !channelMatchesExpectedTaskPlugin(c, channel, expectedPlugin) {
 		logTaskPluginChannelDecision(c, channel, modelName, "channel_rejected", "identity_mismatch")
 		return types.NewError(
@@ -709,15 +720,23 @@ func SetupContextForSelectedChannel(c *gin.Context, channel *model.Channel, mode
 	if nil != channel.OpenAIOrganization && *channel.OpenAIOrganization != "" {
 		common.SetContextKey(c, constant.ContextKeyChannelOrganization, *channel.OpenAIOrganization)
 	}
-	common.SetContextKey(c, constant.ContextKeyChannelAutoBan, channel.GetAutoBan())
+	common.SetContextKey(c, constant.ContextKeyChannelAutoBan, !managedMember && channel.GetAutoBan())
 	common.SetContextKey(c, constant.ContextKeyChannelModelMapping, channel.GetModelMapping())
-	common.SetContextKey(c, constant.ContextKeyChannelStatusCodeMapping, channel.GetStatusCodeMapping())
-
-	key, index, newAPIError := channel.GetNextEnabledKey()
-	if newAPIError != nil {
-		return newAPIError
+	statusMapping := channel.GetStatusCodeMapping()
+	if managedMember {
+		statusMapping = ""
 	}
-	if channel.ChannelInfo.IsMultiKey {
+	common.SetContextKey(c, constant.ContextKeyChannelStatusCodeMapping, statusMapping)
+
+	key, index := service.CprMemberRelayPlaceholder, 0
+	if !managedMember {
+		var newAPIError *types.NewAPIError
+		key, index, newAPIError = channel.GetNextEnabledKey()
+		if newAPIError != nil {
+			return newAPIError
+		}
+	}
+	if !managedMember && channel.ChannelInfo.IsMultiKey {
 		common.SetContextKey(c, constant.ContextKeyChannelIsMultiKey, true)
 		common.SetContextKey(c, constant.ContextKeyChannelMultiKeyIndex, index)
 	} else {

@@ -115,14 +115,14 @@ type responsesWSSession struct {
 	// clientWriteBudget is guarded by clientWriteMu.
 	clientWriteBudget helper.StreamWriteBudget
 
-	// These fields belong to the serial request worker and describe the actual
-	// established connection. Per-request token/user data is never stored here.
+	// 串行请求任务保存实际连接状态；CPR 连接仅持有成员授权标识
 	lastResponseID  string
 	lockedModel     string
 	lockedChannelID int
 	lockedGroup     string
 	lockedKey       string
 	lockedKeyIndex  int
+	lockedMember    service.CprMemberBinding
 	lockedContext   map[appconstant.ContextKey]any
 	lockedRoute     dto.AdvancedCustomRoute
 }
@@ -317,9 +317,8 @@ func (s *responsesWSSession) runCall(c *gin.Context, state *responsesWSCallState
 			recordResponsesWSPluginError(c, info, apiErr)
 			return apiErr
 		}
-		if err := s.writeTarget(websocket.TextMessage, payload); err != nil {
-			state.closeCode = websocket.CloseInternalServerErr
-			return types.NewError(err, types.ErrorCodeBadResponse, types.ErrOptionWithSkipRetry())
+		if apiErr = s.writeCreate(c, state, payload); apiErr != nil {
+			return apiErr
 		}
 	} else {
 		retry := &service.RetryParam{Ctx: c, TokenGroup: common.GetContextKeyString(c, appconstant.ContextKeyUsingGroup), ModelName: modelName, RequestPath: c.Request.URL.Path, Retry: common.GetPointer(0)}
@@ -371,9 +370,9 @@ func (s *responsesWSSession) runCall(c *gin.Context, state *responsesWSCallState
 			if !s.setTarget(target) {
 				return types.NewError(context.Canceled, types.ErrorCodeBadResponse, types.ErrOptionWithSkipRetry())
 			}
-			if err := s.writeTarget(websocket.TextMessage, payload); err != nil {
-				state.closeCode = websocket.CloseInternalServerErr
-				return types.NewError(err, types.ErrorCodeBadResponse, types.ErrOptionWithSkipRetry())
+			s.lockedMember, _ = service.CprMemberRelayBinding(c)
+			if apiErr = s.writeCreate(c, state, payload); apiErr != nil {
+				return apiErr
 			}
 			s.lockedModel, s.lockedChannelID, s.lockedGroup = modelName, channel.Id, info.UsingGroup
 			s.lockedKey, s.lockedKeyIndex = info.ApiKey, info.ChannelMultiKeyIndex
@@ -650,20 +649,37 @@ func responsesWSErrorEndsRequest(event responsesWSErrorEvent, streamID, response
 }
 
 func (s *responsesWSSession) restoreConnectionContext(c *gin.Context, model string) *types.NewAPIError {
-	// The channel type is not rechecked: a locked channel keeps its type, and
-	// the FilterResponsesWebSocket rules were applied when it was selected.
+	// Ordinary channels keep the selected adaptor; member channels also confirm
+	// their current access and exact transport contract.
 	channel, err := appmodel.CacheGetChannel(s.lockedChannelID)
-	if err != nil || channel == nil || channel.Status != common.ChannelStatusEnabled || !channel.GetSetting().ResponsesWebSocketEnabled {
+	if err != nil || channel == nil || channel.Status != common.ChannelStatusEnabled {
 		return types.NewErrorWithStatusCode(errors.New("Responses WebSocket is disabled for this channel"), types.ErrorCode(appdto.FilterResponsesWebSocket), http.StatusForbidden, types.ErrOptionWithSkipRetry())
 	}
-	keyEnabled := channel.Key == s.lockedKey
-	if channel.ChannelInfo.IsMultiKey {
-		keys := channel.GetKeys()
-		status := channel.ChannelInfo.MultiKeyStatusList[s.lockedKeyIndex]
-		keyEnabled = s.lockedKeyIndex >= 0 && s.lockedKeyIndex < len(keys) && keys[s.lockedKeyIndex] == s.lockedKey && (status == 0 || status == common.ChannelStatusEnabled)
+	managed, channelErr := service.CheckCprMemberChannel(channel)
+	if channelErr != nil {
+		return channelErr
 	}
-	if !keyEnabled {
-		return types.NewErrorWithStatusCode(errors.New("the upstream connection credential is no longer enabled"), types.ErrorCodeAccessDenied, http.StatusForbidden, types.ErrOptionWithSkipRetry())
+	settings := channel.GetSetting()
+	if !settings.ResponsesWebSocketEnabled {
+		return types.NewErrorWithStatusCode(errors.New("Responses WebSocket is disabled for this channel"), types.ErrorCode(appdto.FilterResponsesWebSocket), http.StatusForbidden, types.ErrOptionWithSkipRetry())
+	}
+	if managed != (s.lockedMember.MemberID > 0) {
+		return types.NewErrorWithStatusCode(errors.New("The upstream channel identity changed; reconnect required."), types.ErrorCodeAccessDenied, http.StatusForbidden, types.ErrOptionWithSkipRetry())
+	}
+	if managed {
+		if apiErr := service.RecheckCprMemberBinding(c, s.lockedMember); apiErr != nil {
+			return apiErr
+		}
+	} else {
+		keyEnabled := channel.Key == s.lockedKey
+		if channel.ChannelInfo.IsMultiKey {
+			keys := channel.GetKeys()
+			status := channel.ChannelInfo.MultiKeyStatusList[s.lockedKeyIndex]
+			keyEnabled = s.lockedKeyIndex >= 0 && s.lockedKeyIndex < len(keys) && keys[s.lockedKeyIndex] == s.lockedKey && (status == 0 || status == common.ChannelStatusEnabled)
+		}
+		if !keyEnabled {
+			return types.NewErrorWithStatusCode(errors.New("the upstream connection credential is no longer enabled"), types.ErrorCodeAccessDenied, http.StatusForbidden, types.ErrOptionWithSkipRetry())
+		}
 	}
 	// Changes that alter the physical upstream connection require a new
 	// handshake. Request-level settings can be refreshed without rotating keys.
@@ -671,7 +687,7 @@ func (s *responsesWSSession) restoreConnectionContext(c *gin.Context, model stri
 		!reflect.DeepEqual(channel.GetHeaderOverride(), s.lockedContext[appconstant.ContextKeyChannelHeaderOverride]) {
 		return types.NewErrorWithStatusCode(errors.New("upstream connection settings changed; reconnect required"), types.ErrorCodeAccessDenied, http.StatusForbidden, types.ErrOptionWithSkipRetry())
 	}
-	if previous, ok := s.lockedContext[appconstant.ContextKeyChannelSetting].(dto.ChannelSettings); ok && previous.Proxy != channel.GetSetting().Proxy {
+	if previous, ok := s.lockedContext[appconstant.ContextKeyChannelSetting].(dto.ChannelSettings); ok && previous.Proxy != settings.Proxy {
 		return types.NewErrorWithStatusCode(errors.New("upstream proxy changed; reconnect required"), types.ErrorCodeAccessDenied, http.StatusForbidden, types.ErrOptionWithSkipRetry())
 	}
 	// An advanced custom connection was dialed through the route matched for
@@ -708,11 +724,15 @@ func (s *responsesWSSession) restoreConnectionContext(c *gin.Context, model stri
 	for key, value := range s.lockedContext {
 		c.Set(string(key), value)
 	}
-	common.SetContextKey(c, appconstant.ContextKeyChannelSetting, channel.GetSetting())
+	common.SetContextKey(c, appconstant.ContextKeyChannelSetting, settings)
 	common.SetContextKey(c, appconstant.ContextKeyChannelOtherSetting, otherSettings)
 	common.SetContextKey(c, appconstant.ContextKeyChannelParamOverride, channel.GetParamOverride())
 	common.SetContextKey(c, appconstant.ContextKeyChannelModelMapping, channel.GetModelMapping())
-	common.SetContextKey(c, appconstant.ContextKeyChannelStatusCodeMapping, channel.GetStatusCodeMapping())
+	statusMapping := channel.GetStatusCodeMapping()
+	if managed {
+		statusMapping = ""
+	}
+	common.SetContextKey(c, appconstant.ContextKeyChannelStatusCodeMapping, statusMapping)
 	policy := service.RequestPolicy(c)
 	policy.BeginAttempt(channel, s.lockedGroup)
 	policy.AddEvent(service.PolicyEvent{ChannelID: channel.Id, Decision: service.PolicyDecision{Action: "select", Reason: "pinned_channel", Source: "channel_constraint"}})
@@ -855,9 +875,30 @@ func (s *responsesWSSession) setTarget(target *websocket.Conn) bool {
 	return true
 }
 
+// writeCreate 持有发送锁时重核成员授权，随后提交当前帧
+func (s *responsesWSSession) writeCreate(c *gin.Context, state *responsesWSCallState, body []byte) *types.NewAPIError {
+	s.targetWriteMu.Lock()
+	defer s.targetWriteMu.Unlock()
+	if s.lockedMember.MemberID > 0 {
+		if apiErr := service.RecheckCprMemberBinding(c, s.lockedMember); apiErr != nil {
+			state.closeCode = websocket.ClosePolicyViolation
+			return apiErr
+		}
+	}
+	if err := s.writeTargetLocked(websocket.TextMessage, body); err != nil {
+		state.closeCode = websocket.CloseInternalServerErr
+		return types.NewError(err, types.ErrorCodeBadResponse, types.ErrOptionWithSkipRetry())
+	}
+	return nil
+}
+
 func (s *responsesWSSession) writeTarget(kind int, message []byte) error {
 	s.targetWriteMu.Lock()
 	defer s.targetWriteMu.Unlock()
+	return s.writeTargetLocked(kind, message)
+}
+
+func (s *responsesWSSession) writeTargetLocked(kind int, message []byte) error {
 	target := s.getTarget()
 	if target == nil {
 		return errors.New("responses websocket upstream is not connected")
