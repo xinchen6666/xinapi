@@ -310,7 +310,8 @@ impl CredentialsService {
                     "start_failed",
                 )
                 .await;
-            self.reclaim_authorization(&operation, context).await?;
+            self.reclaim_authorization(&operation, &context.actor)
+                .await?;
         }
         result
     }
@@ -442,7 +443,7 @@ impl CredentialsService {
                 .fail(&id, &context.actor, "completion_unknown")
                 .await;
             if let Some(current) = ports.store.get(&id, &context.actor).await.map_err(error)? {
-                self.reclaim_authorization(&current, context).await?;
+                self.reclaim_authorization(&current, &context.actor).await?;
             }
         }
         self.oauth_operation(&id, context).await
@@ -468,18 +469,36 @@ impl CredentialsService {
             .cancel(&id, &context.actor)
             .await
             .map_err(error)?;
-        self.reclaim_authorization(&operation, context).await?;
+        self.reclaim_authorization(&operation, &context.actor)
+            .await?;
         Ok(operation.view(false))
     }
+    pub async fn reclaim_expired_oauth_reservation(
+        &self,
+        id: &str,
+        context: &MutationContext,
+    ) -> Result<String, AdminError> {
+        let id = operation_id(id)?;
+        let ports = self.managed()?;
+        let operation = ports
+            .store
+            .cancel_expired_reservation(&id, context)
+            .await
+            .map_err(error)?;
+        self.reclaim_authorization(&operation, &operation.owner)
+            .await?;
+        Ok(id)
+    }
+
     async fn reclaim_authorization(
         &self,
         operation: &OAuthOperation,
-        context: &MutationContext,
+        owner: &crate::model::MutationActor,
     ) -> Result<(), AdminError> {
         let ports = self.managed()?;
         if ports
             .store
-            .reclaimable(&operation.request.operation_id, &context.actor)
+            .reclaimable(&operation.request.operation_id, owner)
             .await
             .map_err(error)?
         {

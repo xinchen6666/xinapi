@@ -23,6 +23,7 @@ use gateway_admin::model::{
         AccountCost, AccountGroupFilter, AccountListQuery, AccountModelUsage, AccountSort,
         AccountSortField, AccountStatus as DomainAccountStatus, AccountUpdateResult, AccountUsage,
         AccountWeight, AccountsUpdateResult, BatchUpdateAccounts, SortDirection, UpdateAccount,
+        UpdateAccountGroups,
     },
     provider_credentials::{
         AccountDirectoryItem, AccountDirectoryPage, AccountExportBundle, AccountPersonalInfo,
@@ -83,4 +84,4 @@ use credentials::{
     validate_wire_group_ids,
 };
 use presenter::*;
-use wire::BatchUpdatedAccountsData;
+use wire::{BatchUpdateAccountsCommand, BatchUpdatedAccountsData};

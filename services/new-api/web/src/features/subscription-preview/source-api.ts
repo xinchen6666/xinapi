@@ -28,18 +28,25 @@ import type {
 type Response<T> = { success: boolean; message: string; data: T }
 const sourcePath = '/api/account-egress/subscription-sources'
 
-export async function listSources(): Promise<SourceSummary[]> {
+export async function listSources(
+  signal?: AbortSignal
+): Promise<SourceSummary[]> {
   const response = await api.get<Response<{ items: SourceSummary[] }>>(
     sourcePath,
-    { skipBusinessError: true }
+    { signal, disableDuplicate: true, skipBusinessError: true }
   )
   return requireServerSuccess(response.data).data.items ?? []
 }
-export async function sourceDetail(sourceId: string): Promise<SourceDetail> {
+export async function sourceDetail(
+  sourceId: string,
+  signal?: AbortSignal
+): Promise<SourceDetail> {
   const response = await api.get<Response<SourceDetail>>(
     `${sourcePath}/detail`,
     {
       params: { source_id: sourceId },
+      signal,
+      disableDuplicate: true,
       skipBusinessError: true,
     }
   )
@@ -55,7 +62,7 @@ export async function saveSource(input: {
   const response = await api.post<Response<SourceDetail>>(
     `${sourcePath}/${operation}`,
     input,
-    { skipBusinessError: true }
+    { singleUseAuthorization: true, skipBusinessError: true }
   )
   return requireServerSuccess(response.data).data
 }
@@ -66,7 +73,7 @@ export async function refreshSource(input: {
   const response = await api.post<Response<SourceDetail>>(
     `${sourcePath}/refresh`,
     input,
-    { skipBusinessError: true }
+    { singleUseAuthorization: true, skipBusinessError: true }
   )
   return requireServerSuccess(response.data).data
 }
@@ -76,7 +83,7 @@ export async function approveSource(
   const response = await api.post<Response<SourceDetail>>(
     `${sourcePath}/approve`,
     input,
-    { skipBusinessError: true }
+    { singleUseAuthorization: true, skipBusinessError: true }
   )
   return requireServerSuccess(response.data).data
 }

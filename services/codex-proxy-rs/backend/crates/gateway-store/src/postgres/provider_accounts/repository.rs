@@ -523,75 +523,8 @@ impl ProviderAccountAdminRepository for PgProviderAccountRepository {
         &self,
         command: BatchUpdateProviderAccountsAdmin,
     ) -> StoreResult<Revision> {
-        validate_batch_update_account_ids(&command.account_ids)?;
-        if let Some(group_ids) = &command.group_ids {
-            validate_batch_update_group_ids(group_ids)?;
-        }
-        let mut transaction = self.pool.begin().await.map_err(|source| {
-            postgres_unavailable("begin provider account admin state change", source)
-        })?;
-        let result = async {
-            let revision = bump_config_revision_in_transaction(&mut transaction).await?;
-            if command.quota_settings.is_some() {
-                for id in &command.account_ids {
-                    let pause = command.pauses.get(id).ok_or_else(|| invalid("缺少额度桶设置结论"))?;
-                    let updated = sqlx::query("update provider_accounts set quota_settings = $2, quota_paused = $3
-                        where id = $1 and credential_revision = $4 and quota_settings = $6
-                          and ($7 or quota_observed_at is not distinct from $5)")
-                        .bind(id).bind(sqlx::types::Json(&pause.settings)).bind(pause.paused)
-                        .bind(to_i64(pause.revision.get())?).bind(pause.observed_at)
-                        .bind(sqlx::types::Json(&pause.previous_settings)).bind(pause.settings.is_empty())
-                        .execute(&mut *transaction).await.map_err(|source| postgres_unavailable("set account quota settings", source))?;
-                    if updated.rows_affected() == 0 {
-                        return Err(StoreError::Conflict { source: None, entity: ENTITY, id: id.clone(), kind: ConflictKind::StaleRevision });
-                    }
-                }
-            }
-            update_provider_accounts_scheduling_in_transaction(
-                &mut transaction,
-                &command.account_ids,
-                command.enabled,
-                command.concurrency_limit,
-                command.weight,
-                command.model_access.as_ref(),
-                command.outbound_proxy.as_ref(),
-            )
-            .await?;
-            if let Some(enabled) = command.auto_use_quota_credits {
-                sqlx::query("update provider_accounts set auto_use_quota_credits = $2 where id = any($1) and auto_use_quota_credits <> $2")
-                    .bind(&command.account_ids).bind(enabled).execute(&mut *transaction).await
-                    .map_err(|source| postgres_unavailable("set account quota credits policy", source))?;
-            }
-            if let Some(group_ids) = &command.group_ids {
-                replace_account_group_assignments_in_transaction(
-                    &mut transaction,
-                    &command.account_ids,
-                    group_ids,
-                )
-                .await?;
-            }
-            if let Some(notes) = command.notes.as_deref() {
-                update_provider_account_notes_in_transaction(
-                    &mut transaction,
-                    &command.account_ids,
-                    notes,
-                )
-                .await?;
-            }
-            if let Some(name) = command.name.as_deref() {
-                update_provider_account_name_in_transaction(
-                    &mut transaction,
-                    &command.account_ids,
-                    name,
-                )
-                .await?;
-            }
-            append_admin_audit_event_in_transaction(&mut transaction, command.audit, revision)
-                .await?;
-            Ok(revision)
-        }
-        .await;
-        finish_admin_transaction(transaction, result, "provider account admin state change").await
+        self.apply_provider_account_admin_update(command, None)
+            .await
     }
 
     async fn recover_provider_account_admin(
@@ -667,6 +600,119 @@ impl ProviderAccountAdminRepository for PgProviderAccountRepository {
         }
         .await;
         finish_admin_transaction(transaction, result, "provider account admin deletion").await
+    }
+}
+
+impl PgProviderAccountRepository {
+    pub(super) async fn apply_provider_account_admin_update(
+        &self,
+        command: BatchUpdateProviderAccountsAdmin,
+        expected_group_ids: Option<&[AccountGroupId]>,
+    ) -> StoreResult<Revision> {
+        validate_batch_update_account_ids(&command.account_ids)?;
+        if let Some(group_ids) = &command.group_ids {
+            validate_batch_update_group_ids(group_ids)?;
+        }
+        let group_precondition = match expected_group_ids {
+            Some(expected) => {
+                let [account_id] = command.account_ids.as_slice() else {
+                    return Err(invalid("conditional group update requires one account"));
+                };
+                if command.group_ids.is_none() {
+                    return Err(invalid(
+                        "conditional group update requires group assignments",
+                    ));
+                }
+                validate_batch_update_group_ids(expected)?;
+                Some((account_id, expected))
+            }
+            None => None,
+        };
+        let mut transaction = self.pool.begin().await.map_err(|source| {
+            postgres_unavailable("begin provider account admin state change", source)
+        })?;
+        let result = async {
+            let revision = bump_config_revision_in_transaction(&mut transaction).await?;
+            if command.quota_settings.is_some() {
+                for id in &command.account_ids {
+                    let pause = command.pauses.get(id).ok_or_else(|| invalid("缺少额度桶设置结论"))?;
+                    let updated = sqlx::query("update provider_accounts set quota_settings = $2, quota_paused = $3
+                        where id = $1 and credential_revision = $4 and quota_settings = $6
+                          and ($7 or quota_observed_at is not distinct from $5)")
+                        .bind(id).bind(sqlx::types::Json(&pause.settings)).bind(pause.paused)
+                        .bind(to_i64(pause.revision.get())?).bind(pause.observed_at)
+                        .bind(sqlx::types::Json(&pause.previous_settings)).bind(pause.settings.is_empty())
+                        .execute(&mut *transaction).await.map_err(|source| postgres_unavailable("set account quota settings", source))?;
+                    if updated.rows_affected() == 0 {
+                        return Err(StoreError::Conflict { source: None, entity: ENTITY, id: id.clone(), kind: ConflictKind::StaleRevision });
+                    }
+                }
+            }
+            update_provider_accounts_scheduling_in_transaction(
+                &mut transaction,
+                &command.account_ids,
+                command.enabled,
+                command.concurrency_limit,
+                command.weight,
+                command.model_access.as_ref(),
+                command.outbound_proxy.as_ref(),
+            )
+            .await?;
+            if let Some(enabled) = command.auto_use_quota_credits {
+                sqlx::query("update provider_accounts set auto_use_quota_credits = $2 where id = any($1) and auto_use_quota_credits <> $2")
+                    .bind(&command.account_ids).bind(enabled).execute(&mut *transaction).await
+                    .map_err(|source| postgres_unavailable("set account quota credits policy", source))?;
+            }
+            if let Some((account_id, expected)) = group_precondition {
+                // 控制面版本行锁覆盖账号、分组及插件成员写入，确保核对和替换共享提交顺序
+                let current = sqlx::query_scalar::<_, String>(
+                    "select account_group_id from account_group_accounts where provider_account_id = $1",
+                )
+                .bind(account_id)
+                .fetch_all(&mut *transaction)
+                .await
+                .map_err(|source| postgres_unavailable("load account group precondition", source))?;
+                let current = current.iter().map(String::as_str).collect::<BTreeSet<_>>();
+                let expected = expected.iter().map(AccountGroupId::as_str).collect::<BTreeSet<_>>();
+                if current != expected {
+                    return Err(StoreError::Conflict {
+                        source: None,
+                        entity: ENTITY,
+                        id: account_id.clone(),
+                        kind: ConflictKind::StaleRevision,
+                    });
+                }
+            }
+            if let Some(group_ids) = &command.group_ids {
+                replace_account_group_assignments_in_transaction(
+                    &mut transaction,
+                    &command.account_ids,
+                    group_ids,
+                )
+                .await?;
+            }
+            if let Some(notes) = command.notes.as_deref() {
+                update_provider_account_notes_in_transaction(
+                    &mut transaction,
+                    &command.account_ids,
+                    notes,
+                )
+                .await?;
+            }
+            if let Some(name) = command.name.as_deref() {
+                update_provider_account_name_in_transaction(
+                    &mut transaction,
+                    &command.account_ids,
+                    name,
+                )
+                .await?;
+            }
+            append_admin_audit_event_in_transaction(&mut transaction, command.audit, revision)
+                .await?;
+            Ok(revision)
+        }
+        .await;
+        finish_admin_transaction(transaction, result, "provider account admin state change").await
     }
 }
 

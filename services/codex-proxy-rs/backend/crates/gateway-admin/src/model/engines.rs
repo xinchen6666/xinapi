@@ -110,7 +110,22 @@ pub struct EngineSnapshot {
     pub cpu_seconds: Option<f64>,
     pub cold_start_ms: Option<u64>,
     pub last_error: Option<String>,
+    pub occupies_slot: bool,
 }
+
+#[derive(Debug, Clone, Copy, Serialize)]
+pub struct EngineCapacity {
+    pub limit: usize,
+    pub used: usize,
+    pub available: usize,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct EngineList {
+    pub items: Vec<EngineView>,
+    pub capacity: EngineCapacity,
+}
+
 #[derive(Debug, Clone, Serialize)]
 pub struct EngineView {
     pub entry_id: String,
@@ -129,6 +144,10 @@ pub struct EngineView {
     pub cpu_seconds: Option<f64>,
     pub cold_start_ms: Option<u64>,
     pub last_error: Option<String>,
+    pub occupies_slot: bool,
+    pub expires_at: Option<DateTime<Utc>>,
+    pub reclaimable: bool,
+    pub stoppable: bool,
 }
 impl From<EngineSnapshot> for EngineView {
     fn from(s: EngineSnapshot) -> Self {
@@ -149,6 +168,10 @@ impl From<EngineSnapshot> for EngineView {
             cpu_seconds: s.cpu_seconds,
             cold_start_ms: s.cold_start_ms,
             last_error: s.last_error,
+            occupies_slot: s.occupies_slot,
+            expires_at: None,
+            reclaimable: false,
+            stoppable: false,
         }
     }
 }
@@ -188,6 +211,12 @@ pub enum EngineServiceError {
     NodeInactive,
     #[error("engine node options are unsupported")]
     NodeUnsupported,
+    #[error("approved engine node version changed")]
+    NodeVersionChanged,
+    #[error("engine node connection test timed out")]
+    NodeTestTimeout,
+    #[error("only a published account engine can be stopped")]
+    StopForbidden,
     #[error("engine process failed")]
     ProcessFailed,
     #[error("engine storage is unavailable")]
@@ -215,6 +244,9 @@ impl EngineServiceError {
             Self::NodeMissing => "engine_node_missing",
             Self::NodeInactive => "engine_node_inactive",
             Self::NodeUnsupported => "engine_node_unsupported",
+            Self::NodeVersionChanged => "engine_node_version_changed",
+            Self::NodeTestTimeout => "engine_node_test_timeout",
+            Self::StopForbidden => "engine_stop_forbidden",
             Self::ProcessFailed => "engine_process_failed",
             Self::Store => "engine_store_unavailable",
             Self::Configuration => "engine_configuration_invalid",

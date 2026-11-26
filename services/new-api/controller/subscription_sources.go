@@ -11,14 +11,12 @@ import (
 	"github.com/QuantumNous/new-api/dto"
 	"github.com/QuantumNous/new-api/service"
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 )
 
 const maxSourceRevision uint64 = 9007199254740991
 
-func sourceRevisionValid(id string, revision uint64) bool {
-	_, err := uuid.Parse(id)
-	return err == nil && revision > 0 && revision <= maxSourceRevision
+func sourceRevisionValid(id *string, revision uint64) bool {
+	return canonicalAccountEgressUUID(id) && revision > 0 && revision <= maxSourceRevision
 }
 func sourceNameValid(name string) bool { return name != "" && utf8.RuneCountInString(name) <= 100 }
 func sourceURLValid(value string) bool {
@@ -29,6 +27,11 @@ func sourceRequestInvalid(c *gin.Context) {
 	common.ApiErrorStatus(c, http.StatusBadRequest, common.NewMessage("Review the subscription source fields and approval decisions."), gin.H{"code": "subscription_source_request_invalid"})
 }
 func sourceResponse(c *gin.Context, data any, err error) {
+	var transportError *service.CPRManagementError
+	if errors.As(err, &transportError) {
+		accountEgressResponse(c, nil, err)
+		return
+	}
 	if err != nil {
 		var sourceError *service.SubscriptionSourceError
 		if errors.As(err, &sourceError) {
@@ -49,7 +52,7 @@ func GetSubscriptionSources(c *gin.Context) {
 }
 func GetSubscriptionSourceDetail(c *gin.Context) {
 	id := c.Query("source_id")
-	if _, err := uuid.Parse(id); err != nil {
+	if !canonicalAccountEgressUUID(&id) {
 		sourceRequestInvalid(c)
 		return
 	}
@@ -70,7 +73,7 @@ func CreateSubscriptionSource(c *gin.Context) {
 		return
 	}
 	data, err := service.CreateSubscriptionSource(c.Request.Context(), input)
-	sourceResponse(c, data, err)
+	finishSubscriptionSourceAction(c, data, err, "account_egress.source_create", "")
 }
 func UpdateSubscriptionSource(c *gin.Context) {
 	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, 16<<10)
@@ -91,22 +94,22 @@ func UpdateSubscriptionSource(c *gin.Context) {
 			input.SourceURL = &value
 		}
 	}
-	if !sourceRevisionValid(input.SourceID, input.ExpectedRevision) || !sourceNameValid(input.Name) {
+	if !sourceRevisionValid(&input.SourceID, input.ExpectedRevision) || !sourceNameValid(input.Name) {
 		sourceRequestInvalid(c)
 		return
 	}
 	data, err := service.UpdateSubscriptionSource(c.Request.Context(), input)
-	sourceResponse(c, data, err)
+	finishSubscriptionSourceAction(c, data, err, "account_egress.source_update", input.SourceID)
 }
 func RefreshSubscriptionSource(c *gin.Context) {
 	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, 4096)
 	var input dto.SubscriptionSourceRefresh
-	if err := c.ShouldBindJSON(&input); err != nil || !sourceRevisionValid(input.SourceID, input.ExpectedRevision) {
+	if err := c.ShouldBindJSON(&input); err != nil || !sourceRevisionValid(&input.SourceID, input.ExpectedRevision) {
 		sourceRequestInvalid(c)
 		return
 	}
 	data, err := service.RefreshSubscriptionSource(c.Request.Context(), input)
-	sourceResponse(c, data, err)
+	finishSubscriptionSourceAction(c, data, err, "account_egress.source_refresh", input.SourceID)
 }
 func ApproveSubscriptionSource(c *gin.Context) {
 	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, 512<<10)
@@ -115,8 +118,7 @@ func ApproveSubscriptionSource(c *gin.Context) {
 		sourceRequestInvalid(c)
 		return
 	}
-	_, reviewErr := uuid.Parse(input.ReviewID)
-	if !sourceRevisionValid(input.SourceID, input.ExpectedRevision) || reviewErr != nil || input.Selected == nil || len(input.Selected) > 4096 {
+	if !sourceRevisionValid(&input.SourceID, input.ExpectedRevision) || !canonicalAccountEgressUUID(&input.ReviewID) || input.Selected == nil || len(input.Selected) > 4096 {
 		sourceRequestInvalid(c)
 		return
 	}
@@ -129,14 +131,29 @@ func ApproveSubscriptionSource(c *gin.Context) {
 		}
 		candidates[selected.CandidateIndex] = true
 		if selected.NodeID != nil {
-			id, err := uuid.Parse(*selected.NodeID)
-			if err != nil || nodes[id.String()] {
+			if !canonicalAccountEgressUUID(selected.NodeID) || nodes[*selected.NodeID] {
 				sourceRequestInvalid(c)
 				return
 			}
-			nodes[id.String()] = true
+			nodes[*selected.NodeID] = true
 		}
 	}
 	data, err := service.ApproveSubscriptionSource(c.Request.Context(), input)
+	finishSubscriptionSourceAction(c, data, err, "account_egress.source_approve", input.SourceID)
+}
+
+func finishSubscriptionSourceAction(c *gin.Context, data dto.SubscriptionSourceDetail, err error, action, sourceID string) {
+	result, code := "success", ""
+	if err != nil {
+		result, code = accountEgressErrorOutcome(err)
+	} else {
+		if sourceID == "" && canonicalAccountEgressUUID(&data.Source.ID) {
+			sourceID = data.Source.ID
+		}
+		if action == "account_egress.source_refresh" && data.Source.Status == "stale" {
+			result, code = "failure", "subscription_refresh_failed"
+		}
+	}
 	sourceResponse(c, data, err)
+	accountEgressAudit(c, action, "subscription_source", sourceID, "", result, code)
 }

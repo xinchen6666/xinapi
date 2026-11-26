@@ -11,8 +11,17 @@ use async_trait::async_trait;
 use config::EngineSettings;
 use entries::{EntryRecord, EntryRegistry};
 use gateway_admin::{
-    model::engines::{EngineFacts, EngineServiceError as Error, EngineSnapshot, EngineState},
-    ports::engine::EngineHost,
+    model::{
+        engines::{
+            EngineCapacity, EngineFacts, EngineOwnerKind, EngineServiceError as Error,
+            EngineSnapshot, EngineState,
+        },
+        managed_routes::{RouteNode, RouteObservation},
+    },
+    ports::{
+        engine::EngineHost,
+        proxy::{ProbeRoute, ProxyProbe},
+    },
 };
 use gateway_core::lifecycle::CancellationToken;
 use std::{
@@ -30,7 +39,7 @@ use tokio::{
 struct RunHandle {
     cancel: CancellationToken,
     status: watch::Receiver<EngineSnapshot>,
-    done: watch::Receiver<bool>,
+    done: watch::Receiver<Option<Result<(), Error>>>,
 }
 struct Inner {
     registry: Result<EntryRegistry, Error>,
@@ -41,7 +50,7 @@ struct Inner {
 pub(super) struct EngineSupervisor {
     settings: Result<Arc<EngineSettings>, Error>,
     root: PathBuf,
-    inner: Mutex<Inner>,
+    inner: Arc<Mutex<Inner>>,
     capacity: Arc<Semaphore>,
     cancellation: CancellationToken,
     transitions: std::sync::Mutex<std::collections::BTreeSet<String>>,
@@ -56,10 +65,10 @@ impl EngineSupervisor {
         Self {
             settings,
             root,
-            inner: Mutex::new(Inner {
+            inner: Arc::new(Mutex::new(Inner {
                 registry,
                 runs: BTreeMap::new(),
-            }),
+            })),
             capacity,
             cancellation,
             transitions: std::sync::Mutex::new(std::collections::BTreeSet::new()),
@@ -106,7 +115,7 @@ impl EngineSupervisor {
         let run = inner.runs.get(&target.entry_id).ok_or(Denied)?;
         let view = run.status.borrow();
         if run.cancel.is_cancelled()
-            || *run.done.borrow()
+            || run.done.borrow().is_some()
             || view.state != EngineState::Running
             || record.source_id != target.source_id
             || record.node_id != target.node_id
@@ -149,20 +158,28 @@ impl Drop for CancelOnDrop {
     }
 }
 
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum StartMode {
+    Stable,
+    Replace,
+    NodeTest,
+}
+
 impl EngineSupervisor {
     async fn start_entry(
         &self,
         facts: EngineFacts,
-        allow_transition: bool,
-    ) -> Result<EngineSnapshot, Error> {
+        mode: StartMode,
+    ) -> Result<(EngineSnapshot, RunHandle), Error> {
         let settings = self.settings()?;
         config::validate_connection(&facts)?;
         let deadline = Instant::now() + settings.start_timeout;
+        let temporary = mode == StartMode::NodeTest;
         let (run, receiver) = {
             let mut inner = timeout_at(deadline, self.inner.lock())
                 .await
                 .map_err(|_| Error::StartTimeout)?;
-            if !allow_transition
+            if mode != StartMode::Replace
                 && self
                     .transitions
                     .lock()
@@ -177,7 +194,7 @@ impl EngineSupervisor {
             let active = inner
                 .runs
                 .get(&facts.entry_id)
-                .filter(|r| !(*r.done.borrow()))
+                .filter(|r| r.done.borrow().is_none())
                 .cloned();
             let permit = if active.is_some() {
                 None
@@ -190,15 +207,20 @@ impl EngineSupervisor {
                 )
             };
             let registry = inner.registry.as_mut().map_err(|e| *e)?;
-            let record = registry.reserve(&facts, settings.port_base, settings.port_span)?;
+            if !temporary && registry.is_temporary(&facts.entry_id) {
+                return Err(Error::BindingConflict);
+            }
+            let record =
+                registry.reserve(&facts, settings.port_base, settings.port_span, temporary)?;
             if let Some(existing) = active {
                 (existing, None)
             } else {
                 let permit = permit.ok_or(Error::Capacity)?;
                 let mut initial = stopped(&record);
                 initial.state = EngineState::Starting;
+                initial.occupies_slot = true;
                 let (status, observe) = watch::channel(initial);
-                let (done, completed) = watch::channel(false);
+                let (done, completed) = watch::channel(None);
                 let cancel = self.cancellation.child_token();
                 let run = RunHandle {
                     cancel: cancel.clone(),
@@ -217,6 +239,8 @@ impl EngineSupervisor {
                     permit,
                     ready: send,
                     done,
+                    inner: self.inner.clone(),
+                    temporary,
                 }));
                 inner.runs.insert(record.entry_id, run.clone());
                 (run, Some(receive))
@@ -229,16 +253,12 @@ impl EngineSupervisor {
                 Ok(Err(_)) => Err(Error::ProcessFailed),
                 Err(_) => {
                     run.cancel.cancel();
-                    let _ = timeout(
-                        runtime::STOP_GRACE + Duration::from_secs(2),
-                        wait_done(run.done.clone()),
-                    )
-                    .await;
+                    let _ = timeout(runtime::CLEANUP_WAIT, wait_done(run.done.clone())).await;
                     Err(Error::StartTimeout)
                 }
             };
             guard.0 = None;
-            result.map(sample)
+            result.map(|observed| (sample(observed), run))
         } else {
             // 等待同一入口的既有操作，副本请求只观察共享结果
             let mut status = run.status.clone();
@@ -248,7 +268,7 @@ impl EngineSupervisor {
                 }
                 let observed = status.borrow().clone();
                 match observed.state {
-                    EngineState::Running => return Ok(sample(observed)),
+                    EngineState::Running => return Ok((sample(observed), run)),
                     EngineState::Starting => {}
                     EngineState::Stopped => return Err(Error::Cancelled),
                     EngineState::Failed => return Err(Error::ProcessFailed),
@@ -268,7 +288,79 @@ impl EngineSupervisor {
 #[async_trait]
 impl EngineHost for EngineSupervisor {
     async fn start(&self, facts: EngineFacts) -> Result<EngineSnapshot, Error> {
-        self.start_entry(facts, false).await
+        self.start_entry(facts, StartMode::Stable)
+            .await
+            .map(|(snapshot, _)| snapshot)
+    }
+
+    async fn test_node<'a>(
+        &self,
+        facts: EngineFacts,
+        probe: &dyn ProxyProbe,
+        validate: futures::future::BoxFuture<'a, Result<(), Error>>,
+    ) -> Result<RouteObservation, Error> {
+        if facts.owner.kind != EngineOwnerKind::Reservation {
+            return Err(Error::OwnerInvalid);
+        }
+        let deadline = Instant::now() + Duration::from_secs(58);
+        let entry_id = facts.entry_id.clone();
+        let (_, run) = timeout_at(deadline, self.start_entry(facts, StartMode::NodeTest))
+            .await
+            .map_err(|_| Error::NodeTestTimeout)??;
+        let guard = CancelOnDrop(Some(run.cancel.clone()));
+        let result = tokio::select! {
+            biased;
+            _ = run.cancel.cancelled() => Err(Error::Cancelled),
+            result = timeout_at(deadline, async {
+                let endpoint = self.endpoint(&entry_id).await?;
+                validate.await?;
+                let result = probe.test(ProbeRoute::Proxy(&endpoint), false).await;
+                Ok(RouteObservation {
+                    success: result.success,
+                    latency_ms: result.latency_ms,
+                    exit_ip: result.exit_ip,
+                    exit_ipv4: result.exit_ipv4,
+                    exit_ipv6: result.exit_ipv6,
+                })
+            }) => result.unwrap_or(Err(Error::NodeTestTimeout)),
+        };
+        drop(guard);
+        let cleanup = timeout(runtime::CLEANUP_WAIT, wait_done(run.done)).await;
+        match cleanup {
+            Ok(Ok(())) => result,
+            Ok(Err(error)) => Err(error),
+            Err(_) => Err(Error::Unavailable),
+        }
+    }
+
+    async fn stop_account(
+        &self,
+        entry_id: &str,
+        node: &RouteNode,
+    ) -> Result<EngineSnapshot, Error> {
+        let _transition = Transition::begin(&self.transitions, entry_id)?;
+        {
+            let inner = self.inner.lock().await;
+            let record = inner
+                .registry
+                .as_ref()
+                .map_err(|error| *error)?
+                .records()
+                .iter()
+                .find(|record| record.entry_id == entry_id)
+                .ok_or(Error::UnknownEntry)?;
+            if !record
+                .owner
+                .as_ref()
+                .is_some_and(|owner| owner.kind == EngineOwnerKind::Account)
+                || record.source_id != node.source_id
+                || record.node_id != node.node_id
+                || record.version_id != node.version_id
+            {
+                return Err(Error::StopForbidden);
+            }
+        }
+        self.stop(entry_id).await
     }
     async fn stop(&self, entry_id: &str) -> Result<EngineSnapshot, Error> {
         let (record, run) = {
@@ -355,7 +447,9 @@ impl EngineHost for EngineSupervisor {
             let mut inner = self.inner.lock().await;
             inner.registry.as_mut().map_err(|e| *e)?.rebind(&facts)?;
         }
-        self.start_entry(facts, true).await
+        self.start_entry(facts, StartMode::Replace)
+            .await
+            .map(|(snapshot, _)| snapshot)
     }
 
     async fn discard_candidate(&self, entry_id: &str) -> Result<(), Error> {
@@ -409,9 +503,15 @@ impl EngineHost for EngineSupervisor {
     }
 
     async fn list(&self) -> Result<Vec<EngineSnapshot>, Error> {
+        self.inventory().await.map(|(entries, _)| entries)
+    }
+
+    async fn inventory(&self) -> Result<(Vec<EngineSnapshot>, EngineCapacity), Error> {
+        let settings = self.settings()?;
         let inner = self.inner.lock().await;
         let registry = inner.registry.as_ref().map_err(|e| *e)?;
-        Ok(registry
+        let available = self.capacity.available_permits();
+        let entries = registry
             .records()
             .iter()
             .map(|record| {
@@ -420,13 +520,21 @@ impl EngineHost for EngineSupervisor {
                     .get(&record.entry_id)
                     .map_or_else(|| stopped(record), |r| sample(r.status.borrow().clone()))
             })
-            .collect())
+            .collect();
+        Ok((
+            entries,
+            EngineCapacity {
+                limit: settings.capacity,
+                used: settings.capacity.saturating_sub(available),
+                available,
+            },
+        ))
     }
 }
-async fn wait_done(mut done: watch::Receiver<bool>) -> Result<(), Error> {
+async fn wait_done(mut done: watch::Receiver<Option<Result<(), Error>>>) -> Result<(), Error> {
     loop {
-        if *done.borrow() {
-            return Ok(());
+        if let Some(result) = *done.borrow() {
+            return result;
         }
         done.changed().await.map_err(|_| Error::ProcessFailed)?;
     }
@@ -457,6 +565,7 @@ fn stopped(record: &EntryRecord) -> EngineSnapshot {
         cpu_seconds: None,
         cold_start_ms: None,
         last_error: None,
+        occupies_slot: false,
     }
 }
 

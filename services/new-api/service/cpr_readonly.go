@@ -1,7 +1,6 @@
 package service
 
 import (
-	"bytes"
 	"context"
 	"errors"
 	"io"
@@ -79,18 +78,8 @@ func readCPRAdminKey() (string, error) {
 
 func readCPRList[T any](ctx context.Context, path string, page, pageSize int) (dto.AccountEgressPage[T], error) {
 	var result dto.AccountEgressPage[T]
-	key, err := readCPRAdminKey()
-	if err != nil {
-		return result, err
-	}
 	query := url.Values{"page": {strconv.Itoa(page)}, "pageSize": {strconv.Itoa(pageSize)}}
-	request, err := http.NewRequestWithContext(ctx, http.MethodGet, "http://cpr:8080"+path+"?"+query.Encode(), nil)
-	if err != nil {
-		return result, ErrAccountEgressUnavailable
-	}
-	request.Header.Set("x-api-key", key)
-	request.Header.Set("Accept", "application/json")
-	response, err := cprReadOnlyClient.Do(request)
+	response, err := sendCPRAdmin(ctx, cprReadOnlyClient, http.MethodGet, path, query, nil)
 	if err != nil {
 		return result, ErrAccountEgressUnavailable
 	}
@@ -167,22 +156,10 @@ var subscriptionPreviewReasonMessages = map[string]string{
 // ReadSubscriptionPreview 请 CPR 下载并解析一份订阅链接，返回预览白名单字段。
 func ReadSubscriptionPreview(ctx context.Context, sourceURL string) (dto.AccountEgressSubscriptionPreview, error) {
 	var preview dto.AccountEgressSubscriptionPreview
-	key, err := readCPRAdminKey()
-	if err != nil {
-		return preview, err
-	}
-	payload, err := common.Marshal(map[string]string{"source_url": sourceURL})
-	if err != nil {
-		return preview, ErrAccountEgressUnavailable
-	}
-	request, err := http.NewRequestWithContext(ctx, http.MethodPost, "http://cpr:8080/api/admin/subscriptions/preview", bytes.NewReader(payload))
-	if err != nil {
-		return preview, ErrAccountEgressUnavailable
-	}
-	request.Header.Set("Content-Type", "application/json")
-	request.Header.Set("Accept", "application/json")
-	request.Header.Set("x-api-key", key)
-	response, err := cprSubscriptionPreviewClient.Do(request)
+	command := struct {
+		SourceURL string `json:"source_url"`
+	}{SourceURL: sourceURL}
+	response, err := sendCPRAdmin(ctx, cprSubscriptionPreviewClient, http.MethodPost, "/api/admin/subscriptions/preview", nil, command)
 	if err != nil {
 		return preview, ErrAccountEgressUnavailable
 	}

@@ -216,6 +216,10 @@ async fn initialize_inner(
             store.subscriptions(),
             store.accounts(),
             engines,
+            store.managed_routes(),
+            store.oauth_operations(),
+            proxy_probe.clone(),
+            store.auth(),
         )),
         proxies: Arc::new(use_case::proxies::DefaultProxiesService::new(
             store.proxies(),

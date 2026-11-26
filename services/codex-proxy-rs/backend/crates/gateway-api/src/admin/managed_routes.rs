@@ -55,7 +55,7 @@ fn response<T: Serialize>(value: T) -> Result<impl IntoResponse, AdminError> {
     ))
 }
 async fn abort<S>(
-    _: AdminAuth,
+    auth: AdminAuth,
     State(state): State<S>,
     AdminJson(command): AdminJson<OperationId>,
 ) -> Result<impl IntoResponse, AdminError>
@@ -66,7 +66,7 @@ where
         state
             .admin_services()
             .managed_routes()
-            .abort(&command.operation_id)
+            .abort(&command.operation_id, &auth.context().mutation_context())
             .await
             .map_err(error)?,
     )

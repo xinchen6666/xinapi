@@ -27,7 +27,7 @@ export async function previewSubscription(
   const response = await api.post<SubscriptionPreviewResponse>(
     '/api/account-egress/subscription-preview',
     { source_url: sourceUrl },
-    { skipBusinessError: true }
+    { singleUseAuthorization: true, skipBusinessError: true }
   )
   return requireServerSuccess(response.data).data
 }

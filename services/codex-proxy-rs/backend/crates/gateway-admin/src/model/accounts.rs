@@ -265,6 +265,15 @@ pub struct BatchUpdateAccounts {
     pub outbound_proxy: Option<super::proxies::AccountProxySelection>,
 }
 
+/// 按当前分组集合条件更新单账号设置
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct UpdateAccountGroups {
+    pub account_id: gateway_core::account::ProviderAccountId,
+    pub group_ids: Vec<gateway_core::routing::AccountGroupId>,
+    pub expected_group_ids: Vec<gateway_core::routing::AccountGroupId>,
+    pub enabled: Option<bool>,
+}
+
 /// 已按拟提交策略重算的账号暂停结果，以快照版本防止旧判断覆盖新观测
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PreparedQuotaPause {

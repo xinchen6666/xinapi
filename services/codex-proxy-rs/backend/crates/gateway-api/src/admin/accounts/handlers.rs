@@ -87,12 +87,18 @@ where
     S: SessionState + Send + Sync,
 {
     let command = request.into_command().map_err(map_wire_error)?;
-    let result = state
-        .admin_services()
-        .accounts()
-        .batch_update(&auth.context().mutation_context(), command)
-        .await
-        .map_err(map_service_error)?;
+    let services = state.admin_services();
+    let accounts = services.accounts();
+    let context = auth.context().mutation_context();
+    let result = match command {
+        BatchUpdateAccountsCommand::Settings(command) => {
+            accounts.batch_update(&context, command).await
+        }
+        BatchUpdateAccountsCommand::ConditionalGroups(command) => {
+            accounts.update_account_groups(&context, command).await
+        }
+    }
+    .map_err(map_service_error)?;
     Ok(AdminResponse::new(
         StatusCode::OK,
         AdminEnvelope::ok(BatchUpdatedAccountsData::from(result)),
@@ -491,7 +497,7 @@ pub fn profile_avatar_response(avatar: ProviderProfileAvatar) -> Response {
 }
 
 async fn refresh_account_quota<S>(
-    _auth: AdminAuth,
+    auth: AdminAuth,
     State(state): State<S>,
     AdminJson(request): AdminJson<AccountActionRequest>,
 ) -> Result<impl IntoResponse, AdminError>
@@ -503,7 +509,7 @@ where
     let result = state
         .admin_services()
         .accounts()
-        .quota(&account_id, true)
+        .refresh_quota(&account_id, &auth.context().mutation_context())
         .await
         .map_err(map_service_error)?;
     let data = AccountQuotaData {

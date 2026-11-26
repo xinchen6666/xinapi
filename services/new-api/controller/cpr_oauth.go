@@ -90,6 +90,7 @@ func StartCprOAuthOperation(c *gin.Context) {
 	}
 	view, err := service.StartCprOAuthOperation(c.Request.Context(), identity, input)
 	cprOAuthResponse(c, view, err)
+	accountEgressOAuthAudit(c, "start", "", view, err)
 }
 
 func ListCprOAuthOperations(c *gin.Context) {
@@ -139,6 +140,7 @@ func CompleteCprOAuthOperation(c *gin.Context) {
 	// 回调内容仅转交固定CPR服务端点，由Provider解析state与PKCE
 	view, err := service.FinishCprOAuthOperation(c.Request.Context(), identity, id, "complete", input.CallbackURL)
 	cprOAuthResponse(c, view, err)
+	accountEgressOAuthAudit(c, "complete", id, view, err)
 }
 
 func CancelCprOAuthOperation(c *gin.Context) {
@@ -152,4 +154,23 @@ func CancelCprOAuthOperation(c *gin.Context) {
 	}
 	view, err := service.FinishCprOAuthOperation(c.Request.Context(), identity, id, "cancel", "")
 	cprOAuthResponse(c, view, err)
+	accountEgressOAuthAudit(c, "cancel", id, view, err)
+}
+
+func accountEgressOAuthAudit(c *gin.Context, action, id string, view service.CprOAuthView, err error) {
+	if id == "" && canonicalAccountEgressUUID(&view.OperationID) {
+		id = view.OperationID
+	}
+	result := "failure"
+	if err == nil {
+		switch {
+		case action == "start" && view.Status == "pending",
+			action == "complete" && view.Status == "completed",
+			action == "cancel" && view.Status == "cancelled":
+			result = "success"
+		case view.Status == "unknown", view.Status == "completing", view.Status == "pending":
+			result = "unknown"
+		}
+	}
+	accountEgressAudit(c, "account_egress.oauth_"+action, "authorization", id, id, result, "")
 }

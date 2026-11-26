@@ -416,7 +416,12 @@ impl ManagedRouteStore for PgManagedRouteStore {
         finish(tx, result).await
     }
 
-    async fn fail(&self, operation_id: &str, reason: &str) -> AdminStoreResult<RouteOperation> {
+    async fn fail_with_context(
+        &self,
+        operation_id: &str,
+        reason: &str,
+        context: Option<&MutationContext>,
+    ) -> AdminStoreResult<RouteOperation> {
         if reason.is_empty()
             || reason.len() > 128
             || !reason
@@ -435,7 +440,7 @@ impl ManagedRouteStore for PgManagedRouteStore {
                 .bind(op.route_id).bind(id).execute(&mut *tx).await.map_err(unavailable)?;
             let updated=sqlx::query_as::<_,OperationRow>("update managed_route_operations set phase='failed',error_code=$2,updated_at=now() where operation_id=$1 returning *")
                 .bind(id).bind(reason).fetch_one(&mut *tx).await.map_err(unavailable)?;
-            audit(&mut tx,&op.context.0,MutationAuditOperation::ManagedRouteFail,&id.to_string(),&["phase","error_code"],None).await?;
+            audit(&mut tx,context.unwrap_or(&op.context.0),MutationAuditOperation::ManagedRouteFail,&id.to_string(),&["phase","error_code"],None).await?;
             updated.view()
         }.await;
         finish(tx, result).await
@@ -459,26 +464,44 @@ impl ManagedRouteStore for PgManagedRouteStore {
             route_id: Uuid,
             account_id: String,
             proxy_id: Option<String>,
+            proxy_enabled: Option<bool>,
             account_proxy_id: Option<String>,
             generation: i64,
             current_node: Option<Json<RouteNode>>,
             observation: Option<Json<RouteObservation>>,
             applying_operation_id: Option<Uuid>,
+            applied_operation_id: Option<Uuid>,
             proxy_url: Option<String>,
             updated_at: DateTime<Utc>,
         }
-        let row=sqlx::query_as::<_,ViewRow>("select r.route_id,r.account_id,r.proxy_id,a.outbound_proxy_id as account_proxy_id,r.generation,r.current_node,r.observation,r.applying_operation_id,p.proxy_url,r.updated_at from managed_routes r join provider_accounts a on a.id=r.account_id left join outbound_proxies p on p.id=r.proxy_id where r.account_id=$1")
-            .bind(account_id).fetch_optional(&self.pool).await.map_err(unavailable)?;
+        let row = sqlx::query_as::<_, ViewRow>(
+            "select r.route_id, r.account_id, r.proxy_id, p.enabled as proxy_enabled,
+                    a.outbound_proxy_id as account_proxy_id,
+                    r.generation, r.current_node, r.observation, r.applying_operation_id,
+                    (select o.operation_id from managed_route_operations o
+                     where o.route_id = r.route_id and o.phase = 'applied'
+                       and o.expected_generation = r.generation - 1
+                     order by o.updated_at desc, o.operation_id limit 1) as applied_operation_id,
+                    p.proxy_url, r.updated_at
+             from managed_routes r join provider_accounts a on a.id = r.account_id
+             left join outbound_proxies p on p.id = r.proxy_id where r.account_id = $1",
+        )
+        .bind(account_id)
+        .fetch_optional(&self.pool)
+        .await
+        .map_err(unavailable)?;
         row.map(|r| {
             Ok(ManagedRoute {
                 route_id: r.route_id.to_string(),
                 account_id: r.account_id,
                 proxy_id: r.proxy_id,
+                proxy_enabled: r.proxy_enabled,
                 account_proxy_id: r.account_proxy_id,
                 generation: unsigned(r.generation)?,
                 current: r.current_node.map(|v| v.0),
                 observation: r.observation.map(|v| v.0),
                 applying_operation_id: r.applying_operation_id.map(|v| v.to_string()),
+                applied_operation_id: r.applied_operation_id.map(|v| v.to_string()),
                 endpoint: r
                     .proxy_url
                     .map(|url| {

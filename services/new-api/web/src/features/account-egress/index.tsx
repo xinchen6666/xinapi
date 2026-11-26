@@ -18,13 +18,13 @@ For commercial licensing, please contact support@quantumnous.com
 */
 import { useQueryClient } from '@tanstack/react-query'
 import type { ColumnDef } from '@tanstack/react-table'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { ErrorState } from '@/components/error-state'
 import { SectionPageLayout } from '@/components/layout'
-import { Button } from '@/components/ui/button'
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { SubscriptionPreview } from '@/features/subscription-preview'
 import { toIntlLocale } from '@/i18n/languages'
 import {
   ADMIN_PERMISSION_RESOURCES,
@@ -35,46 +35,43 @@ import { formatNumber } from '@/lib/format'
 import { ROLE } from '@/lib/roles'
 import { useAuthStore } from '@/stores/auth-store'
 
-import { getAccounts, getEgressProxies } from './api'
+import { AccountTable } from './account-table'
+import { getEgressProxies } from './api'
+import { EnginePanel } from './engine-panel'
 import { OAuthPanel } from './oauth-panel'
 import type { AccountOAuthTarget } from './oauth-types'
 import { ReadOnlyList } from './read-only-list'
-import type { Account, EgressProxy } from './types'
+import type { EgressProxy } from './types'
+import { egressSectionSchema, type EgressSection } from './workspace-section'
 
-const STATUS_LABELS: Record<string, string> = {
-  normal: 'Normal',
-  quota_paused: 'Quota paused',
-  quota_exhausted: 'Quota exhausted',
-  rate_limited: 'Rate limited',
-  disabled: 'Disabled',
-  error: 'Error',
+type WorkspaceProps = {
+  section: EgressSection
+  onSectionChange: (next: EgressSection) => void
 }
 
-export function AccountEgress() {
+export function AccountEgress(props: WorkspaceProps) {
+  const userId = useAuthStore((state) => state.auth.user?.id)
+  const sessionId = useAuthStore((state) => state.auth.session?.sid ?? '')
+  return (
+    <Workspace
+      key={`${userId}:${sessionId}`}
+      {...props}
+      sessionId={sessionId}
+    />
+  )
+}
+
+function Workspace(props: WorkspaceProps & { sessionId: string }) {
   const { t, i18n } = useTranslation()
   const locale = toIntlLocale(i18n.resolvedLanguage || i18n.language)
   const user = useAuthStore((state) => state.auth.user)
   const queryClient = useQueryClient()
-  const [kind, setKind] = useState<'accounts' | 'proxies' | 'oauth'>('accounts')
+  const onSectionChange = props.onSectionChange
   const [startTarget, setStartTarget] = useState<
     AccountOAuthTarget | 'new' | null
   >(null)
-  const sessionId = useAuthStore((state) => state.auth.session?.sid ?? '')
-  const canAuthorize =
-    !!user &&
-    user.role >= ROLE.ADMIN &&
-    hasPermission(
-      user,
-      ADMIN_PERMISSION_RESOURCES.ACCOUNT_EGRESS,
-      ADMIN_PERMISSION_ACTIONS.AUTHORIZE
-    )
   const [accessRevoked, setAccessRevoked] = useState(false)
   const userId = user?.id
-  useEffect(() => {
-    setStartTarget(null)
-    setKind('accounts')
-    setAccessRevoked(false)
-  }, [userId, sessionId])
   const canRead =
     !!user &&
     user.role >= ROLE.ADMIN &&
@@ -83,131 +80,60 @@ export function AccountEgress() {
       ADMIN_PERMISSION_RESOURCES.ACCOUNT_EGRESS,
       ADMIN_PERMISSION_ACTIONS.READ
     )
-  const handleAuthorizationDenied = useCallback(() => {
-    setStartTarget(null)
-    setKind('accounts')
-    const current = useAuthStore.getState().auth.user
-    if (current && current.id === userId) {
-      useAuthStore.getState().auth.setUser({
-        ...current,
-        permissions: {
-          ...current.permissions,
-          admin_permissions: {
-            ...current.permissions?.admin_permissions,
-            account_egress: {
-              ...current.permissions?.admin_permissions?.account_egress,
-              authorize: false,
+  const canAuthorize =
+    canRead &&
+    hasPermission(
+      user,
+      ADMIN_PERMISSION_RESOURCES.ACCOUNT_EGRESS,
+      ADMIN_PERMISSION_ACTIONS.AUTHORIZE
+    )
+  const section =
+    props.section === 'oauth' && !canAuthorize ? 'accounts' : props.section
+
+  const clearPermission = useCallback(
+    (action: 'read' | 'authorize') => {
+      const auth = useAuthStore.getState().auth
+      const current = auth.user
+      if (
+        current &&
+        current.id === userId &&
+        (auth.session?.sid ?? '') === props.sessionId
+      ) {
+        auth.setUser({
+          ...current,
+          permissions: {
+            ...current.permissions,
+            admin_permissions: {
+              ...current.permissions?.admin_permissions,
+              account_egress: {
+                ...current.permissions?.admin_permissions?.account_egress,
+                [action]: false,
+              },
             },
           },
-        },
-      })
-    }
-    void queryClient
-      .cancelQueries({ queryKey: ['account-egress', userId, 'oauth'] })
-      .then(() => {
-        queryClient.removeQueries({
-          queryKey: ['account-egress', userId, 'oauth'],
         })
-      })
-  }, [queryClient, userId])
+      }
+      const scope =
+        action === 'authorize'
+          ? ['account-egress', userId, 'oauth']
+          : ['account-egress', userId]
+      void queryClient
+        .cancelQueries({ queryKey: scope })
+        .then(() => queryClient.removeQueries({ queryKey: scope }))
+    },
+    [props.sessionId, queryClient, userId]
+  )
+
+  const handleAuthorizationDenied = useCallback(() => {
+    setStartTarget(null)
+    onSectionChange('accounts')
+    clearPermission('authorize')
+  }, [onSectionChange, clearPermission])
   const handleAccessDenied = useCallback(() => {
     setAccessRevoked(true)
-    const current = useAuthStore.getState().auth.user
-    if (current && current.id === userId) {
-      useAuthStore.getState().auth.setUser({
-        ...current,
-        permissions: {
-          ...current.permissions,
-          admin_permissions: {
-            ...current.permissions?.admin_permissions,
-            account_egress: { read: false },
-          },
-        },
-      })
-    }
-    void queryClient
-      .cancelQueries({ queryKey: ['account-egress', userId] })
-      .then(() => {
-        queryClient.removeQueries({ queryKey: ['account-egress', userId] })
-      })
-  }, [queryClient, userId])
-  useEffect(() => {
-    if (!canRead) {
-      void queryClient
-        .cancelQueries({ queryKey: ['account-egress', userId] })
-        .then(() => {
-          queryClient.removeQueries({ queryKey: ['account-egress', userId] })
-        })
-    }
-  }, [canRead, queryClient, userId])
-  const accountColumns: ColumnDef<Account>[] = [
-    {
-      accessorKey: 'name',
-      header: t('Name'),
-      size: 200,
-      meta: { mobileTitle: true },
-    },
-    { accessorKey: 'provider', header: t('Provider') },
-    {
-      accessorKey: 'status',
-      header: t('Status'),
-      cell: ({ row }) =>
-        t(STATUS_LABELS[row.original.status] ?? row.original.status, {
-          defaultValue: row.original.status,
-        }),
-    },
-    {
-      accessorKey: 'enabled',
-      header: t('Enabled'),
-      cell: ({ row }) => (row.original.enabled ? t('Yes') : t('No')),
-    },
-    {
-      accessorKey: 'planType',
-      header: t('Plan'),
-      cell: ({ row }) => row.original.planType ?? '—',
-    },
-    {
-      accessorKey: 'outboundProxyId',
-      header: t('Egress ID'),
-      cell: ({ row }) => (
-        <span className='break-all'>{row.original.outboundProxyId ?? '—'}</span>
-      ),
-    },
-    {
-      accessorKey: 'id',
-      header: t('ID'),
-      size: 280,
-      cell: ({ row }) => <span className='break-all'>{row.original.id}</span>,
-    },
-  ]
-  if (canAuthorize) {
-    accountColumns.push({
-      id: 'authorize',
-      header: t('Actions'),
-      cell: ({ row }) => {
-        const account = row.original
-        if (account.provider !== 'openai' && account.provider !== 'xai') {
-          return '—'
-        }
-        return (
-          <Button
-            variant='outline'
-            size='sm'
-            onClick={() => {
-              setStartTarget({
-                account_id: account.id,
-                provider: account.provider as AccountOAuthTarget['provider'],
-                name: account.name,
-              })
-              setKind('oauth')
-            }}
-          >
-            {t('Reauthorize')}
-          </Button>
-        )
-      },
-    })
-  }
+    clearPermission('read')
+  }, [clearPermission])
+
   const proxyColumns: ColumnDef<EgressProxy>[] = [
     {
       accessorKey: 'name',
@@ -237,81 +163,102 @@ export function AccountEgress() {
       cell: ({ row }) => <span className='break-all'>{row.original.id}</span>,
     },
   ]
+  const tableSection =
+    section === 'accounts' || section === 'proxies' || section === 'oauth'
   return (
-    <SectionPageLayout fixedContent stackActionsOnMobile>
-      <SectionPageLayout.Title>
-        {t('Accounts and Egress')}
-      </SectionPageLayout.Title>
-      {canRead && !accessRevoked && (
-        <SectionPageLayout.Actions>
-          <Tabs
-            value={kind}
-            onValueChange={(value) =>
-              setKind(
-                value === 'proxies' || value === 'oauth' ? value : 'accounts'
-              )
-            }
-          >
-            <TabsList aria-label={t('Accounts and Egress')}>
+    <Tabs
+      className='min-h-0 flex-1'
+      value={section}
+      onValueChange={(value) => {
+        const choice = egressSectionSchema.safeParse(value)
+        if (choice.success) onSectionChange(choice.data)
+      }}
+    >
+      <SectionPageLayout fixedContent={tableSection} stackActionsOnMobile>
+        <SectionPageLayout.Title>
+          {t('Accounts and Egress')}
+        </SectionPageLayout.Title>
+        {canRead && !accessRevoked && (
+          <SectionPageLayout.Actions>
+            <TabsList
+              aria-label={t('Accounts and Egress')}
+              className='h-auto! max-w-full flex-wrap justify-start'
+            >
               <TabsTrigger value='accounts'>
                 {t('Upstream accounts')}
               </TabsTrigger>
-              <TabsTrigger value='proxies'>{t('Egress proxies')}</TabsTrigger>
+              <TabsTrigger value='sources'>
+                {t('Sources and nodes')}
+              </TabsTrigger>
               {canAuthorize && (
                 <TabsTrigger value='oauth'>
                   {t('Account authorizations')}
                 </TabsTrigger>
               )}
+              <TabsTrigger value='engines'>{t('Engines')}</TabsTrigger>
+              <TabsTrigger value='proxies'>{t('Egress proxies')}</TabsTrigger>
             </TabsList>
-          </Tabs>
-        </SectionPageLayout.Actions>
-      )}
-      <SectionPageLayout.Content>
-        {canRead && !accessRevoked ? (
-          <div className='flex h-full min-h-0 flex-col gap-3'>
-            <p className='text-muted-foreground text-sm'>
-              {kind === 'oauth'
-                ? t(
-                    'Manage upstream authorizations and restore their session receipts.'
-                  )
-                : t('View account status and egress assignments.')}
-            </p>
-            {kind === 'oauth' && canAuthorize && (
-              <OAuthPanel
-                key={`${userId}:${sessionId}:oauth`}
-                userId={user.id}
-                sessionId={sessionId}
-                startTarget={startTarget}
-                onStart={() => setStartTarget('new')}
-                onCloseStart={() => setStartTarget(null)}
-                onAccessDenied={handleAuthorizationDenied}
-              />
-            )}
-            {kind === 'accounts' && (
-              <ReadOnlyList
-                key={`${userId}:accounts`}
-                kind='accounts'
-                userId={user.id}
-                columns={accountColumns}
-                load={getAccounts}
-                onAccessDenied={handleAccessDenied}
-              />
-            )}
-            {kind === 'proxies' && (
-              <ReadOnlyList
-                key={`${userId}:proxies`}
-                kind='proxies'
-                userId={user.id}
-                columns={proxyColumns}
-                load={getEgressProxies}
-                onAccessDenied={handleAccessDenied}
-              />
-            )}
-          </div>
-        ) : (
-          <ErrorState title={t('Access to accounts and egress has changed.')} />
+          </SectionPageLayout.Actions>
         )}
-      </SectionPageLayout.Content>
-    </SectionPageLayout>
+        <SectionPageLayout.Content>
+          {canRead && !accessRevoked ? (
+            <>
+              <TabsContent
+                value='accounts'
+                className='flex h-full min-h-0 flex-col'
+              >
+                <AccountTable
+                  userId={user.id}
+                  sessionId={props.sessionId}
+                  onAccessDenied={handleAccessDenied}
+                  onReauthorize={(target) => {
+                    setStartTarget(target)
+                    onSectionChange('oauth')
+                  }}
+                />
+              </TabsContent>
+              <TabsContent value='sources'>
+                <SubscriptionPreview onReadDenied={handleAccessDenied} />
+              </TabsContent>
+              <TabsContent value='engines'>
+                <EnginePanel />
+              </TabsContent>
+              {canAuthorize && (
+                <TabsContent
+                  value='oauth'
+                  className='flex h-full min-h-0 flex-col'
+                >
+                  <OAuthPanel
+                    userId={user.id}
+                    sessionId={props.sessionId}
+                    startTarget={startTarget}
+                    onStart={() => setStartTarget('new')}
+                    onCloseStart={() => setStartTarget(null)}
+                    onAccessDenied={handleAuthorizationDenied}
+                  />
+                </TabsContent>
+              )}
+              <TabsContent
+                value='proxies'
+                className='flex h-full min-h-0 flex-col'
+              >
+                <ReadOnlyList
+                  kind='proxies'
+                  userId={user.id}
+                  sessionId={props.sessionId}
+                  columns={proxyColumns}
+                  load={getEgressProxies}
+                  onAccessDenied={handleAccessDenied}
+                />
+              </TabsContent>
+            </>
+          ) : (
+            <ErrorState
+              title={t('Access to accounts and egress has changed.')}
+            />
+          )}
+        </SectionPageLayout.Content>
+      </SectionPageLayout>
+    </Tabs>
   )
 }

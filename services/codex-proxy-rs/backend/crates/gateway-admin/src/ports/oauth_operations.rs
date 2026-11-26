@@ -2,8 +2,17 @@
 
 use super::store::AdminStoreResult;
 use crate::model::{
-    MutationActor, oauth_operations::OAuthOperation, provider_credentials::AuthorizationStarted,
+    MutationActor, MutationContext, oauth_operations::OAuthOperation,
+    provider_credentials::AuthorizationStarted,
 };
+use chrono::{DateTime, Utc};
+
+pub struct OAuthEngineReservation {
+    pub operation_id: String,
+    pub account_id: String,
+    pub expires_at: DateTime<Utc>,
+    pub reclaimable: bool,
+}
 use async_trait::async_trait;
 
 #[async_trait]
@@ -43,6 +52,15 @@ pub trait OAuthOperationStore: Send + Sync {
         &self,
         operation_id: &str,
         owner: &MutationActor,
+    ) -> AdminStoreResult<OAuthOperation>;
+    async fn engine_reservations(
+        &self,
+        account_ids: &[String],
+    ) -> AdminStoreResult<Vec<OAuthEngineReservation>>;
+    async fn cancel_expired_reservation(
+        &self,
+        operation_id: &str,
+        context: &MutationContext,
     ) -> AdminStoreResult<OAuthOperation>;
     async fn reclaimable(
         &self,

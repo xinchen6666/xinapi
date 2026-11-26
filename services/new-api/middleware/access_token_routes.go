@@ -51,6 +51,15 @@ var accessTokenRouteRules = map[string]accessTokenRouteRule{
 	"POST /api/account-egress/subscription-sources/update":  accessTokenSessionRule,
 	"POST /api/account-egress/subscription-sources/refresh": accessTokenSessionRule,
 	"POST /api/account-egress/subscription-sources/approve": accessTokenSessionRule,
+	"POST /api/account-egress/accounts/settings":            accessTokenSessionRule,
+	"POST /api/account-egress/accounts/quota/refresh":       accessTokenSessionRule,
+	"POST /api/account-egress/engines/stop":                 accessTokenSessionRule,
+	"POST /api/account-egress/engines/reclaim":              accessTokenSessionRule,
+	"POST /api/account-egress/engines/test-node":            accessTokenSessionRule,
+	"POST /api/account-egress/managed-routes/prepare":       accessTokenSessionRule,
+	"POST /api/account-egress/managed-routes/approve":       accessTokenSessionRule,
+	"POST /api/account-egress/managed-routes/abort":         accessTokenSessionRule,
+	"POST /api/account-egress/managed-routes/reconcile":     accessTokenSessionRule,
 
 	// router/api-router.go: top level
 	"GET /api/models":                     accessTokenScopeRule("profile:read"),

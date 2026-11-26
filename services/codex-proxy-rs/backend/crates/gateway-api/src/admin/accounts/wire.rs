@@ -47,6 +47,19 @@ pub struct BatchUpdateAccountsRequest {
     pub weight: Option<u64>,
     pub model_access: Option<gateway_core::account::AccountModelAccess>,
     pub group_ids: Option<Vec<String>>,
+    #[serde(default, deserialize_with = "deserialize_expected_group_ids")]
+    pub expected_group_ids: Option<Vec<String>>,
+}
+
+pub(super) enum BatchUpdateAccountsCommand {
+    Settings(BatchUpdateAccounts),
+    ConditionalGroups(UpdateAccountGroups),
+}
+
+fn deserialize_expected_group_ids<'de, D: Deserializer<'de>>(
+    deserializer: D,
+) -> Result<Option<Vec<String>>, D::Error> {
+    Vec::<String>::deserialize(deserializer).map(Some)
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -90,6 +103,25 @@ impl BatchUpdateAccountsRequest {
         if let Some(group_ids) = &self.group_ids {
             validate_wire_group_ids(group_ids)?;
         }
+        if let Some(expected_group_ids) = &self.expected_group_ids {
+            if self.account_ids.len() != 1 {
+                return Err(WireValidationError::new("accountIds"));
+            }
+            if self.group_ids.is_none() {
+                return Err(WireValidationError::new("groupIds"));
+            }
+            if self.quota_settings.is_some()
+                || self.auto_use_quota_credits.is_some()
+                || self.concurrency_limit.is_some()
+                || self.weight.is_some()
+                || self.model_access.is_some()
+                || self.outbound_proxy_id.is_some()
+            {
+                return Err(WireValidationError::new("expectedGroupIds"));
+            }
+            validate_wire_group_ids(expected_group_ids)
+                .map_err(|_| WireValidationError::new("expectedGroupIds"))?;
+        }
         self.concurrency_limit
             .map(parse_concurrency_limit)
             .transpose()?;
@@ -108,9 +140,32 @@ impl BatchUpdateAccountsRequest {
         Ok(())
     }
 
-    pub(super) fn into_command(self) -> Result<BatchUpdateAccounts, WireValidationError> {
+    pub(super) fn into_command(self) -> Result<BatchUpdateAccountsCommand, WireValidationError> {
         self.validate()?;
-        Ok(BatchUpdateAccounts {
+        let group_ids = self
+            .group_ids
+            .as_deref()
+            .map(validate_wire_group_ids)
+            .transpose()?;
+        if let Some(expected_group_ids) = self.expected_group_ids {
+            let account_id = self
+                .account_ids
+                .into_iter()
+                .next()
+                .ok_or_else(|| WireValidationError::new("accountIds"))?;
+            let expected_group_ids = validate_wire_group_ids(&expected_group_ids)
+                .map_err(|_| WireValidationError::new("expectedGroupIds"))?;
+            return Ok(BatchUpdateAccountsCommand::ConditionalGroups(
+                UpdateAccountGroups {
+                    account_id: ProviderAccountId::new(account_id)
+                        .map_err(|_| WireValidationError::new("accountIds"))?,
+                    group_ids: group_ids.ok_or_else(|| WireValidationError::new("groupIds"))?,
+                    expected_group_ids,
+                    enabled: self.enabled,
+                },
+            ));
+        }
+        Ok(BatchUpdateAccountsCommand::Settings(BatchUpdateAccounts {
             quota_settings: self.quota_settings,
             auto_use_quota_credits: self.auto_use_quota_credits,
             outbound_proxy: proxy_selection(self.outbound_proxy_id)?,
@@ -122,12 +177,8 @@ impl BatchUpdateAccountsRequest {
                 .transpose()?,
             weight: self.weight.map(parse_account_weight).transpose()?,
             model_access: self.model_access,
-            group_ids: self
-                .group_ids
-                .as_deref()
-                .map(validate_wire_group_ids)
-                .transpose()?,
-        })
+            group_ids,
+        }))
     }
 }
 

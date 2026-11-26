@@ -33,6 +33,7 @@ const EMPTY_ITEMS: never[] = []
 type ReadOnlyListProps<T extends { id: string }> = {
   kind: 'accounts' | 'proxies'
   userId: number
+  sessionId: string
   columns: ColumnDef<T, unknown>[]
   load: (
     page: number,
@@ -51,7 +52,13 @@ export function ReadOnlyList<T extends { id: string }>(
     pageSize: 20,
   })
   const query = useQuery({
-    queryKey: ['account-egress', props.userId, props.kind, pagination],
+    queryKey: [
+      'account-egress',
+      props.userId,
+      props.kind,
+      props.sessionId,
+      pagination,
+    ],
     queryFn: ({ signal }) =>
       props.load(pagination.pageIndex + 1, pagination.pageSize, signal),
     retry: false,

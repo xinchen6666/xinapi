@@ -31,9 +31,24 @@ struct StopEngine {
     entry_id: String,
 }
 
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct TestNode {
+    source_id: String,
+    node_id: String,
+    version_id: String,
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct ReclaimReservation {
+    operation_id: String,
+}
+
 #[derive(Serialize)]
-struct EngineListView {
-    items: Vec<EngineView>,
+struct ReclaimedReservation {
+    operation_id: String,
+    status: &'static str,
 }
 
 #[derive(Serialize)]
@@ -49,6 +64,12 @@ where
         .route("/api/admin/engines", get(engines::<S>))
         .route("/api/admin/engines/start", post(engine_start::<S>))
         .route("/api/admin/engines/stop", post(engine_stop::<S>))
+        .route(
+            "/api/admin/engines/stop-account",
+            post(engine_stop_account::<S>),
+        )
+        .route("/api/admin/engines/test-node", post(test_node::<S>))
+        .route("/api/admin/engines/reclaim", post(reclaim::<S>))
 }
 
 fn engine_error(error: EngineServiceError) -> AdminError {
@@ -133,6 +154,21 @@ fn engine_error(error: EngineServiceError) -> AdminError {
             AdminErrorKind::Invalid,
             "引擎适配器尚待实现此节点协议或连接选项",
         ),
+        EngineServiceError::NodeVersionChanged => (
+            StatusCode::CONFLICT,
+            AdminErrorKind::Conflict,
+            "节点批准版本已变化，请刷新节点",
+        ),
+        EngineServiceError::NodeTestTimeout => (
+            StatusCode::GATEWAY_TIMEOUT,
+            AdminErrorKind::BadGateway,
+            "节点连接验证超时",
+        ),
+        EngineServiceError::StopForbidden => (
+            StatusCode::CONFLICT,
+            AdminErrorKind::Conflict,
+            "请选择具有当前受管路由的账号入口",
+        ),
         EngineServiceError::ProcessFailed => (
             StatusCode::SERVICE_UNAVAILABLE,
             AdminErrorKind::BadGateway,
@@ -167,13 +203,13 @@ async fn engines<S>(_: AdminAuth, State(state): State<S>) -> Result<impl IntoRes
 where
     S: crate::auth::SessionState + Send + Sync,
 {
-    let items = state
+    let inventory = state
         .admin_services()
         .engines()
         .list()
         .await
         .map_err(engine_error)?;
-    engine_response(EngineListView { items })
+    engine_response(inventory)
 }
 
 async fn engine_start<S>(
@@ -208,4 +244,63 @@ where
         .await
         .map_err(engine_error)?;
     engine_response(EngineViewResponse { engine })
+}
+
+async fn engine_stop_account<S>(
+    auth: AdminAuth,
+    State(state): State<S>,
+    AdminJson(body): AdminJson<StopEngine>,
+) -> Result<impl IntoResponse, AdminError>
+where
+    S: crate::auth::SessionState + Send + Sync,
+{
+    let engine = state
+        .admin_services()
+        .engines()
+        .stop_account(&body.entry_id, &auth.context().mutation_context())
+        .await
+        .map_err(engine_error)?;
+    engine_response(EngineViewResponse { engine })
+}
+
+async fn test_node<S>(
+    auth: AdminAuth,
+    State(state): State<S>,
+    AdminJson(body): AdminJson<TestNode>,
+) -> Result<impl IntoResponse, AdminError>
+where
+    S: crate::auth::SessionState + Send + Sync,
+{
+    let result = state
+        .admin_services()
+        .engines()
+        .test_node(
+            &body.source_id,
+            &body.node_id,
+            &body.version_id,
+            &auth.context().mutation_context(),
+        )
+        .await
+        .map_err(engine_error)?;
+    engine_response(result)
+}
+
+async fn reclaim<S>(
+    auth: AdminAuth,
+    State(state): State<S>,
+    AdminJson(body): AdminJson<ReclaimReservation>,
+) -> Result<impl IntoResponse, AdminError>
+where
+    S: crate::auth::SessionState + Send + Sync,
+{
+    let operation_id = state
+        .admin_services()
+        .credentials()
+        .reclaim_expired_oauth_reservation(&body.operation_id, &auth.context().mutation_context())
+        .await
+        .map_err(super::oauth_operations::error)?;
+    engine_response(ReclaimedReservation {
+        operation_id,
+        status: "cancelled",
+    })
 }

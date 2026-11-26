@@ -17,8 +17,10 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import { createFileRoute, redirect } from '@tanstack/react-router'
+import { z } from 'zod'
 
 import { AccountEgress } from '@/features/account-egress'
+import { egressSectionSchema } from '@/features/account-egress/workspace-section'
 import {
   ADMIN_PERMISSION_RESOURCES,
   ADMIN_PERMISSION_ACTIONS,
@@ -28,6 +30,9 @@ import { ROLE } from '@/lib/roles'
 import { useAuthStore } from '@/stores/auth-store'
 
 export const Route = createFileRoute('/_authenticated/account-egress/')({
+  validateSearch: z.object({
+    section: egressSectionSchema.optional().catch(undefined),
+  }),
   beforeLoad: () => {
     const user = useAuthStore.getState().auth.user
     if (
@@ -42,5 +47,16 @@ export const Route = createFileRoute('/_authenticated/account-egress/')({
       throw redirect({ to: '/403' })
     }
   },
-  component: AccountEgress,
+  component: AccountEgressRoute,
 })
+
+function AccountEgressRoute() {
+  const { section } = Route.useSearch()
+  const navigate = Route.useNavigate()
+  return (
+    <AccountEgress
+      section={section ?? 'accounts'}
+      onSectionChange={(next) => void navigate({ search: { section: next } })}
+    />
+  )
+}
