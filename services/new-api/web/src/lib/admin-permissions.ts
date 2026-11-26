@@ -38,6 +38,9 @@ export const ADMIN_PERMISSION_ACTIONS = {
   SECRET_VIEW: 'secret_view',
   BIND: 'bind',
   AUTHORIZE: 'authorize',
+  MANAGE_SOURCES: 'manage_sources',
+  MANAGE_EGRESS: 'manage_egress',
+  MANAGE_ACCOUNTS: 'manage_accounts',
 } as const
 
 // The role whose baseline grants are used as defaults in the permission editor.

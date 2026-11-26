@@ -148,7 +148,11 @@ func TestSetUserPermissionsStoresOnlyOverrides(t *testing.T) {
 	assert.False(t, Can(42, common.RoleAdminUser, ChannelWrite))
 	assert.Equal(t, PermissionsMap{
 		ResourceAccountEgress: {
-			ActionRead: true,
+			ActionRead:                         true,
+			AccountEgressAuthorize.Action:      true,
+			AccountEgressManageSources.Action:  false,
+			AccountEgressManageEgress.Action:   false,
+			AccountEgressManageAccounts.Action: false,
 		},
 		ResourceChannel: {
 			ActionRead:           true,
@@ -183,7 +187,11 @@ func TestSetUserPermissionsStoresOnlyOverrides(t *testing.T) {
 	assert.False(t, Can(42, common.RoleAdminUser, ChannelSensitiveWrite))
 	assert.Equal(t, PermissionsMap{
 		ResourceAccountEgress: {
-			ActionRead: true,
+			ActionRead:                         true,
+			AccountEgressAuthorize.Action:      true,
+			AccountEgressManageSources.Action:  false,
+			AccountEgressManageEgress.Action:   false,
+			AccountEgressManageAccounts.Action: false,
 		},
 		ResourceChannel: {
 			ActionRead:           true,

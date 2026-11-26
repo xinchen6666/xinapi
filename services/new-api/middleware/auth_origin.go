@@ -21,8 +21,7 @@ func SessionCookieOriginGuard() gin.HandlerFunc {
 			c.Next()
 			return
 		}
-		origin, ok := requestBrowserOrigin(c.Request)
-		if !ok || !isAllowedSessionOrigin(c.Request, origin) {
+		if !hasAllowedBrowserOrigin(c.Request) {
 			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{
 				"success": false,
 				"code":    "AUTH_ORIGIN_FORBIDDEN",
@@ -32,6 +31,28 @@ func SessionCookieOriginGuard() gin.HandlerFunc {
 		}
 		c.Next()
 	}
+}
+
+// RequireBrowserSessionOrigin checks the authenticated dashboard session and
+// browser origin for sensitive routes in both local and secure cookie modes.
+func RequireBrowserSessionOrigin() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		if _, ok := GetSessionAuthIdentity(c); !ok {
+			abortWithWebMessage(c, http.StatusForbidden, "AUTH_SESSION_REQUIRED", common.NewMessage(accessTokenSessionRequiredMsg))
+			return
+		}
+		origin, ok := requestBrowserOrigin(c.Request)
+		if !ok || (common.SessionCookieSecure && !strings.HasPrefix(origin, "https://")) || !isAllowedSessionOrigin(c.Request, origin) {
+			abortWithWebMessage(c, http.StatusForbidden, "AUTH_ORIGIN_FORBIDDEN", common.NewMessage("Open this page from a trusted origin and try again."))
+			return
+		}
+		c.Next()
+	}
+}
+
+func hasAllowedBrowserOrigin(request *http.Request) bool {
+	origin, ok := requestBrowserOrigin(request)
+	return ok && isAllowedSessionOrigin(request, origin)
 }
 
 func requestBrowserOrigin(request *http.Request) (string, bool) {

@@ -36,17 +36,17 @@ func accessTokenScopeRule(scope string) accessTokenRouteRule {
 	return accessTokenRouteRule{kind: accessTokenRuleScope, scope: scope}
 }
 
-// accessTokenRouteRules declares the token rule of every dashboard route that
-// is not guarded by RequirePermission, keyed by method and gin full path.
-// Casbin-guarded routes declare themselves through
-// DeclareAccessTokenPermissionRoute when they are registered.
+// accessTokenRouteRules declares dashboard token rules, keyed by method and Gin
+// full path. Session-only routes belong here even when they use RequirePermission;
+// routes using a Casbin permission as their PAT scope declare it at registration.
 var accessTokenRouteRules = map[string]accessTokenRouteRule{
 	"GET /api/account-egress/oauth/operations":                         accessTokenSessionRule,
 	"POST /api/account-egress/oauth/operations":                        accessTokenSessionRule,
 	"GET /api/account-egress/oauth/operations/:operation_id":           accessTokenSessionRule,
 	"POST /api/account-egress/oauth/operations/:operation_id/complete": accessTokenSessionRule,
 	"POST /api/account-egress/oauth/operations/:operation_id/cancel":   accessTokenSessionRule,
-	// 来源管理写入由超级管理员的登录会话执行，读取令牌保持只读职责
+	// 来源操作由拥有对应权限的管理登录会话执行，个人访问令牌保留读取职责。
+	"POST /api/account-egress/subscription-preview":         accessTokenSessionRule,
 	"POST /api/account-egress/subscription-sources/create":  accessTokenSessionRule,
 	"POST /api/account-egress/subscription-sources/update":  accessTokenSessionRule,
 	"POST /api/account-egress/subscription-sources/refresh": accessTokenSessionRule,

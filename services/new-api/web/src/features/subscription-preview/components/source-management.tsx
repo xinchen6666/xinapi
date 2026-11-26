@@ -18,14 +18,18 @@ For commercial licensing, please contact support@quantumnous.com
 */
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { isAxiosError } from 'axios'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { ErrorState } from '@/components/error-state'
 import { LoadingState } from '@/components/loading-state'
 import { Button } from '@/components/ui/button'
 import { FieldError } from '@/components/ui/field'
-import { ROLE } from '@/lib/roles'
+import {
+  ADMIN_PERMISSION_RESOURCES,
+  ADMIN_PERMISSION_ACTIONS,
+  hasPermission,
+} from '@/lib/admin-permissions'
 import { getServerErrorMessage } from '@/lib/server-error-message'
 import { useAuthStore } from '@/stores/auth-store'
 
@@ -40,11 +44,15 @@ import { SourceEditor } from './source-editor'
 import { SourceReviewPanel } from './source-review'
 import { ApprovedNodes, SourcesTable } from './sources-table'
 
-export function SourceManagement(props: { onAccessDenied: () => void }) {
+export function SourceManagement(props: { onReadDenied: () => void }) {
   const { t } = useTranslation()
   const queryClient = useQueryClient()
   const user = useAuthStore((state) => state.auth.user)
-  const canWrite = !!user && user.role >= ROLE.SUPER_ADMIN
+  const canWrite = hasPermission(
+    user,
+    ADMIN_PERMISSION_RESOURCES.ACCOUNT_EGRESS,
+    ADMIN_PERMISSION_ACTIONS.MANAGE_SOURCES
+  )
   const [sourceId, setSourceId] = useState('')
   const [editor, setEditor] = useState<'create' | 'update' | null>(null)
   const sources = useQuery({
@@ -61,6 +69,14 @@ export function SourceManagement(props: { onAccessDenied: () => void }) {
     retry: false,
     meta: { errorToast: false },
   })
+  const readDenied = [sources.error, detail.error].some(
+    (error) => isAxiosError(error) && error.response?.status === 403
+  )
+  const onReadDenied = props.onReadDenied
+  useEffect(() => {
+    if (readDenied) onReadDenied()
+  }, [readDenied, onReadDenied])
+
   const updated = (value: SourceDetail) => {
     setSourceId(value.source.id)
     queryClient.setQueryData(
@@ -77,9 +93,6 @@ export function SourceManagement(props: { onAccessDenied: () => void }) {
       void queryClient.invalidateQueries({
         queryKey: ['subscription-sources', user?.id],
       })
-    }
-    if (isAxiosError(error) && error.response?.status === 403) {
-      props.onAccessDenied()
     }
   }
   const refresh = useMutation({
@@ -126,7 +139,7 @@ export function SourceManagement(props: { onAccessDenied: () => void }) {
       {!canWrite ? (
         <p className='rounded-lg border p-3 text-sm'>
           {t(
-            'Administrators can view sources. Super administrators can manage sources and approve versions.'
+            'Source management permission is required to edit sources and approve versions.'
           )}
         </p>
       ) : null}
@@ -216,7 +229,7 @@ export function SourceManagement(props: { onAccessDenied: () => void }) {
           ) : null}
         </section>
       ) : null}
-      {editor ? (
+      {canWrite && editor ? (
         <SourceEditor
           key={`${editor}:${detail.data?.source.id ?? 'new'}`}
           detail={editor === 'update' ? detail.data : undefined}

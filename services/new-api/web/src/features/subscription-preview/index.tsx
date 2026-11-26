@@ -17,7 +17,6 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import { useMutation } from '@tanstack/react-query'
-import { isAxiosError } from 'axios'
 import { Rss } from 'lucide-react'
 import { useCallback, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -67,7 +66,13 @@ function SubscriptionPreviewSession() {
       ADMIN_PERMISSION_ACTIONS.READ
     )
 
-  const handleAccessDenied = useCallback(() => {
+  const canManageSources = hasPermission(
+    user,
+    ADMIN_PERMISSION_RESOURCES.ACCOUNT_EGRESS,
+    ADMIN_PERMISSION_ACTIONS.MANAGE_SOURCES
+  )
+
+  const handleReadDenied = useCallback(() => {
     setAccessRevoked(true)
     const current = useAuthStore.getState().auth.user
     if (current && current.id === userId) {
@@ -77,7 +82,10 @@ function SubscriptionPreviewSession() {
           ...current.permissions,
           admin_permissions: {
             ...current.permissions?.admin_permissions,
-            account_egress: { read: false },
+            account_egress: {
+              ...current.permissions?.admin_permissions?.account_egress,
+              read: false,
+            },
           },
         },
       })
@@ -87,14 +95,10 @@ function SubscriptionPreviewSession() {
   const previewMutation = useMutation({
     meta: { errorToast: false },
     mutationFn: previewSubscription,
-    onError: (error) => {
-      if (isAxiosError(error) && error.response?.status === 403) {
-        handleAccessDenied()
-      }
-    },
   })
 
   const submit = () => {
+    if (!canManageSources) return
     previewMutation.reset()
     const trimmed = source.trim()
     if (trimmed === '') {
@@ -125,7 +129,10 @@ function SubscriptionPreviewSession() {
       </SectionPageLayout.Title>
       <SectionPageLayout.Content>
         {canRead && !accessRevoked ? (
-          <Tabs defaultValue='preview' className='min-h-0'>
+          <Tabs
+            defaultValue={canManageSources ? 'preview' : 'sources'}
+            className='min-h-0'
+          >
             <TabsList aria-label={t('Subscription workspace')}>
               <TabsTrigger value='preview'>
                 {t('Subscription Preview')}
@@ -135,55 +142,63 @@ function SubscriptionPreviewSession() {
               </TabsTrigger>
             </TabsList>
             <TabsContent value='sources'>
-              <SourceManagement onAccessDenied={handleAccessDenied} />
+              <SourceManagement onReadDenied={handleReadDenied} />
             </TabsContent>
             <TabsContent value='preview'>
-              <div className='flex h-full min-h-0 flex-col gap-3'>
-                <SourceForm
-                  value={source}
-                  error={sourceError}
-                  pending={previewMutation.isPending}
-                  onChange={setSource}
-                  onError={setSourceError}
-                  onSubmit={submit}
+              {canManageSources ? (
+                <div className='flex h-full min-h-0 flex-col gap-3'>
+                  <SourceForm
+                    value={source}
+                    error={sourceError}
+                    pending={previewMutation.isPending}
+                    onChange={setSource}
+                    onError={setSourceError}
+                    onSubmit={submit}
+                  />
+                  {previewMutation.isPending ? (
+                    <LoadingState
+                      message={t('Downloading and parsing the subscription...')}
+                    />
+                  ) : null}
+                  {previewMutation.isError ? (
+                    <ErrorState
+                      title={t('Subscription preview failed')}
+                      description={getServerErrorMessage(previewMutation.error)}
+                      onRetry={() =>
+                        previewMutation.mutate(previewMutation.variables)
+                      }
+                      action={
+                        previewErrorCode(previewMutation.error) ? (
+                          <span className='text-muted-foreground font-mono text-xs'>
+                            {previewErrorCode(previewMutation.error)}
+                          </span>
+                        ) : undefined
+                      }
+                    />
+                  ) : null}
+                  {previewMutation.isSuccess ? (
+                    <PreviewResult
+                      key={previewMutation.submittedAt}
+                      preview={previewMutation.data}
+                    />
+                  ) : null}
+                  {previewMutation.isIdle ? (
+                    <EmptyState
+                      icon={Rss}
+                      title={t('No preview yet')}
+                      description={t(
+                        'Paste a subscription link to review parsing, transport capability, and per-node diagnostics.'
+                      )}
+                    />
+                  ) : null}
+                </div>
+              ) : (
+                <ErrorState
+                  title={t(
+                    'Source management permission is required to preview subscription links.'
+                  )}
                 />
-                {previewMutation.isPending ? (
-                  <LoadingState
-                    message={t('Downloading and parsing the subscription...')}
-                  />
-                ) : null}
-                {previewMutation.isError ? (
-                  <ErrorState
-                    title={t('Subscription preview failed')}
-                    description={getServerErrorMessage(previewMutation.error)}
-                    onRetry={() =>
-                      previewMutation.mutate(previewMutation.variables)
-                    }
-                    action={
-                      previewErrorCode(previewMutation.error) ? (
-                        <span className='text-muted-foreground font-mono text-xs'>
-                          {previewErrorCode(previewMutation.error)}
-                        </span>
-                      ) : undefined
-                    }
-                  />
-                ) : null}
-                {previewMutation.isSuccess ? (
-                  <PreviewResult
-                    key={previewMutation.submittedAt}
-                    preview={previewMutation.data}
-                  />
-                ) : null}
-                {previewMutation.isIdle ? (
-                  <EmptyState
-                    icon={Rss}
-                    title={t('No preview yet')}
-                    description={t(
-                      'Paste a subscription link to review parsing, transport capability, and per-node diagnostics.'
-                    )}
-                  />
-                ) : null}
-              </div>
+              )}
             </TabsContent>
           </Tabs>
         ) : (

@@ -102,7 +102,7 @@ export function OAuthStartDialog(props: Props) {
       props.onStarted(receipt)
     } catch (error) {
       setErrorMessage(getServerErrorMessage(error))
-      if (error instanceof AccountOAuthError && error.status === 403) {
+      if (error instanceof AccountOAuthError && error.accessDenied) {
         props.onAccessDenied()
       }
     } finally {

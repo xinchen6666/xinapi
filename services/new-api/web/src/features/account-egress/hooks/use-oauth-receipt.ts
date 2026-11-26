@@ -32,6 +32,7 @@ import {
   type AccountOAuthCallbackValues,
 } from '../lib/oauth-schema'
 import {
+  AccountOAuthError,
   cancelAccountOAuth,
   completeAccountOAuth,
   getAccountOAuthReceipt,
@@ -135,8 +136,11 @@ export function useOAuthReceipt(props: Props) {
       updateReceipt(await complete.mutateAsync())
     } catch (error) {
       setErrorMessage(getServerErrorMessage(error))
-      if (getServerErrorStatus(error) === 403) props.onAccessDenied()
-      else void receipt.refetch()
+      if (error instanceof AccountOAuthError && error.accessDenied) {
+        props.onAccessDenied()
+      } else {
+        void receipt.refetch()
+      }
     } finally {
       callback.current = ''
       form.reset({ callback_url: '' })
@@ -154,8 +158,11 @@ export function useOAuthReceipt(props: Props) {
       updateReceipt(await cancel.mutateAsync())
     } catch (error) {
       setErrorMessage(getServerErrorMessage(error))
-      if (getServerErrorStatus(error) === 403) props.onAccessDenied()
-      else void receipt.refetch()
+      if (error instanceof AccountOAuthError && error.accessDenied) {
+        props.onAccessDenied()
+      } else {
+        void receipt.refetch()
+      }
     } finally {
       cancelSubmitted.current = false
       cancel.reset()

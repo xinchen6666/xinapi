@@ -19,6 +19,7 @@ For commercial licensing, please contact support@quantumnous.com
 import { api } from '@/lib/api'
 import {
   getServerErrorMessage,
+  getServerErrorSources,
   getServerErrorStatus,
   requireServerSuccess,
   safeServerErrorMessage,
@@ -37,6 +38,7 @@ const operationsPath = '/api/account-egress/oauth/operations'
 export class AccountOAuthError extends Error {
   readonly [safeServerErrorMessage] = true
   readonly status: number | undefined
+  readonly accessDenied: boolean
 
   constructor(error: unknown) {
     super(
@@ -46,6 +48,13 @@ export class AccountOAuthError extends Error {
       )
     )
     this.status = getServerErrorStatus(error)
+    this.accessDenied =
+      this.status === 403 &&
+      !getServerErrorSources(error).some(
+        (source) =>
+          source.code === 'AUTH_ORIGIN_FORBIDDEN' ||
+          source.code === 'AUTH_SESSION_REQUIRED'
+      )
   }
 }
 
