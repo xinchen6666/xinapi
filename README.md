@@ -1,6 +1,6 @@
 # xinapi
 
-给朋友小团队私用的 Codex 订阅网关：管理员在 New API 后台导入 Clash 订阅、确认出口、授权上游账号并给成员分组。成员使用自己的平台 Key。**本仓库已准备固定上游源码及来源验证工具，还不是可启动的集成成品；实际进度见状态表。** 发布位置：[xinchen6666/xinapi](https://github.com/xinchen6666/xinapi)。
+给朋友小团队私用的 Codex 订阅网关。当前已具备本机五服务运行、订阅预览与来源审批、受管账号出口、管理员 OAuth 与回执。统一管理员工作流、成员授组和正式首次安装按[项目状态](docs/STATUS.md)继续交付。发布位置：[xinchen6666/xinapi](https://github.com/xinchen6666/xinapi)。
 
 ## 阅读入口
 

@@ -1,6 +1,6 @@
 # 项目进度
 
-目标：[xinchen6666/xinapi](https://github.com/xinchen6666/xinapi)，单机 Docker Compose。更新：2026-11-25 UTC。**本表是 X 任务的唯一进度来源**；不以已有上游源码、文档或工具看板推断集成产品完成。
+目标：[xinchen6666/xinapi](https://github.com/xinchen6666/xinapi)，单机 Docker Compose。更新：2026-11-26（Asia/Shanghai）。**本表是 X 任务的唯一进度来源**；主干收拢与部署状态分别见[交接单](HANDOFF.md)。
 
 | ID | 状态 | 负责人／工作域 | 最近事实或验收入口 |
 | --- | --- | --- | --- |
@@ -14,13 +14,13 @@
 | X08 | done | lead；审核修复已交付 | R1–R9及DNS语义修复完成；61项真实引擎场景、既有回归与[PR CI](https://github.com/xinchen6666/xinapi/actions/runs/45667344429)通过，见 [修复记录](worklog/X08-fix.md)与[E027](VALIDATION.md#e027-x08审核修复复验)；[Draft PR #7](https://github.com/xinchen6666/xinapi/pull/7) 保留修复后审阅入口 |
 | X09 | done | lead；账号绑定与换路已交付 | 41项真实运行场景、既有回归及[PR CI](https://github.com/xinchen6666/xinapi/actions/runs/45690896769)通过；[Draft PR #8](https://github.com/xinchen6666/xinapi/pull/8)保留复审入口，见[X09日志](worklog/X09.md)与[E028](VALIDATION.md#e028-x09账号绑定及换路) |
 | X10 | done | lead；严格出口已交付 | 331次实际请求观测、12项网关场景及124项既有回归通过；165次故障调用的上游／默认出口增量均零，已交付[Draft PR #9](https://github.com/xinchen6666/xinapi/pull/9)，见[X10日志](worklog/X10.md)与[E029](VALIDATION.md#e029-x10严格出口与故障停发) |
-| X11 | done | lead；OAuth与只读回执已交付 | [Draft PR #10](https://github.com/xinchen6666/xinapi/pull/10)以X10为base；38项运行、168项三数据库检查与浏览器完成／取消通过，保留1项旧权限字段断言差异，见[X11日志](worklog/X11.md)与[E030](VALIDATION.md#e030-x11管理员oauth与回执恢复) |
+| X11 | done | lead；OAuth与只读回执已交付 | [原 PR #10](https://github.com/xinchen6666/xinapi/pull/10)记录 38 项运行、168 项三数据库检查与浏览器完成／取消。既有权限字段断言已在[主干收拢](worklog/X11-consolidation.md)按授权更新并复跑通过；历史证据见 [E030](VALIDATION.md#e030-x11管理员oauth与回执恢复) |
 | X12 | pending | New API 管理后台 | 完整管理员工作流与权限证据 |
 | X13 | pending | 成员和授权映射 | 注册无默认上游权限、改组与撤销 |
 | X14 | pending | 模型转发 | Responses、SSE／WS、工具及用量 |
 | X15 | pending | 跨服务测试 | 模拟矩阵／获授权的真实验收分别记账 |
 | X16 | pending | 单机交付 | 从新克隆安装、首次管理员使用 |
-| X17 | pending | 备份与升级 | 隔离恢复、回退和维护窗口 |
+| X17 | pending | 专项演练暂缓 | 等待单独确认维护范围和时间；X18 直接依赖 X15 与 X16 |
 | X18 | pending | 版本发布 | 候选标签、接手试用、实际覆盖说明 |
 
 `pending` 表示排队；`in_progress` 表示正在实施或交付；`blocked` 表示存在具体障碍；`done` 表示功能目标与该步 GitHub 交付均已核对。工作分支同步、合入 `main`、服务器部署分别记录。V01–V03 的最新覆盖见 E022，其余场景以各证据条目为准。已完成的 D01–D05 属于前期研究，证据见[验证记录](VALIDATION.md)，X 业务开发成果按本表记录。

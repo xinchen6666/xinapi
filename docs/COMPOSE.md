@@ -4,21 +4,16 @@
 
 ## 准备镜像和配置
 
-已有 X03 镜像时，用 `XINAPI_NEW_API_IMAGE` 和 `XINAPI_CPR_IMAGE` 指定本机标签。[公开配置示例](../.env.example)列出完整参数。新环境先执行：
+已有应用镜像时，用 `XINAPI_NEW_API_IMAGE` 和 `XINAPI_CPR_IMAGE` 指定本机标签。[公开配置示例](../.env.example)列出参数。需要自行构建时按[构建说明](BUILD.md)依次构建两套镜像，再确认标签与 Compose 配置一致。
 
-```bash
-python3 -B tools/build_image.py new-api --tag xinapi/new-api:x04-local
-python3 -B tools/build_image.py cpr --tag xinapi/cpr:x04-local
-```
-
-受限网络可按[构建说明](BUILD.md)选择相应下载通道。基础服务使用 PostgreSQL 18 bookworm、Redis 8 alpine；本机已有镜像也可通过 `XINAPI_POSTGRES_IMAGE`、`XINAPI_REDIS_IMAGE` 指定。
+数据服务使用 PostgreSQL 18 bookworm、Redis 8 alpine；本机已有镜像也可通过 `XINAPI_POSTGRES_IMAGE`、`XINAPI_REDIS_IMAGE` 指定。
 
 ```bash
 chmod 0755 deploy/compose/init-db.sh
 chmod 0644 deploy/compose/cpr-entrypoint.sh services/codex-proxy-rs/deploy/config.example.yaml
 python3 -B tools/init_compose.py
 docker compose config --quiet
-python3 -B tools/start_compose.py --build --timeout 120
+python3 -B tools/start_compose.py --timeout 120
 ```
 
 `chmod` 只面向公开脚本、模板，尤其适用于 umask 为 077 的检出。生成器按服务写入 `.runtime/x04/`，目录 0700，文件 0600。自选目录时同步设置 `XINAPI_CONFIG_DIR` 和生成器的 `--directory`。复用已有完整配置，缺项时停止并提示。展开的 Compose 配置和 `docker inspect` 环境段含有秘密，仅供部署者本地使用。
@@ -57,8 +52,7 @@ python3 -B tools/start_compose.py --timeout 120
 
 ## X07 来源与批准版本
 
-超级管理员通过「订阅预览 → 来源管理」保存私密来源链接，刷新后查看新增、改名、连接变化与重复候选，
-选择节点身份并批准范围。普通管理员可读取来源详情，来源写入仅接受超级管理员登录会话。
+「订阅预览 → 来源管理」的读取沿用 `account_egress:read`。预览外部链接、创建、编辑、刷新及批准需 `account_egress:manage_sources`、真实浏览器登录会话和可信来源。Root 默认拥有，普通管理员由 Root 显式授予。OAuth 写入沿用 `account_egress:authorize` 并接受相同来源校验。HTTPS 反代部署配置 `SESSION_COOKIE_SECURE=true` 与精确的 `SESSION_COOKIE_TRUSTED_URL`；本机 HTTP 联调从应用自身入口访问。
 New API 的读取响应只包含来源名、版本、节点 UUID、连接版本 ID 与诊断；来源链接只在提交表单中填写。
 
 CPR 首次保存来源时在其持久运行数据目录创建 `subscription.key`（0600、32 字节）。根 Compose 已将该目录

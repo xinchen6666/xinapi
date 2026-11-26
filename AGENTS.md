@@ -7,7 +7,7 @@
 ## 从新会话恢复
 
 1. 确认项目根目录、当前分支、`git status --short --branch` 及实际远端；仓库目标为 [xinchen6666/xinapi](https://github.com/xinchen6666/xinapi)。研究子目录的 Git 不是本项目根仓库。
-2. 读[进度](docs/STATUS.md)、[交接](docs/HANDOFF.md)。用当前任务 ID 查[唯一计划](docs/PLAN.md)，从本步工作日志、验证索引和远端 SHA 核实状态。不要假定上个 agent 的后台任务或聊天可用。
+2. 读[进度](docs/STATUS.md)、[交接](docs/HANDOFF.md)。用当前任务 ID 查[路线图](docs/PLAN.md)，查看工作日志和远端 PR 确认交付状态。
 3. 按需要读取[需求](docs/PROJECT.md)、[架构](docs/ARCHITECTURE.md)、[部署边界](docs/DEPLOYMENT.md)、[长期记忆](docs/MEMORY.md)、[上游](docs/UPSTREAM.md)。进入实际修改的上游模块时还要遵循适用的局部约定。
 
 ## 实施纪律
@@ -31,8 +31,8 @@
 
 ## 源码和 GitHub
 
-X01 用空远端建立 `main`；之后用 `task/Xnn-简述`，提交例如 `feat(accounts): X11 add owner-bound receipts`。每步推送到指定仓库并比对远端分支 SHA；按仓库规则用 PR 合并到 `main`。分别记录本地提交、远端分支是否确认和是否已合入，不假定远端请求一定成功。不创建另一个远端、不强推、不为了收尾重写他人历史。
+X01 用空远端建立 `main`；X02–X11 通过汇总 PR 保留原提交历史合入。后续从 `main` 建立 `task/Xnn-简述`，例如提交 `feat(accounts): X12 connect managed routes`。依据分支、PR 和实际运行结果分别记录本地完成、远端交付与合入主干。使用用户指定仓库和普通合并流程，保留其他协作者的历史。
 
 公开提交使用白名单审查；禁止真实订阅 URL、节点认证、OAuth code/state/AT/RT、管理 Key、`.env`、GitHub 凭据、运行日志或数据库备份进入 Git、PR、CI 输出或截图。日志只记脱敏结果和配置职责。不要公开真实出口 IP 或成员身份。`research/checkouts/` 是可选本地研究缓存，不提交；实际修改的产品源码必须在本仓库的 `services/` 受控树，而不是嵌套仓库指针。保留许可、来源与修改说明。
 
-网络失败时保留本地 SHA；重试前检查远端 ref。没有写权限，通过本机受信凭据管理器等配置授权，不向聊天索取密码、PAT 或私钥。收工时记录准确的下一动作、工作树差异、未完成验证与运行任务；没有则写明。
+网络失败时保持本地提交，重试前检查远端分支或 PR 状态。写权限由本机受信凭据管理器等配置，凭据留在其管理边界。收工时记录下一动作、工作树状态、待验证项与仍在运行的任务。

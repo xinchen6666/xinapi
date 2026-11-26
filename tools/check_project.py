@@ -231,18 +231,36 @@ def check_project(snapshot, baseline):
                 else:
                     issue(path, text.count("\n", 0, match.start()) + 1, category)
 
+    documents = check_documentation(snapshot.files, snapshot.modes, issue, counts)
+    check_tasks(documents, snapshot.modes, issue, counts)
+    return {
+        "ok": not issues,
+        "tree": snapshot.tree,
+        "baseline_tree": baseline.tree,
+        "counts": dict(sorted(counts.items())),
+        "issues": issues,
+        "scope": "Committed files; project Markdown links; structural task checks; all-file signature scan",
+        "limitations": [
+            "Not a full Markdown parser or exhaustive credential detector",
+            "Reviewed signature exemptions apply only to identical upstream matches at the audited path",
+            "No network, worktree content, upstream execution or build/runtime completion verification",
+        ],
+    }
+
+
+def check_documentation(files, modes, issue, counts):
     documents = {}
-    for path in sorted(snapshot.files):
+    for path in sorted(files):
         if not project_document(path):
             if path.startswith("services/") and path.endswith(".md"):
                 counts["upstream_markdown_not_link_checked"] += 1
             continue
         counts["documents_checked"] += 1
-        if snapshot.modes.get(path) not in ("100644", "100755"):
+        if modes.get(path) not in ("100644", "100755"):
             issue(path, 1, "document-not-regular")
             continue
         try:
-            text = snapshot.files[path].decode("utf-8")
+            text = files[path].decode("utf-8")
         except UnicodeDecodeError:
             issue(path, 1, "document-not-utf8")
             continue
@@ -250,7 +268,7 @@ def check_project(snapshot, baseline):
         if unclosed:
             issue(path, unclosed, "unclosed-code-fence")
         documents[path] = (lines, anchor_ids(lines))
-    directories = {posixpath.dirname(path) for path in snapshot.modes}
+    directories = {posixpath.dirname(path) for path in modes}
     directories |= {
         parent for path in tuple(directories) for parent in parents_of(path)
     }
@@ -300,7 +318,7 @@ def check_project(snapshot, baseline):
                 issue(path, number, "link-outside-repository")
                 continue
             if (
-                destination not in snapshot.modes
+                destination not in modes
                 and destination not in directories
                 and destination != "."
             ):
@@ -311,36 +329,23 @@ def check_project(snapshot, baseline):
                 continue
             line_anchor = LINE_ANCHOR.fullmatch(fragment)
             if line_anchor:
-                target_bytes = snapshot.files.get(destination, b"")
+                target_bytes = files.get(destination, b"")
                 target_lines = len(target_bytes.decode("utf-8", "replace").splitlines())
                 start = int(line_anchor[1])
                 end = int(line_anchor[2] or start)
                 if start > end or end > target_lines:
                     issue(path, number, "invalid-line-anchor")
-            elif destination.endswith(".md") and destination in snapshot.files:
+            elif destination.endswith(".md") and destination in files:
                 if destination in documents:
                     ids = documents[destination][1]
                 else:
                     target_lines, _ = prose_lines(
-                        snapshot.files[destination].decode("utf-8", "replace")
+                        files[destination].decode("utf-8", "replace")
                     )
                     ids = anchor_ids(target_lines)
                 if fragment not in ids:
                     issue(path, number, "missing-heading-anchor")
-    check_tasks(documents, snapshot.modes, issue, counts)
-    return {
-        "ok": not issues,
-        "tree": snapshot.tree,
-        "baseline_tree": baseline.tree,
-        "counts": dict(sorted(counts.items())),
-        "issues": issues,
-        "scope": "Committed files; project Markdown links; structural task checks; all-file signature scan",
-        "limitations": [
-            "Not a full Markdown parser or exhaustive credential detector",
-            "Reviewed signature exemptions apply only to identical upstream matches at the audited path",
-            "No network, worktree content, upstream execution or build/runtime completion verification",
-        ],
-    }
+    return documents
 
 
 def parents_of(path):
