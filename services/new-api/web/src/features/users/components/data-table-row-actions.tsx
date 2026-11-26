@@ -28,6 +28,7 @@ import {
   ShieldAlert,
   Link2,
   CreditCard,
+  Network,
 } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -48,8 +49,14 @@ import {
 } from '@/components/ui/tooltip'
 import type { AdminUserManageAction } from '@/features/auth/secure-verification'
 import { UserSubscriptionsDialog } from '@/features/subscriptions/components/dialogs/user-subscriptions-dialog'
+import {
+  ADMIN_PERMISSION_ACTIONS,
+  ADMIN_PERMISSION_RESOURCES,
+  hasPermission,
+} from '@/lib/admin-permissions'
 import { handleServerError } from '@/lib/handle-server-error'
 import { AuthOperationError } from '@/lib/secure-verification'
+import { useAuthStore } from '@/stores/auth-store'
 
 import { manageUser, resetUserPasskey, resetUserTwoFA } from '../api'
 import {
@@ -61,6 +68,7 @@ import {
 import { getUserActionMessage } from '../lib'
 import type { User } from '../types'
 import { UserBindingDialog } from './dialogs/user-binding-dialog'
+import { UserCprAccessDialog } from './user-cpr-access-dialog'
 import { useUsers } from './users-provider'
 
 const MANAGE_ACTION_TITLES: Record<AdminUserManageAction, string> = {
@@ -88,6 +96,18 @@ export function DataTableRowActions({ row }: DataTableRowActionsProps) {
   const [resetTwoFAOpen, setResetTwoFAOpen] = useState(false)
   const [bindingDialogOpen, setBindingDialogOpen] = useState(false)
   const [subscriptionsDialogOpen, setSubscriptionsDialogOpen] = useState(false)
+  const [cprAccessSession, setCprAccessSession] = useState<string | null>(null)
+  const operator = useAuthStore((state) => state.auth.user)
+  const sessionId = useAuthStore((state) => state.auth.session?.sid)
+  const canManageCprAccess =
+    operator != null &&
+    operator.role >= USER_ROLE.ADMIN &&
+    (operator.role === USER_ROLE.ROOT || operator.role > user.role) &&
+    hasPermission(
+      operator,
+      ADMIN_PERMISSION_RESOURCES.ACCOUNT_EGRESS,
+      ADMIN_PERMISSION_ACTIONS.MANAGE_ACCOUNTS
+    )
 
   const handleEdit = () => {
     setCurrentRow(user)
@@ -275,6 +295,20 @@ export function DataTableRowActions({ row }: DataTableRowActionsProps) {
           </DropdownMenuShortcut>
         </DropdownMenuItem>
 
+        {canManageCprAccess && sessionId && (
+          <DropdownMenuItem
+            onSelect={(event) => {
+              event.preventDefault()
+              setCprAccessSession(sessionId)
+            }}
+          >
+            {t('Upstream access')}
+            <DropdownMenuShortcut>
+              <Network size={16} />
+            </DropdownMenuShortcut>
+          </DropdownMenuItem>
+        )}
+
         <DropdownMenuSeparator />
 
         <DropdownMenuItem
@@ -354,6 +388,19 @@ export function DataTableRowActions({ row }: DataTableRowActionsProps) {
         user={{ id: user.id, username: user.username }}
         onSuccess={triggerRefresh}
       />
+
+      {canManageCprAccess &&
+        operator &&
+        cprAccessSession &&
+        cprAccessSession === sessionId && (
+          <UserCprAccessDialog
+            key={`${cprAccessSession}:${user.id}`}
+            user={user}
+            operatorId={operator.id}
+            sessionId={cprAccessSession}
+            onClose={() => setCprAccessSession(null)}
+          />
+        )}
     </div>
   )
 }

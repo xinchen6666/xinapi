@@ -346,6 +346,7 @@ func migrateDB() error {
 		&UserSession{},
 		&AuthFlow{},
 		&CprOAuthOperation{},
+		&CprMemberAccess{},
 		&ExternalIdentityClaim{},
 		&PasskeyCredential{},
 		&Option{},

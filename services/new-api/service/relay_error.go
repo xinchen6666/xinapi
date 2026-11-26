@@ -21,6 +21,9 @@ func DecideRelayRetry(c *gin.Context, err *types.NewAPIError, retryTimes int) Po
 	if err == nil {
 		return PolicyDecision{Action: "stop", Reason: "request_completed", Source: "system"}
 	}
+	if _, bound := CprMemberRelayBinding(c); bound || c != nil && IsCprMemberChannel(c.GetInt("channel_id")) {
+		return PolicyDecision{Action: "stop", Reason: "member_channel_single_attempt", Source: "system"}
+	}
 	if ShouldSkipRetryAfterChannelAffinityFailure(c) {
 		source := RequestPolicy(c).SessionModeSource
 		if source == "" {
@@ -66,7 +69,7 @@ func ProcessChannelError(c *gin.Context, channelError types.ChannelError, err *t
 	}
 	upstreamURLs := common.UpstreamAddresses(c)
 	logger.LogError(c, common.LogText("channel error (channel #%d, status code: %d): %s", channelError.ChannelId, err.StatusCode, common.LocalLogPreview(err.MaskSensitiveErrorWithStatusCode(upstreamURLs...))))
-	if ShouldDisableChannel(err) && channelError.AutoBan {
+	if _, bound := CprMemberRelayBinding(c); channelError.AutoBan && !bound && !IsCprMemberChannel(channelError.ChannelId) && ShouldDisableChannel(err) {
 		reason := err.MaskSensitiveErrorWithStatusCode(upstreamURLs...)
 		gopool.Go(func() {
 			DisableChannel(channelError, reason)

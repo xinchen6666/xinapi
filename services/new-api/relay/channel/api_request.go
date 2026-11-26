@@ -385,6 +385,16 @@ func DoApiRequest(a Adaptor, c *gin.Context, info *common.RelayInfo, requestBody
 		return nil, fmt.Errorf("new request failed: %w", err)
 	}
 	ApplyUpstreamBodyMetadata(req, requestBody)
+	if managedCprMemberAttempt(c, info) {
+		if !validCprMemberTransportSettings(info) {
+			return nil, reservedCprMemberTargetError()
+		}
+		headers := req.Header
+		if err := a.SetupRequestHeader(c, &headers, info); err != nil {
+			return nil, reservedCprMemberTargetError()
+		}
+		return doRequest(c, req, info)
+	}
 	headers := req.Header
 	err = a.SetupRequestHeader(c, &headers, info)
 	if err != nil {
@@ -449,6 +459,10 @@ type WebSocketPreparer interface {
 // request context, and reports a rejected handshake as a *types.NewAPIError
 // carrying the upstream status code (types.NewError preserves it).
 func DoWssRequest(a Adaptor, c *gin.Context, info *common.RelayInfo, requestBody io.Reader) (*websocket.Conn, error) {
+	managed := managedCprMemberAttempt(c, info)
+	if managed {
+		return dialCprMemberResponses(a, c, info)
+	}
 	if preparer, ok := a.(WebSocketPreparer); ok {
 		if err := preparer.PrepareWebSocket(c, info); err != nil {
 			return nil, err
@@ -460,6 +474,9 @@ func DoWssRequest(a Adaptor, c *gin.Context, info *common.RelayInfo, requestBody
 	}
 	fullRequestURL = toWebSocketURL(fullRequestURL)
 	if targetURL, parseErr := url.Parse(fullRequestURL); parseErr == nil {
+		if service.IsCprMemberRelayTarget(targetURL) {
+			return nil, reservedCprMemberTargetError()
+		}
 		common2.SetContextKey(c, appconstant.ContextKeyUpstreamRequestOrigin, targetURL.Scheme+"://"+targetURL.Host)
 	}
 	targetHeader := http.Header{}
@@ -493,10 +510,16 @@ func DoWssRequest(a Adaptor, c *gin.Context, info *common.RelayInfo, requestBody
 		if proxyErr != nil {
 			return nil, proxyErr
 		}
+		if service.IsCprMemberRelayTarget(proxyURL) {
+			return nil, reservedCprMemberTargetError()
+		}
 		dialer.Proxy = http.ProxyURL(proxyURL)
 	}
 	if info.ChannelSetting.TLSInsecureSkipVerify {
 		dialer.TLSClientConfig = common2.InsecureTLSConfig
+	}
+	if finalURL, parseErr := url.Parse(fullRequestURL); parseErr == nil && service.IsCprMemberRelayTarget(finalURL) {
+		return nil, reservedCprMemberTargetError()
 	}
 	targetConn, resp, err := dialer.DialContext(c.Request.Context(), fullRequestURL, targetHeader)
 	if err != nil {
@@ -510,6 +533,115 @@ func DoWssRequest(a Adaptor, c *gin.Context, info *common.RelayInfo, requestBody
 		return nil, types.NewErrorWithStatusCode(fmt.Errorf("dial failed to %s: %w", common.SanitizeURLForLog(fullRequestURL), err), types.ErrorCodeDoRequestFailed, statusCode)
 	}
 	return targetConn, nil
+}
+
+var cprMemberHTTPClient = &http.Client{
+	Transport: &http.Transport{
+		Proxy:             nil,
+		DisableKeepAlives: true,
+	},
+	CheckRedirect: keepUpstreamRedirectResponse,
+}
+
+func managedCprMemberAttempt(c *gin.Context, info *common.RelayInfo) bool {
+	_, bound := service.CprMemberRelayBinding(c)
+	return bound || info.HasChannelMeta() && service.IsCprMemberChannel(info.ChannelId)
+}
+
+func reservedCprMemberTargetError() *types.NewAPIError {
+	return types.NewErrorWithStatusCode(errors.New("The internal gateway requires its dedicated member channel."), types.ErrorCodeAccessDenied, http.StatusForbidden, types.ErrOptionWithSkipRetry())
+}
+
+func validCprMemberTransportSettings(info *common.RelayInfo) bool {
+	return info.HasChannelMeta() && info.ChannelType == appconstant.ChannelTypeOpenAI &&
+		info.ChannelBaseUrl == service.CprMemberRelayOrigin &&
+		info.ChannelSetting.Proxy == "" && info.ChannelOtherSettings.AdvancedCustom == nil &&
+		len(info.HeadersOverride) == 0 && len(info.RuntimeHeadersOverride) == 0
+}
+
+// cprMemberHeaders 仅保留原生协议头并注入当次成员凭据
+func cprMemberHeaders(source http.Header, requestID, key string) http.Header {
+	result := http.Header{"Authorization": {"Bearer " + key}}
+	for _, name := range []string{"Content-Type", "Accept"} {
+		if value := source.Get(name); value != "" {
+			result.Set(name, value)
+		}
+	}
+	if requestID != "" {
+		result.Set("X-Request-Id", requestID)
+	}
+	return result
+}
+
+func sendCprMemberRequest(c *gin.Context, req *http.Request, info *common.RelayInfo) (*http.Response, error) {
+	if req == nil || !validCprMemberTransportSettings(info) {
+		return nil, reservedCprMemberTargetError()
+	}
+	key, apiErr := service.AuthorizeCprMemberRelayTarget(c, info.ChannelId, req.Method, req.URL, false)
+	if apiErr != nil {
+		return nil, apiErr
+	}
+	outbound := req.Clone(c.Request.Context())
+	outbound.Host = ""
+	outbound.Header = cprMemberHeaders(req.Header, c.GetString(common2.RequestIdKey), key)
+	outbound.GetBody = nil
+	if info.IsStream {
+		helper.SetEventStreamHeaders(c)
+		generalSettings := operation_setting.GetGeneralSetting()
+		if generalSettings.PingIntervalEnabled && !info.DisablePing {
+			stopPinger := helper.StartStreamKeepAlive(c, time.Duration(generalSettings.PingIntervalSeconds)*time.Second)
+			defer stopPinger()
+		}
+	}
+	common2.SetContextKey(c, appconstant.ContextKeyUpstreamRequestOrigin, service.CprMemberRelayOrigin)
+	resp, err := cprMemberHTTPClient.Do(outbound)
+	if err != nil {
+		return nil, types.NewErrorWithStatusCode(errors.New("The internal gateway request failed."), types.ErrorCodeDoRequestFailed, http.StatusBadGateway, types.ErrOptionWithSkipRetry())
+	}
+	resp.Request = req
+	if upID := resp.Header.Get(common2.RequestIdKey); upID != "" {
+		c.Set(common2.UpstreamRequestIdKey, upID)
+	}
+	return resp, nil
+}
+
+func dialCprMemberResponses(a Adaptor, c *gin.Context, info *common.RelayInfo) (*websocket.Conn, error) {
+	if !validCprMemberTransportSettings(info) {
+		return nil, reservedCprMemberTargetError()
+	}
+	raw, err := a.GetRequestURL(info)
+	if err != nil {
+		return nil, reservedCprMemberTargetError()
+	}
+	target, err := url.Parse(toWebSocketURL(raw))
+	if err != nil {
+		return nil, reservedCprMemberTargetError()
+	}
+	headers := http.Header{}
+	if err := a.SetupRequestHeader(c, &headers, info); err != nil {
+		return nil, reservedCprMemberTargetError()
+	}
+	key, apiErr := service.AuthorizeCprMemberRelayTarget(c, info.ChannelId, http.MethodGet, target, true)
+	if apiErr != nil {
+		return nil, apiErr
+	}
+	dialer := *websocket.DefaultDialer
+	dialer.Proxy = nil
+	common2.SetContextKey(c, appconstant.ContextKeyUpstreamRequestOrigin, target.Scheme+"://"+target.Host)
+	conn, resp, err := dialer.DialContext(c.Request.Context(), target.String(), cprMemberHeaders(headers, c.GetString(common2.RequestIdKey), key))
+	if err != nil {
+		status := http.StatusBadGateway
+		if resp != nil {
+			if resp.StatusCode >= 400 && resp.StatusCode < 600 {
+				status = resp.StatusCode
+			}
+			if resp.Body != nil {
+				_ = resp.Body.Close()
+			}
+		}
+		return nil, types.NewErrorWithStatusCode(errors.New("The internal gateway WebSocket handshake failed."), types.ErrorCodeDoRequestFailed, status, types.ErrOptionWithSkipRetry())
+	}
+	return conn, nil
 }
 
 // toWebSocketURL maps an http(s) endpoint to ws(s). Realtime adaptors already
@@ -536,6 +668,18 @@ func keepUpstreamRedirectResponse(_ *http.Request, _ []*http.Request) error {
 }
 
 func doRequest(c *gin.Context, req *http.Request, info *common.RelayInfo) (*http.Response, error) {
+	if managedCprMemberAttempt(c, info) {
+		return sendCprMemberRequest(c, req, info)
+	}
+	if req != nil && service.IsCprMemberRelayTarget(req.URL) {
+		return nil, reservedCprMemberTargetError()
+	}
+	if info.ChannelSetting.Proxy != "" {
+		proxyURL, _, _ := common2.ParseProxyURLRuntime(info.ChannelSetting.Proxy)
+		if service.IsCprMemberRelayTarget(proxyURL) {
+			return nil, reservedCprMemberTargetError()
+		}
+	}
 	client, err := service.GetHttpClientWithProxySettings(info.ChannelSetting.Proxy, info.ChannelSetting)
 	if err != nil {
 		return nil, fmt.Errorf("new proxy http client failed: %w", err)

@@ -24,6 +24,9 @@ func registerAccountEgressRoutes(apiRouter *gin.RouterGroup) {
 	accounts := group.Group("", middleware.RequirePermission(authz.AccountEgressManageAccounts), middleware.RequireBrowserSessionOrigin(), middleware.UserCriticalRateLimit("account_egress_accounts"))
 	accounts.POST("/accounts/settings", controller.UpdateAccountEgressSettings)
 	accounts.POST("/accounts/quota/refresh", controller.RefreshAccountEgressQuota)
+	accounts.POST("/members/:id/groups", controller.UpdateCprMemberAccess)
+	accounts.POST("/members/:id/reconcile", controller.ReconcileCprMemberAccess)
+	group.GET("/members/:id", middleware.RequirePermission(authz.AccountEgressManageAccounts), controller.GetCprMemberAccess)
 
 	egress := group.Group("", middleware.RequirePermission(authz.AccountEgressManageEgress), middleware.RequireBrowserSessionOrigin(), middleware.UserCriticalRateLimit("account_egress_operations"))
 	egress.POST("/engines/stop", controller.StopAccountEgressEngine)

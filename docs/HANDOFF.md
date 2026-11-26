@@ -1,6 +1,14 @@
 # 当前交接
 
-## 当前：X12 管理员工作台
+## 当前：X13 成员授权与内部身份
+
+X12 已完成合并前审阅修订，[PR #12](https://github.com/xinchen6666/xinapi/pull/12)通过普通合并提交进入 `main`，[主干双镜像](https://github.com/xinchen6666/xinapi/actions/runs/45866915134)成功。原工作树已快进，用户维护编辑保持。
+
+[X13 PR #13](https://github.com/xinchen6666/xinapi/pull/13)从更新主干的 `task/X13-member-access` 交付，包含显式 CPR 账号组授权与成员专属内部 Key、固定渠道准入、WS 每轮重核及续接归属检查。实际三数据库、构建与浏览器结果见[X13 日志](worklog/X13.md)，配置与管理员操作见[Compose 说明](COMPOSE.md#x13-成员授权)。成员授权空集表示撤权，平台计费组保持原语义。
+
+**下一步 X14：**在完成 X13 PR 审阅后接通完整模型数据面，延续同一成员身份、授权范围与严格账号出口。继续验证 SSE／WS 多轮、工具回填和用量，真实公网模型与正式部署保留专项验证。
+
+## 历史：X12 管理员工作台
 
 [任务 PR #12](https://github.com/xinchen6666/xinapi/pull/12) 以 `main` 为目标，交付统一管理入口、批准节点独立验证、容量处理、受管换路、账号分组与额度。实际验证见[工作日志](worklog/X12.md)，当前合并和部署状态以 GitHub 与实际发布记录为准。
 

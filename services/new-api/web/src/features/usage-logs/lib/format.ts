@@ -524,6 +524,8 @@ const AUDIT_TEMPLATES: Record<string, string> = {
   'account_egress.route_approve': 'Approve route',
   'account_egress.route_abort': 'Cancel route operation',
   'account_egress.route_reconcile': 'Reconcile route',
+  'account_egress.member_groups': 'Upstream access',
+  'account_egress.member_reconcile': 'Reconcile access',
   // Channel
   'channel.create': 'Created channel {{name}} (type {{type}}, count {{count}})',
   'channel.update': 'Updated channel {{name}} (ID: {{id}})',

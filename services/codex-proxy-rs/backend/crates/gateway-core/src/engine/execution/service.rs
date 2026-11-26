@@ -522,7 +522,7 @@ impl DefaultExecutionService {
                             Err(error)
                                 if error.kind() == NativeContinuationStoreErrorKind::Unavailable =>
                             {
-                                tracing::debug!(request_id = request_id.as_str(), %error, "Continuation affinity 查询失败，退化为外部续接");
+                                tracing::debug!(request_id = request_id.as_str(), %error, "Continuation affinity 查询失败，按当前客户端策略处理续接");
                                 None
                             }
                             Err(error)
@@ -545,6 +545,12 @@ impl DefaultExecutionService {
                             return Err(GatewayError::new(GatewayErrorKind::PolicyDenied, "Continuation account is outside the client account scope."));
                         }
                         Some(pin) => ContinuationBinding::Pinned(pin),
+                        None if request.client.policy.plaintext_key().expose_for_auth().starts_with("xinapi_member_") => {
+                            return Err(GatewayError::new(
+                                GatewayErrorKind::PolicyDenied,
+                                "Continuation ownership is unavailable. Start a new response with the full history.",
+                            ));
+                        }
                         None => ContinuationBinding::External(previous.clone()),
                     })
                 }
