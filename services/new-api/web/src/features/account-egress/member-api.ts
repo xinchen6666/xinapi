@@ -33,7 +33,12 @@ export type MemberAccess = z.infer<typeof memberAccessSchema>
 
 export type MemberAccessCommand =
   | { action: 'groups'; group_ids: string[]; expected_revision: number }
-  | { action: 'reconcile'; operation_id: string; expected_revision: number }
+  | {
+      action: 'reconcile'
+      operation_id: string
+      expected_revision: number
+      revoke?: boolean
+    }
 
 type MemberAccessResult = { success: boolean; data: unknown }
 

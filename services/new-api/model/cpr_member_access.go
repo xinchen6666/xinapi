@@ -19,6 +19,7 @@ const (
 	CprMemberAccessActive  = "active"
 	CprMemberDisableOld    = "disable_old"
 	CprMemberCreateKey     = "create_key"
+	CprMemberRevokeKeys    = "revoke_keys"
 )
 
 var (
@@ -41,6 +42,7 @@ type CprMemberAccess struct {
 	KeyCiphertext       string `gorm:"type:text;not null" json:"-"`
 	PreviousKeyID       string `gorm:"size:128;not null" json:"-"`
 	PreviousOperationID string `gorm:"type:varchar(36);not null" json:"-"`
+	CreateIssued        bool   `gorm:"not null;default:false" json:"-"`
 	StageAttempt        int64  `gorm:"not null" json:"-"`
 	AttemptUntil        int64  `gorm:"not null" json:"-"`
 	UpdatedAt           int64  `json:"-"`
@@ -146,7 +148,7 @@ func BeginCprMemberAccess(ctx context.Context, identity AuthSessionIdentity, exp
 					"revision": next.Revision, "group_ids": next.GroupIDsJSON, "status": next.Status,
 					"stage": next.Stage, "operation_id": next.OperationID, "cpr_key_id": "",
 					"key_ciphertext": next.KeyCiphertext, "previous_key_id": next.PreviousKeyID,
-					"previous_operation_id": next.PreviousOperationID, "stage_attempt": 0, "attempt_until": 0,
+					"previous_operation_id": next.PreviousOperationID, "create_issued": false, "stage_attempt": 0, "attempt_until": 0,
 					"updated_at": next.UpdatedAt,
 				})
 			if result.Error != nil {
@@ -167,6 +169,64 @@ func CheckCprMemberAccessManagement(ctx context.Context, identity AuthSessionIde
 	})
 }
 
+// BeginCprMemberRevocation 将原操作转为撤权，保留远端资源的核对材料。
+func BeginCprMemberRevocation(ctx context.Context, identity AuthSessionIdentity, access *CprMemberAccess, authorize CprMemberAccessAuthorizer) error {
+	if access.Stage != CprMemberDisableOld && access.Stage != CprMemberCreateKey {
+		return ErrCprMemberAccessConflict
+	}
+	now := time.Now().Unix()
+	err := memberAccessDB(ctx).Transaction(func(tx *gorm.DB) error {
+		result := tx.Model(&CprMemberAccess{}).
+			Where("user_id = ? AND revision = ? AND operation_id = ? AND status = ? AND stage = ? AND stage_attempt = ? AND attempt_until = ? AND attempt_until <= ? AND create_issued = ?",
+				access.UserID, access.Revision, access.OperationID, access.Status, access.Stage, access.StageAttempt, access.AttemptUntil, now, access.CreateIssued).
+			Where("status IN ?", []string{CprMemberAccessPending, CprMemberAccessUnknown}).
+			Updates(map[string]any{"status": CprMemberAccessPending, "stage": CprMemberRevokeKeys, "stage_attempt": 0, "attempt_until": 0, "updated_at": now})
+		if result.Error != nil {
+			return result.Error
+		}
+		if result.RowsAffected != 1 {
+			return ErrCprMemberAccessConflict
+		}
+		return authorizeCprMemberAccess(tx, identity, access.UserID, false, authorize)
+	})
+	if err == nil {
+		access.Status, access.Stage = CprMemberAccessPending, CprMemberRevokeKeys
+		access.StageAttempt, access.AttemptUntil, access.UpdatedAt = 0, 0, now
+	}
+	return err
+}
+
+// MarkCprMemberCreateIssued 先保存当前领取者的发送意图，再创建远端 Key。
+func MarkCprMemberCreateIssued(ctx context.Context, access *CprMemberAccess) error {
+	if access.Stage != CprMemberCreateKey || access.StageAttempt <= 0 {
+		return ErrCprMemberAccessConflict
+	}
+	now := time.Now().Unix()
+	db := memberAccessDB(ctx).Model(&CprMemberAccess{}).
+		Where("user_id = ? AND revision = ? AND operation_id = ? AND status = ? AND stage = ? AND stage_attempt = ? AND attempt_until = ? AND attempt_until > ?",
+			access.UserID, access.Revision, access.OperationID, CprMemberAccessPending, CprMemberCreateKey, access.StageAttempt, access.AttemptUntil, now)
+	if access.CreateIssued {
+		// 再次显式创建前核对同一次领取，兼容各数据库的更新计数。
+		var count int64
+		if err := db.Where("create_issued = ?", true).Count(&count).Error; err != nil {
+			return err
+		}
+		if count != 1 {
+			return ErrCprMemberAccessConflict
+		}
+		return nil
+	}
+	result := db.Where("create_issued = ?", false).Updates(map[string]any{"create_issued": true, "updated_at": now})
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected != 1 {
+		return ErrCprMemberAccessConflict
+	}
+	access.CreateIssued, access.UpdatedAt = true, now
+	return nil
+}
+
 // ClaimCprMemberAccessStage 按当前操作与阶段领取一次 CPR 调用。
 func ClaimCprMemberAccessStage(ctx context.Context, identity AuthSessionIdentity, access *CprMemberAccess, until int64, authorize CprMemberAccessAuthorizer) error {
 	if access.StageAttempt == math.MaxInt64 {
@@ -175,8 +235,8 @@ func ClaimCprMemberAccessStage(ctx context.Context, identity AuthSessionIdentity
 	now := time.Now().Unix()
 	err := memberAccessDB(ctx).Transaction(func(tx *gorm.DB) error {
 		result := tx.Model(&CprMemberAccess{}).
-			Where("user_id = ? AND revision = ? AND operation_id = ? AND stage = ? AND stage_attempt = ? AND attempt_until <= ? AND status IN ?",
-				access.UserID, access.Revision, access.OperationID, access.Stage, access.StageAttempt, now, []string{CprMemberAccessPending, CprMemberAccessUnknown}).
+			Where("user_id = ? AND revision = ? AND operation_id = ? AND stage = ? AND stage_attempt = ? AND attempt_until <= ? AND create_issued = ? AND status IN ?",
+				access.UserID, access.Revision, access.OperationID, access.Stage, access.StageAttempt, now, access.CreateIssued, []string{CprMemberAccessPending, CprMemberAccessUnknown}).
 			Updates(map[string]any{"status": CprMemberAccessPending, "stage_attempt": access.StageAttempt + 1, "attempt_until": until, "updated_at": now})
 		if result.Error != nil {
 			return result.Error
@@ -184,7 +244,7 @@ func ClaimCprMemberAccessStage(ctx context.Context, identity AuthSessionIdentity
 		if result.RowsAffected != 1 {
 			return ErrCprMemberAccessConflict
 		}
-		return authorizeCprMemberAccess(tx, identity, access.UserID, access.GroupIDsJSON != "[]", authorize)
+		return authorizeCprMemberAccess(tx, identity, access.UserID, access.Stage != CprMemberRevokeKeys && access.GroupIDsJSON != "[]", authorize)
 	})
 	if err == nil {
 		access.Status = CprMemberAccessPending
@@ -200,18 +260,19 @@ func FinishCprMemberAccessStage(ctx context.Context, access *CprMemberAccess, ne
 	now := time.Now().Unix()
 	attempt := access.StageAttempt
 	previousKeyID, previousOpID := access.PreviousKeyID, access.PreviousOperationID
-	ciphertext := access.KeyCiphertext
+	ciphertext, groups, createIssued := access.KeyCiphertext, access.GroupIDsJSON, access.CreateIssued
 	if nextStage != access.Stage {
 		attempt, previousKeyID, previousOpID = 0, "", ""
 	}
 	if nextStatus == CprMemberAccessRevoked {
-		ciphertext = ""
+		ciphertext, groups, createIssued = "", "[]", false
 	}
 	result := memberAccessDB(ctx).Model(&CprMemberAccess{}).
-		Where("user_id = ? AND revision = ? AND operation_id = ? AND status = ? AND stage = ? AND stage_attempt = ? AND attempt_until = ?",
-			access.UserID, access.Revision, access.OperationID, CprMemberAccessPending, access.Stage, access.StageAttempt, access.AttemptUntil).
+		Where("user_id = ? AND revision = ? AND operation_id = ? AND status = ? AND stage = ? AND stage_attempt = ? AND attempt_until = ? AND create_issued = ?",
+			access.UserID, access.Revision, access.OperationID, CprMemberAccessPending, access.Stage, access.StageAttempt, access.AttemptUntil, access.CreateIssued).
 		Updates(map[string]any{"status": nextStatus, "stage": nextStage, "cpr_key_id": newKeyID,
 			"key_ciphertext": ciphertext, "previous_key_id": previousKeyID, "previous_operation_id": previousOpID,
+			"group_ids": groups, "create_issued": createIssued,
 			"stage_attempt": attempt, "attempt_until": 0, "updated_at": now})
 	if result.Error != nil {
 		return result.Error
@@ -221,6 +282,7 @@ func FinishCprMemberAccessStage(ctx context.Context, access *CprMemberAccess, ne
 	}
 	access.Status, access.Stage, access.CprKeyID = nextStatus, nextStage, newKeyID
 	access.KeyCiphertext, access.PreviousKeyID, access.PreviousOperationID = ciphertext, previousKeyID, previousOpID
+	access.GroupIDsJSON, access.CreateIssued = groups, createIssued
 	access.StageAttempt, access.AttemptUntil, access.UpdatedAt = attempt, 0, now
 	return nil
 }

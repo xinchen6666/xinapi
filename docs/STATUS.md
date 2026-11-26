@@ -1,6 +1,6 @@
 # 项目进度
 
-目标：[xinchen6666/xinapi](https://github.com/xinchen6666/xinapi)，单机 Docker Compose。更新：2026-11-26（Asia/Shanghai）。**本表是 X 任务的唯一进度来源**；主干收拢与部署状态分别见[交接单](HANDOFF.md)。
+目标：[xinchen6666/xinapi](https://github.com/xinchen6666/xinapi)，单机 Docker Compose。更新：2026-11-27（Asia/Shanghai）。**本表是 X 任务的唯一进度来源**；主干收拢与部署状态分别见[交接单](HANDOFF.md)。
 
 | ID | 状态 | 负责人／工作域 | 最近事实或验收入口 |
 | --- | --- | --- | --- |
@@ -15,8 +15,8 @@
 | X09 | done | lead；账号绑定与换路已交付 | 41项真实运行场景、既有回归及[PR CI](https://github.com/xinchen6666/xinapi/actions/runs/45690896769)通过；[Draft PR #8](https://github.com/xinchen6666/xinapi/pull/8)保留复审入口，见[X09日志](worklog/X09.md)与[E028](VALIDATION.md#e028-x09账号绑定及换路) |
 | X10 | done | lead；严格出口已交付 | 331次实际请求观测、12项网关场景及124项既有回归通过；165次故障调用的上游／默认出口增量均零，已交付[Draft PR #9](https://github.com/xinchen6666/xinapi/pull/9)，见[X10日志](worklog/X10.md)与[E029](VALIDATION.md#e029-x10严格出口与故障停发) |
 | X11 | done | lead；OAuth与只读回执已交付 | [原 PR #10](https://github.com/xinchen6666/xinapi/pull/10)记录 38 项运行、168 项三数据库检查与浏览器完成／取消。既有权限字段断言已在[主干收拢](worklog/X11-consolidation.md)按授权更新并复跑通过；历史证据见 [E030](VALIDATION.md#e030-x11管理员oauth与回执恢复) |
-| X12 | done | lead；CPR 引擎／账号、Go BFF、Web | [PR #12](https://github.com/xinchen6666/xinapi/pull/12)交付管理工作台，隔离环境完成节点连接验证、满槽释放、受管换路、分组并发与浏览器复验，见[工作日志](worklog/X12.md) |
-| X13 | in_progress | lead；成员授权、固定渠道与管理界面 | X12 经审阅合入主干后启动 `task/X13-member-access`，范围见[工作日志](worklog/X13.md) |
+| X12 | done | lead；CPR 引擎／账号、Go BFF、Web | [PR #12](https://github.com/xinchen6666/xinapi/pull/12)经审阅修订以普通合并提交进入主干，主干双镜像成功；管理工作台实测见[工作日志](worklog/X12.md) |
+| X13 | done | lead；成员授权、固定渠道与管理界面 | 从更新主干交付[PR #13](https://github.com/xinchen6666/xinapi/pull/13)，三数据库授组／撤权、WS 下一轮及浏览器验证通过，见[工作日志](worklog/X13.md) |
 | X14 | pending | 模型转发 | Responses、SSE／WS、工具及用量 |
 | X15 | pending | 跨服务测试 | 模拟矩阵／获授权的真实验收分别记账 |
 | X16 | pending | 单机交付 | 从新克隆安装、首次管理员使用 |

@@ -138,7 +138,8 @@ export function UserCprAccessDialog(props: UserCprAccessDialogProps) {
     'Grant CPR model access to the selected account groups.'
   )
   const revoking =
-    command?.action === 'groups' && command.group_ids.length === 0
+    (command?.action === 'groups' && command.group_ids.length === 0) ||
+    (command?.action === 'reconcile' && command.revoke === true)
   if (revoking) {
     confirmTitle = t('Revoke upstream access')
     confirmDescription = t(
@@ -186,17 +187,26 @@ export function UserCprAccessDialog(props: UserCprAccessDialogProps) {
               {t('Reconcile access')}
             </Button>
           )}
-          {current && !unfinished && current.group_ids.length > 0 && (
+          {current && current.group_ids.length > 0 && (
             <Button
               variant='outline'
-              disabled={!canEdit}
-              onClick={() =>
-                setCommand({
-                  action: 'groups',
-                  expected_revision: current.revision,
-                  group_ids: [],
-                })
-              }
+              disabled={!canAct || (unfinished && !current.operation_id)}
+              onClick={() => {
+                if (unfinished && current.operation_id) {
+                  setCommand({
+                    action: 'reconcile',
+                    expected_revision: current.revision,
+                    operation_id: current.operation_id,
+                    revoke: true,
+                  })
+                } else if (!unfinished) {
+                  setCommand({
+                    action: 'groups',
+                    expected_revision: current.revision,
+                    group_ids: [],
+                  })
+                }
+              }}
             >
               {t('Revoke upstream access')}
             </Button>

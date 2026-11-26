@@ -522,7 +522,7 @@ impl DefaultExecutionService {
                             Err(error)
                                 if error.kind() == NativeContinuationStoreErrorKind::Unavailable =>
                             {
-                                tracing::debug!(request_id = request_id.as_str(), %error, "Continuation affinity 查询失败，退化为外部续接");
+                                tracing::debug!(request_id = request_id.as_str(), %error, "Continuation affinity 查询失败，按当前客户端策略处理续接");
                                 None
                             }
                             Err(error)

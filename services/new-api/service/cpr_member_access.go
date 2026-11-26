@@ -261,10 +261,18 @@ func ReconcileCprMemberAccess(ctx context.Context, identity model.AuthSessionIde
 		return dto.CprMemberAccess{}, model.ErrCprMemberAccessConflict
 	}
 	if access.Status == model.CprMemberAccessActive || access.Status == model.CprMemberAccessRevoked {
+		if cmd.Revoke && access.Status == model.CprMemberAccessActive {
+			return dto.CprMemberAccess{}, model.ErrCprMemberAccessConflict
+		}
 		if err := model.CheckCprMemberAccessManagement(ctx, identity, userID, authorize); err != nil {
 			return dto.CprMemberAccess{}, err
 		}
 		return cprMemberView(access)
+	}
+	if cmd.Revoke && access.Stage != model.CprMemberRevokeKeys {
+		if err := model.BeginCprMemberRevocation(ctx, identity, access, authorize); err != nil {
+			return dto.CprMemberAccess{}, err
+		}
 	}
 	groups, err := access.GroupIDs()
 	if err != nil {
@@ -275,13 +283,15 @@ func ReconcileCprMemberAccess(ctx context.Context, identity model.AuthSessionIde
 
 // runCprMemberAccess 以持久领取执行远端调用，含糊结果保持停发并由管理员读回。
 func runCprMemberAccess(ctx context.Context, identity model.AuthSessionIdentity, access *model.CprMemberAccess, groups []string, authorize model.CprMemberAccessAuthorizer, reconcile bool) (dto.CprMemberAccess, error) {
-	for access.Stage == model.CprMemberDisableOld || access.Stage == model.CprMemberCreateKey {
+	for access.Stage == model.CprMemberDisableOld || access.Stage == model.CprMemberCreateKey || access.Stage == model.CprMemberRevokeKeys {
 		previouslyAttempted := access.StageAttempt > 0
 		if err := model.ClaimCprMemberAccessStage(ctx, identity, access, time.Now().Add(2*time.Minute).Unix(), authorize); err != nil {
-			return dto.CprMemberAccess{}, err
+			view, _ := cprMemberView(access)
+			return view, err
 		}
 		status, stage, keyID := model.CprMemberAccessUnknown, access.Stage, ""
-		if access.Stage == model.CprMemberDisableOld {
+		switch access.Stage {
+		case model.CprMemberDisableOld:
 			if disableCprMemberKey(ctx, access, reconcile && previouslyAttempted) {
 				if len(groups) == 0 {
 					status, stage = model.CprMemberAccessRevoked, ""
@@ -289,16 +299,23 @@ func runCprMemberAccess(ctx context.Context, identity model.AuthSessionIdentity,
 					status, stage = model.CprMemberAccessPending, model.CprMemberCreateKey
 				}
 			}
-		} else if len(groups) > 0 {
-			if id := createCprMemberKey(ctx, access, groups, reconcile && previouslyAttempted); id != "" {
-				status, stage, keyID = model.CprMemberAccessActive, "", id
+		case model.CprMemberCreateKey:
+			if len(groups) > 0 {
+				if id := createCprMemberKey(ctx, access, groups, reconcile && previouslyAttempted); id != "" {
+					status, stage, keyID = model.CprMemberAccessActive, "", id
+				}
+			}
+		case model.CprMemberRevokeKeys:
+			if revokeCprMemberKeys(ctx, access) {
+				status, stage = model.CprMemberAccessRevoked, ""
 			}
 		}
 		saveCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 5*time.Second)
 		err := model.FinishCprMemberAccessStage(saveCtx, access, status, stage, keyID)
 		cancel()
 		if err != nil {
-			return dto.CprMemberAccess{}, err
+			view, _ := cprMemberView(access)
+			return view, err
 		}
 		if status != model.CprMemberAccessPending {
 			view, err := cprMemberView(access)
@@ -388,13 +405,40 @@ func disableCprMemberKey(ctx context.Context, access *model.CprMemberAccess, rea
 			}
 		}
 	}
-	result, err := cprManagementData[struct {
+	return postDisableCprMemberKey(ctx, access.PreviousKeyID)
+}
+
+func postDisableCprMemberKey(ctx context.Context, keyID string) bool {
+	type keyRef struct {
 		ID string `json:"id"`
-	}](ctx, http.MethodPost, cprMemberKeyPath+"/disable", nil,
-		struct {
-			ID string `json:"id"`
-		}{ID: access.PreviousKeyID}, cprManagementWriteTimeout)
-	return err == nil && result.ID == access.PreviousKeyID
+	}
+	result, err := cprManagementData[keyRef](ctx, http.MethodPost, cprMemberKeyPath+"/disable", nil,
+		keyRef{ID: keyID}, cprManagementWriteTimeout)
+	return err == nil && result.ID == keyID
+}
+
+// revokeCprMemberKeys 先收尾旧 Key，再核对同操作可能已经创建的 Key。
+func revokeCprMemberKeys(ctx context.Context, access *model.CprMemberAccess) bool {
+	if access.PreviousKeyID != "" && !disableCprMemberKey(ctx, access, true) {
+		return false
+	}
+	key, err := findCprMemberKey(ctx, access.OperationID, "")
+	if err != nil {
+		return false
+	}
+	if key == nil {
+		// 已发送的创建可能仍在生效。没有远端证据时保留同一操作等待核对。
+		return !access.CreateIssued
+	}
+	plaintext, err := openCprMemberKey(access)
+	if err != nil {
+		return false
+	}
+	revealed, err := revealCprMemberKey(ctx, key.ID)
+	if err != nil || revealed.ID != key.ID || subtle.ConstantTimeCompare([]byte(plaintext), []byte(revealed.Plaintext)) != 1 {
+		return false
+	}
+	return !*key.Enabled || postDisableCprMemberKey(ctx, key.ID)
 }
 
 func createCprMemberKey(ctx context.Context, access *model.CprMemberAccess, groups []string, readback bool) string {
@@ -444,6 +488,9 @@ func createCprMemberKey(ctx context.Context, access *model.CprMemberAccess, grou
 	}{Name: cprMemberKeyNamePrefix + access.OperationID, CustomKey: key, GroupIDs: groups, Profile: profile}
 	ctx, cancel := context.WithTimeout(ctx, cprManagementWriteTimeout)
 	defer cancel()
+	if err := model.MarkCprMemberCreateIssued(ctx, access); err != nil {
+		return ""
+	}
 	response, err := sendCPRAdmin(ctx, cprMutationClient, http.MethodPost, cprMemberKeyPath+"/create", nil, command)
 	if err != nil {
 		return ""

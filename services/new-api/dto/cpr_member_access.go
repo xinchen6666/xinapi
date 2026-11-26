@@ -20,4 +20,5 @@ type CprMemberGroupsCommand struct {
 type CprMemberReconcileCommand struct {
 	OperationID      string `json:"operation_id"`
 	ExpectedRevision *int64 `json:"expected_revision"`
+	Revoke           bool   `json:"revoke,omitempty"`
 }
