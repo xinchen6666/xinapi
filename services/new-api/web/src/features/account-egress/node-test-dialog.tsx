@@ -107,7 +107,7 @@ export function NodeTestDialog(props: {
         {test.isError && getServerErrorStatus(test.error) === 429 && (
           <EnginePanel occupantsOnly />
         )}
-        {test.isError && (
+        {test.isError && getServerErrorStatus(test.error) !== 429 && (
           <ErrorState
             title={t('Node connection verification failed')}
             description={getServerErrorMessage(test.error)}

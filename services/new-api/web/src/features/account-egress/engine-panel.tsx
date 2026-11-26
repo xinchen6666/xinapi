@@ -23,6 +23,7 @@ import { useTranslation } from 'react-i18next'
 
 import { ConfirmDialog } from '@/components/confirm-dialog'
 import { DataTablePage, useDataTable } from '@/components/data-table'
+import { EmptyState } from '@/components/empty-state'
 import { ErrorState } from '@/components/error-state'
 import { LoadingState } from '@/components/loading-state'
 import { Badge } from '@/components/ui/badge'
@@ -65,7 +66,7 @@ export function EnginePanel(props: { occupantsOnly?: boolean }) {
     enabled: user != null,
     retry: false,
     gcTime: 0,
-    refetchInterval: 6000,
+    refetchInterval: action ? false : 6000,
     meta: { errorToast: false },
   })
   const release = useMutation({
@@ -74,6 +75,7 @@ export function EnginePanel(props: { occupantsOnly?: boolean }) {
       else await reclaimReservation(item.id)
     },
     onSuccess: () => setAction(null),
+    networkMode: 'always',
     onSettled: () =>
       queryClient.invalidateQueries({ queryKey: ['account-egress', user?.id] }),
     retry: false,
@@ -81,54 +83,71 @@ export function EnginePanel(props: { occupantsOnly?: boolean }) {
     meta: { errorToast: false },
   })
 
-  const stateLabel = (state: string): string => {
-    switch (state) {
-      case 'starting':
-        return t('Starting')
-      case 'running':
-        return t('Running')
-      case 'stopped':
-        return t('Stopped')
-      case 'failed':
-        return t('Failed')
-      default:
-        return t('Unknown')
+  const engineState = (engine: EngineEntry) => {
+    let label = t('Unknown')
+    if (engine.state === 'starting') label = t('Starting')
+    else if (engine.state === 'running') label = t('Running')
+    else if (engine.state === 'stopped') label = t('Stopped')
+    else if (engine.state === 'failed') label = t('Failed')
+    return (
+      <div className='flex flex-wrap gap-1'>
+        <Badge variant='outline'>{label}</Badge>
+        {engine.occupies_slot && (
+          <Badge variant='secondary'>{t('Occupies a slot')}</Badge>
+        )}
+      </div>
+    )
+  }
+  const engineOwner = (engine: EngineEntry) => {
+    const owner = engine.owner
+    if (!owner) return <span>{t('Unassigned')}</span>
+    return (
+      <div className='min-w-0'>
+        <p>
+          {owner.kind === 'account' ? t('Upstream account') : t('Reservation')}
+        </p>
+        <code className='text-muted-foreground text-xs break-all'>
+          {owner.id}
+        </code>
+      </div>
+    )
+  }
+  const engineAction = (engine: EngineEntry) => {
+    if (!canManage) return null
+    let item: SlotAction
+    if (engine.stoppable && engine.owner?.kind === 'account') {
+      item = { kind: 'stop', id: engine.entry_id }
+    } else if (engine.reclaimable && engine.owner?.kind === 'reservation') {
+      item = { kind: 'reclaim', id: engine.owner.id }
+    } else {
+      return null
     }
+    return (
+      <Button
+        size='sm'
+        variant='outline'
+        disabled={release.isPending}
+        onClick={() => {
+          release.reset()
+          setAction(item)
+        }}
+      >
+        {item.kind === 'stop' ? t('Stop engine') : t('Reclaim reservation')}
+      </Button>
+    )
   }
   const columns: ColumnDef<EngineEntry>[] = [
     {
       id: 'owner',
       header: t('Slot owner'),
       meta: { mobileTitle: true },
-      cell: ({ row }) => {
-        const owner = row.original.owner
-        if (!owner) return t('Unassigned')
-        return (
-          <div className='flex flex-col gap-1'>
-            <span>
-              {owner.kind === 'account'
-                ? t('Upstream account')
-                : t('Reservation')}
-            </span>
-            <code className='text-muted-foreground text-xs break-all'>
-              {owner.id}
-            </code>
-          </div>
-        )
-      },
+      cell: ({ row }) => engineOwner(row.original),
     },
     { accessorKey: 'node_name', header: t('Node') },
     {
       id: 'state',
       header: t('Status'),
-      cell: ({ row }) => (
-        <div className='flex flex-wrap gap-1'>
-          <Badge variant='outline'>{stateLabel(row.original.state)}</Badge>
-          {row.original.occupies_slot && (
-            <Badge variant='secondary'>{t('Occupies a slot')}</Badge>
-          )}
-        </div>
-      ),
+      cell: ({ row }) => engineState(row.original),
     },
     {
       id: 'resources',
@@ -167,37 +186,14 @@ export function EnginePanel(props: { occupantsOnly?: boolean }) {
     columns.push({
       id: 'actions',
       header: t('Actions'),
-      cell: ({ row }) => {
-        const engine = row.original
-        let item: SlotAction
-        if (engine.stoppable && engine.owner?.kind === 'account') {
-          item = { kind: 'stop', id: engine.entry_id }
-        } else if (engine.reclaimable && engine.owner?.kind === 'reservation') {
-          item = { kind: 'reclaim', id: engine.owner.id }
-        } else {
-          return null
-        }
-        return (
-          <Button
-            size='sm'
-            variant='outline'
-            disabled={release.isPending}
-            onClick={() => {
-              release.reset()
-              setAction(item)
-            }}
-          >
-            {item.kind === 'stop' ? t('Stop engine') : t('Reclaim reservation')}
-          </Button>
-        )
-      },
+      cell: ({ row }) => engineAction(row.original),
     })
   }
   const data = inventory.data
+  const occupants =
+    data?.items.filter((entry) => entry.occupies_slot) ?? noEntries
   const { table } = useDataTable({
-    data: props.occupantsOnly
-      ? (data?.items.filter((entry) => entry.occupies_slot) ?? noEntries)
-      : (data?.items ?? noEntries),
+    data: data?.items ?? noEntries,
     columns,
     getRowId: (entry) => entry.entry_id,
     enableSorting: false,
@@ -236,12 +232,46 @@ export function EnginePanel(props: { occupantsOnly?: boolean }) {
           {t('Refresh')}
         </Button>
       </div>
-      <DataTablePage
-        table={table}
-        columns={columns}
-        fixedHeight={false}
-        emptyTitle={t('No engine entries')}
-      />
+      {props.occupantsOnly && occupants.length > 0 && (
+        <ul className='space-y-2'>
+          {occupants.map((entry) => (
+            <li
+              key={entry.entry_id}
+              className='flex min-w-0 flex-wrap items-start justify-between gap-2 rounded-lg border p-3 text-sm'
+            >
+              <div className='min-w-0 flex-1 space-y-1'>
+                {engineOwner(entry)}
+                <p>
+                  {t('Node')}:{' '}
+                  <span className='break-all'>{entry.node_name}</span>
+                </p>
+                {entry.expires_at && (
+                  <time
+                    className='text-muted-foreground text-xs'
+                    dateTime={entry.expires_at}
+                  >
+                    {t('Expires at')}:{' '}
+                    {new Date(entry.expires_at).toLocaleString(locale)}
+                  </time>
+                )}
+                {engineState(entry)}
+              </div>
+              {engineAction(entry)}
+            </li>
+          ))}
+        </ul>
+      )}
+      {props.occupantsOnly && occupants.length === 0 && (
+        <EmptyState title={t('No engine entries')} />
+      )}
+      {!props.occupantsOnly && (
+        <DataTablePage
+          table={table}
+          columns={columns}
+          fixedHeight={false}
+          emptyTitle={t('No engine entries')}
+        />
+      )}
       {release.isError && (
         <p role='alert' className='text-destructive text-sm'>
           {getServerErrorMessage(release.error)}
