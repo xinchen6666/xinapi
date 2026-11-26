@@ -24,7 +24,7 @@ use crate::{
         accounts::{
             AccountConnectionTestEvent, AccountConnectionTestEventStream, AccountListQuery,
             AccountPageItem, AccountUpdateResult, AccountUsage, AccountUsageWindowQuery,
-            AccountsUpdateResult, BatchUpdateAccounts, UpdateAccount,
+            AccountsUpdateResult, BatchUpdateAccounts, UpdateAccount, UpdateAccountGroups,
         },
         client_keys::ClientKeyBudgetReference,
         observability::TimeRange,
@@ -96,6 +96,14 @@ pub trait AccountsService: Send + Sync {
         command: BatchUpdateAccounts,
     ) -> Result<AccountsUpdateResult, AdminError>;
 
+    async fn update_account_groups(
+        &self,
+        _context: &MutationContext,
+        _command: UpdateAccountGroups,
+    ) -> Result<AccountsUpdateResult, AdminError> {
+        Err(AdminError::unavailable("账号分组更新服务暂缺"))
+    }
+
     async fn account_configuration(
         &self,
         _account_id: &ProviderAccountId,
@@ -108,6 +116,14 @@ pub trait AccountsService: Send + Sync {
         account_id: &ProviderAccountId,
         refresh: bool,
     ) -> Result<AccountDirectoryItem, AdminError>;
+
+    async fn refresh_quota(
+        &self,
+        account_id: &ProviderAccountId,
+        _context: &MutationContext,
+    ) -> Result<AccountDirectoryItem, AdminError> {
+        self.quota(account_id, true).await
+    }
 
     async fn key_budget_references(
         &self,
@@ -961,6 +977,37 @@ impl AccountsService for DefaultAccountsService {
         Ok(result)
     }
 
+    async fn update_account_groups(
+        &self,
+        context: &MutationContext,
+        command: UpdateAccountGroups,
+    ) -> Result<AccountsUpdateResult, AdminError> {
+        let account_id = command.account_id.clone();
+        let (_, provider) = self.provider_for_account(&account_id).await?;
+        let enabled = command.enabled;
+        let result = self
+            .accounts
+            .update_account_groups(command, context)
+            .await
+            .map_err(|error| map_store_error(error, "provider account groups"))?;
+        if enabled == Some(false) {
+            super::notify_account_unavailable(
+                self.upstream_info.as_deref(),
+                provider.as_ref(),
+                &account_id,
+            )
+            .await;
+        }
+        super::notify_account_facts_changed(
+            self.upstream_info.as_deref(),
+            provider.as_ref(),
+            std::slice::from_ref(&account_id),
+        )
+        .await;
+        publish_committed(self.snapshot.as_ref(), result.config_revision).await?;
+        Ok(result)
+    }
+
     async fn account_configuration(
         &self,
         account_id: &ProviderAccountId,
@@ -978,6 +1025,19 @@ impl AccountsService for DefaultAccountsService {
         refresh: bool,
     ) -> Result<AccountDirectoryItem, AdminError> {
         self.load_directory_item(account_id, refresh).await
+    }
+
+    async fn refresh_quota(
+        &self,
+        account_id: &ProviderAccountId,
+        context: &MutationContext,
+    ) -> Result<AccountDirectoryItem, AdminError> {
+        let observed = self.load_directory_item(account_id, true).await?;
+        self.accounts
+            .record_account_quota_refresh(account_id.as_str(), context)
+            .await
+            .map_err(|error| map_store_error(error, "provider account"))?;
+        Ok(observed)
     }
 
     async fn key_budget_references(

@@ -18,29 +18,12 @@ For commercial licensing, please contact support@quantumnous.com
 */
 import { createFileRoute, redirect } from '@tanstack/react-router'
 
-import { SubscriptionPreview } from '@/features/subscription-preview'
-import {
-  ADMIN_PERMISSION_RESOURCES,
-  ADMIN_PERMISSION_ACTIONS,
-  hasPermission,
-} from '@/lib/admin-permissions'
-import { ROLE } from '@/lib/roles'
-import { useAuthStore } from '@/stores/auth-store'
-
 export const Route = createFileRoute('/_authenticated/subscription-preview/')({
   beforeLoad: () => {
-    const user = useAuthStore.getState().auth.user
-    if (
-      !user ||
-      user.role < ROLE.ADMIN ||
-      !hasPermission(
-        user,
-        ADMIN_PERMISSION_RESOURCES.ACCOUNT_EGRESS,
-        ADMIN_PERMISSION_ACTIONS.READ
-      )
-    ) {
-      throw redirect({ to: '/403' })
-    }
+    throw redirect({
+      to: '/account-egress',
+      search: { section: 'sources' },
+      replace: true,
+    })
   },
-  component: SubscriptionPreview,
 })

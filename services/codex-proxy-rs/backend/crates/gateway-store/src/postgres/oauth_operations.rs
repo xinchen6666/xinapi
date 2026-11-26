@@ -4,13 +4,14 @@ use async_trait::async_trait;
 use chrono::{DateTime, Utc};
 use gateway_admin::{
     model::{
-        MutationActor,
+        MutationActor, MutationContext,
+        audit::MutationAuditOperation,
         managed_routes::{RouteNode, RouteObservation},
         oauth_operations::{OAuthOperation, StartOAuthOperation},
         provider_credentials::AuthorizationStarted,
     },
     ports::{
-        oauth_operations::OAuthOperationStore,
+        oauth_operations::{OAuthEngineReservation, OAuthOperationStore},
         store::{AdminStoreError, AdminStoreErrorKind, AdminStoreResult},
     },
 };
@@ -56,6 +57,14 @@ impl OperationRow {
             Err(conflict())
         }
     }
+    fn has_settled_exchange(&self) -> bool {
+        self.phase == "completing" && self.reason.as_deref() == Some("completion_unknown")
+    }
+
+    fn expired_reservation(&self) -> bool {
+        self.is_new && self.expires_at <= Utc::now() && reclaimable_phase(&self.phase)
+    }
+
     pub(crate) fn view(self, receipt_confirmed: bool) -> AdminStoreResult<OAuthOperation> {
         Ok(OAuthOperation {
             request: self.request.0,
@@ -77,6 +86,14 @@ impl OperationRow {
         })
     }
 }
+// 到期操作沿用同一取消边界，旧交换已失去持久提交资格
+fn reclaimable_phase(phase: &str) -> bool {
+    matches!(
+        phase,
+        "preparing" | "pending" | "completing" | "failed" | "cancelled"
+    )
+}
+
 pub(crate) fn conflict() -> AdminStoreError {
     AdminStoreError::new(
         AdminStoreErrorKind::Conflict,
@@ -112,12 +129,64 @@ pub(crate) async fn locked(
     tx: &mut Transaction<'_, Postgres>,
     operation_id: &str,
 ) -> AdminStoreResult<OperationRow> {
+    locked_operation(tx, operation_id)
+        .await?
+        .ok_or_else(conflict)
+}
+
+async fn locked_operation(
+    tx: &mut Transaction<'_, Postgres>,
+    operation_id: &str,
+) -> AdminStoreResult<Option<OperationRow>> {
     sqlx::query_as("select * from managed_oauth_operations where operation_id=$1 for update")
         .bind(id(operation_id)?)
         .fetch_optional(&mut **tx)
         .await
-        .map_err(unavailable)?
-        .ok_or_else(conflict)
+        .map_err(unavailable)
+}
+
+// 三处查询共用同一引用判定，SQL 文本在编译期拼接
+macro_rules! reservation_has_references {
+    () => {
+        "(
+    exists(select 1 from provider_accounts a where a.id=o.planned_account_id or a.outbound_proxy_id=o.proxy_id)
+    or exists(select 1 from managed_routes r where r.account_id=o.planned_account_id or r.proxy_id=o.proxy_id)
+    or exists(select 1 from outbound_proxies p where p.id=o.proxy_id)
+)"
+    };
+}
+
+async fn require_zero_references(
+    tx: &mut Transaction<'_, Postgres>,
+    operation_id: Uuid,
+) -> AdminStoreResult<()> {
+    let referenced: bool = sqlx::query_scalar(concat!(
+        "select ",
+        reservation_has_references!(),
+        " from managed_oauth_operations o where o.operation_id=$1",
+    ))
+    .bind(operation_id)
+    .fetch_one(&mut **tx)
+    .await
+    .map_err(unavailable)?;
+    if referenced {
+        return Err(conflict());
+    }
+    Ok(())
+}
+
+async fn set_cancelled(
+    tx: &mut Transaction<'_, Postgres>,
+    row: OperationRow,
+) -> AdminStoreResult<OperationRow> {
+    if row.phase == "cancelled" {
+        return Ok(row);
+    }
+    sqlx::query_as("update managed_oauth_operations set phase='cancelled',authorization_url=null,updated_at=now() where operation_id=$1 returning *")
+        .bind(row.operation_id)
+        .fetch_one(&mut **tx)
+        .await
+        .map_err(unavailable)
 }
 /// 配置写入沿相同全局锁，授权提交随后锁定相关来源与账号事实
 pub(crate) async fn validate_frozen(
@@ -267,8 +336,7 @@ impl OAuthOperationStore for PgOAuthOperationStore {
         let row = locked(&mut tx, operation_id).await?;
         row.check_owner(owner)?;
         let settled_unknown = row.phase == "completing"
-            && (row.expires_at <= Utc::now()
-                || row.reason.as_deref() == Some("completion_unknown"));
+            && (row.expires_at <= Utc::now() || row.has_settled_exchange());
         if !matches!(
             row.phase.as_str(),
             "preparing" | "pending" | "failed" | "cancelled"
@@ -278,22 +346,105 @@ impl OAuthOperationStore for PgOAuthOperationStore {
         }
         // 新预留以及未知交换的回收先确认全部持久引用已释放
         if row.is_new || settled_unknown {
-            let referenced: bool = sqlx::query_scalar("select exists(select 1 from provider_accounts where id=$1 or outbound_proxy_id=$2) or exists(select 1 from managed_routes where account_id=$1 or proxy_id=$2) or exists(select 1 from outbound_proxies where id=$2)")
-                .bind(&row.planned_account_id).bind(&row.proxy_id)
-                .fetch_one(&mut *tx).await.map_err(unavailable)?;
-            if referenced {
-                return Err(conflict());
-            }
+            require_zero_references(&mut tx, row.operation_id).await?;
         }
-        let row:OperationRow=sqlx::query_as("update managed_oauth_operations set phase='cancelled',authorization_url=null,updated_at=now() where operation_id=$1 returning *").bind(row.operation_id).fetch_one(&mut *tx).await.map_err(unavailable)?;
+        let row = set_cancelled(&mut tx, row).await?;
         tx.commit().await.map_err(unavailable)?;
         row.view(false)
     }
+
+    async fn engine_reservations(
+        &self,
+        account_ids: &[String],
+    ) -> AdminStoreResult<Vec<OAuthEngineReservation>> {
+        if account_ids.is_empty() {
+            return Ok(Vec::new());
+        }
+        let rows: Vec<(Uuid, String, DateTime<Utc>, String, bool)> = sqlx::query_as(concat!(
+            "select o.operation_id, o.planned_account_id, o.expires_at, o.phase, ",
+            reservation_has_references!(),
+            " from managed_oauth_operations o where o.is_new and o.phase <> 'completed'
+              and o.planned_account_id = any($1)",
+        ))
+        .bind(account_ids)
+        .fetch_all(&self.pool)
+        .await
+        .map_err(unavailable)?;
+        let now = Utc::now();
+        Ok(rows
+            .into_iter()
+            .map(
+                |(id, account_id, expires_at, phase, referenced)| OAuthEngineReservation {
+                    operation_id: id.to_string(),
+                    account_id,
+                    expires_at,
+                    reclaimable: expires_at <= now && !referenced && reclaimable_phase(&phase),
+                },
+            )
+            .collect())
+    }
+
+    async fn cancel_expired_reservation(
+        &self,
+        operation_id: &str,
+        context: &MutationContext,
+    ) -> AdminStoreResult<OAuthOperation> {
+        let mut tx = self.pool.begin().await.map_err(unavailable)?;
+        lock_config(&mut tx).await?;
+        let row = locked_operation(&mut tx, operation_id)
+            .await?
+            .ok_or_else(|| {
+                AdminStoreError::new(
+                    AdminStoreErrorKind::NotFound,
+                    "oauth operation",
+                    "授权预留记录缺失",
+                )
+            })?;
+        if !row.expired_reservation() {
+            return Err(conflict());
+        }
+        require_zero_references(&mut tx, row.operation_id).await?;
+        let changed = row.phase != "cancelled";
+        let row = set_cancelled(&mut tx, row).await?;
+        if changed {
+            let audit = crate::mutation_audit(
+                context,
+                MutationAuditOperation::OAuthReservationReclaim,
+                operation_id,
+                vec!["phase".to_owned()],
+            );
+            super::admin_security_audit::append_admin_audit_event_in_transaction(
+                &mut tx, audit, None,
+            )
+            .await
+            .map_err(|error| {
+                AdminStoreError::new(
+                    AdminStoreErrorKind::Unavailable,
+                    "oauth operation",
+                    "授权回收审计写入失败",
+                )
+                .with_source(error)
+            })?;
+        }
+        tx.commit().await.map_err(unavailable)?;
+        row.view(false)
+    }
+
     async fn reclaimable(
         &self,
         operation_id: &str,
         owner: &MutationActor,
     ) -> AdminStoreResult<bool> {
-        sqlx::query_scalar("select exists(select 1 from managed_oauth_operations o where operation_id=$1 and owner=$2 and is_new and phase in ('failed','cancelled') and not exists(select 1 from provider_accounts a where a.id=o.planned_account_id or a.outbound_proxy_id=o.proxy_id) and not exists(select 1 from managed_routes r where r.account_id=o.planned_account_id or r.proxy_id=o.proxy_id) and not exists(select 1 from outbound_proxies p where p.id=o.proxy_id))").bind(id(operation_id)?).bind(Json(owner)).fetch_one(&self.pool).await.map_err(unavailable)
+        sqlx::query_scalar(concat!(
+            "select exists(select 1 from managed_oauth_operations o where operation_id=$1
+             and owner=$2 and is_new and phase in ('failed','cancelled') and not ",
+            reservation_has_references!(),
+            ")",
+        ))
+        .bind(id(operation_id)?)
+        .bind(Json(owner))
+        .fetch_one(&self.pool)
+        .await
+        .map_err(unavailable)
     }
 }

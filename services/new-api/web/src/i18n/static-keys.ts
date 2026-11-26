@@ -19,6 +19,13 @@ For commercial licensing, please contact support@quantumnous.com
 // Static translation keys that don't get picked up by the t('...') regex.
 // These cover dynamic labels (e.g. constants, configs) that are passed into t at runtime.
 export const STATIC_I18N_KEYS = [
+  'The operation result is unknown. Refresh its status before trying again.',
+  'The account or egress operation could not be completed.',
+  'The requested account or egress resource was not found.',
+  'Account or egress settings changed. Refresh and review the current state.',
+  'No egress engine slot is available.',
+  'The egress engine action timed out.',
+  'The account settings were saved. Refresh to view the latest state.',
   'The proxy provider document download failed.',
   'The proxy provider document is unreadable.',
   'Nested proxy providers stay one level deep.',

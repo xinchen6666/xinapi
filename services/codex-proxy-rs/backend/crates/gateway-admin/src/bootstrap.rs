@@ -174,6 +174,13 @@ async fn initialize_inner(
     public_services.register_settings(&settings)?;
     public_services.register_accounts(&accounts)?;
     public_services.register_usage_data(&usage_data)?;
+    let managed_routes = Arc::new(use_case::managed_routes::DefaultManagedRoutesService::new(
+        store.managed_routes(),
+        store.subscriptions(),
+        engines.clone(),
+        proxy_probe.clone(),
+        snapshot.clone(),
+    ));
     let services = AdminServices {
         peer_link: Arc::new(use_case::peer_link::DefaultPeerLinkService::new(
             store.client_keys(),
@@ -205,17 +212,15 @@ async fn initialize_inner(
             )
             .with_store(store.subscriptions()),
         ),
-        managed_routes: Arc::new(use_case::managed_routes::DefaultManagedRoutesService::new(
-            store.managed_routes(),
-            store.subscriptions(),
-            engines.clone(),
-            proxy_probe.clone(),
-            snapshot.clone(),
-        )),
+        managed_routes: managed_routes.clone(),
         engines: Arc::new(use_case::engines::DefaultEnginesService::new(
             store.subscriptions(),
             store.accounts(),
             engines,
+            managed_routes,
+            store.oauth_operations(),
+            proxy_probe.clone(),
+            store.auth(),
         )),
         proxies: Arc::new(use_case::proxies::DefaultProxiesService::new(
             store.proxies(),

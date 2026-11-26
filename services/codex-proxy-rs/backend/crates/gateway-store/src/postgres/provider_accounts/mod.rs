@@ -14,7 +14,7 @@ use gateway_admin::{
             AccountSortField as AdminAccountSortField, AccountSummary, AccountUpdateResult,
             AccountUsage, AccountUsageWindowQuery, AccountUsageWindowResult, AccountsUpdateResult,
             BatchUpdateAccounts, DeleteAccounts, SortDirection as AdminSortDirection,
-            UpdateAccount,
+            UpdateAccount, UpdateAccountGroups,
         },
         observability::TimeRange,
         provider_credentials::{

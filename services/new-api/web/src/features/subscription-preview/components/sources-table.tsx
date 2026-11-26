@@ -99,8 +99,12 @@ export function SourcesTable(props: Props) {
     />
   )
 }
-export function ApprovedNodes(props: { nodes: SourceNode[] }) {
+export function ApprovedNodes(props: {
+  nodes: SourceNode[]
+  onVerify?: (node: SourceNode) => void
+}) {
   const { t } = useTranslation()
+  const onVerify = props.onVerify
   const columns = useMemo<ColumnDef<SourceNode, unknown>[]>(
     () => [
       { accessorKey: 'name', header: t('Name'), meta: { mobileTitle: true } },
@@ -133,8 +137,30 @@ export function ApprovedNodes(props: { nodes: SourceNode[] }) {
         cell: ({ row }) =>
           row.original.supported ? t('Native HTTP/SOCKS') : t('Mihomo pending'),
       },
+      ...(onVerify
+        ? [
+            {
+              id: 'verify',
+              header: t('Actions'),
+              cell: ({ row }: { row: { original: SourceNode } }) => (
+                <Button
+                  size='sm'
+                  variant='outline'
+                  disabled={
+                    !row.original.available ||
+                    !row.original.supported ||
+                    !row.original.version_id
+                  }
+                  onClick={() => onVerify(row.original)}
+                >
+                  {t('Verify connection')}
+                </Button>
+              ),
+            },
+          ]
+        : []),
     ],
-    [t]
+    [t, onVerify]
   )
   const { table } = useDataTable({
     data: props.nodes ?? [],

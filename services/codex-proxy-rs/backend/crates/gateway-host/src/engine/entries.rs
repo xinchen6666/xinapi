@@ -90,13 +90,14 @@ struct StoredRegistry {
 #[derive(Serialize)]
 struct RegistryDocument<'a> {
     version: u32,
-    entries: &'a [EntryRecord],
+    entries: Vec<&'a EntryRecord>,
 }
 
 /// 磁盘登记是端口归属的权威，写入成功后才发布内存记录
 pub(super) struct EntryRegistry {
     path: PathBuf,
     records: Vec<EntryRecord>,
+    temporary: BTreeSet<String>,
 }
 
 impl EntryRegistry {
@@ -146,7 +147,11 @@ impl EntryRegistry {
             None => (Vec::new(), true),
         };
         validate_records(&records)?;
-        let registry = Self { path, records };
+        let registry = Self {
+            path,
+            records,
+            temporary: BTreeSet::new(),
+        };
         if rewrite {
             registry.persist(&registry.records)?;
         } else {
@@ -166,6 +171,7 @@ impl EntryRegistry {
         facts: &EngineFacts,
         port_base: u16,
         port_span: u16,
+        temporary: bool,
     ) -> Result<EntryRecord, EngineServiceError> {
         if facts.owner.clone().normalize().ok().as_ref() != Some(&facts.owner) {
             return Err(EngineServiceError::OwnerInvalid);
@@ -174,7 +180,8 @@ impl EntryRegistry {
             return Err(EngineServiceError::BindingConflict);
         }
         if let Some(record) = self.records.iter().find(|r| r.entry_id == facts.entry_id) {
-            if record.owner.as_ref() != Some(&facts.owner)
+            if temporary
+                || record.owner.as_ref() != Some(&facts.owner)
                 || record.source_id != facts.source_id
                 || record.node_id != facts.node_id
                 || record.version_id != facts.version_id
@@ -207,11 +214,24 @@ impl EntryRegistry {
             password: random_hex(32)?,
             control_secret: random_hex(32)?,
         };
-        let mut records = self.records.clone();
-        records.push(record.clone());
-        self.persist(&records)?;
-        self.records = records;
+        self.records.push(record.clone());
+        if temporary {
+            self.temporary.insert(record.entry_id.clone());
+        } else if let Err(error) = self.persist(&self.records) {
+            self.records.pop();
+            return Err(error);
+        }
         Ok(record)
+    }
+
+    pub(super) fn is_temporary(&self, entry_id: &str) -> bool {
+        self.temporary.contains(entry_id)
+    }
+
+    pub(super) fn release_temporary(&mut self, entry_id: &str) {
+        if self.temporary.remove(entry_id) {
+            self.records.retain(|record| record.entry_id != entry_id);
+        }
     }
 
     /// 发布明确批准的版本，端口与入口认证保持原值
@@ -314,7 +334,10 @@ impl EntryRegistry {
     fn persist(&self, records: &[EntryRecord]) -> Result<(), EngineServiceError> {
         let document = RegistryDocument {
             version: REGISTRY_VERSION,
-            entries: records,
+            entries: records
+                .iter()
+                .filter(|record| !self.temporary.contains(&record.entry_id))
+                .collect(),
         };
         let bytes =
             serde_json::to_vec_pretty(&document).map_err(|_| EngineServiceError::Registry)?;

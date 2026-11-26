@@ -1,7 +1,6 @@
 package service
 
 import (
-	"bytes"
 	"context"
 	"errors"
 	"io"
@@ -40,44 +39,18 @@ type CprOAuthView struct {
 	Reason           string `json:"reason,omitempty"`
 }
 
-var cprOAuthClient = &http.Client{
-	Timeout:       90 * time.Second,
-	Transport:     &http.Transport{Proxy: nil, MaxIdleConnsPerHost: 2, IdleConnTimeout: 30 * time.Second, ResponseHeaderTimeout: 85 * time.Second},
-	CheckRedirect: func(_ *http.Request, _ []*http.Request) error { return http.ErrUseLastResponse },
-}
-
 func cprOAuthPermission(userID, role int) bool {
 	return authz.Can(userID, role, authz.AccountEgressAuthorize)
 }
 
-func cprOAuthRequest(ctx context.Context, method, path string, input any) (CprOAuthView, error) {
+func cprOAuthRequest(ctx context.Context, method, path string, query url.Values, input any) (CprOAuthView, error) {
 	var view CprOAuthView
 	if method == http.MethodGet {
 		var cancel context.CancelFunc
 		ctx, cancel = context.WithTimeout(ctx, 5*time.Second)
 		defer cancel()
 	}
-	key, err := readCPRAdminKey()
-	if err != nil {
-		return view, ErrAccountEgressUnavailable
-	}
-	var payload []byte
-	if input != nil {
-		payload, err = common.Marshal(input)
-		if err != nil {
-			return view, ErrAccountEgressUnavailable
-		}
-	}
-	request, err := http.NewRequestWithContext(ctx, method, "http://cpr:8080/api/admin/oauth-operations"+path, bytes.NewReader(payload))
-	if err != nil {
-		return view, ErrAccountEgressUnavailable
-	}
-	request.Header.Set("x-api-key", key)
-	request.Header.Set("Accept", "application/json")
-	if input != nil {
-		request.Header.Set("Content-Type", "application/json")
-	}
-	response, err := cprOAuthClient.Do(request)
+	response, err := sendCPRAdmin(ctx, cprMutationClient, method, "/api/admin/oauth-operations"+path, query, input)
 	if err != nil {
 		return view, ErrAccountEgressUnavailable
 	}
@@ -205,7 +178,7 @@ func StartCprOAuthOperation(ctx context.Context, identity AuthIdentity, input Cp
 		OperationID string `json:"operation_id"`
 		CprOAuthStartInput
 	}{OperationID: operation.OperationID, CprOAuthStartInput: input}
-	receipt, err := cprOAuthRequest(remoteCtx, http.MethodPost, "/start", payload)
+	receipt, err := cprOAuthRequest(remoteCtx, http.MethodPost, "/start", nil, payload)
 	if err != nil {
 		view, _, readErr := readCprOAuthReceipt(remoteCtx, operation)
 		return view, readErr
@@ -223,7 +196,7 @@ func StartCprOAuthOperation(ctx context.Context, identity AuthIdentity, input Cp
 
 // 回执查询仅更新本次调用的内存投影，数据库状态由启动和发送领取路径推进
 func readCprOAuthReceipt(ctx context.Context, operation *model.CprOAuthOperation) (CprOAuthView, bool, error) {
-	receipt, err := cprOAuthRequest(ctx, http.MethodGet, "?operation_id="+url.QueryEscape(operation.OperationID), nil)
+	receipt, err := cprOAuthRequest(ctx, http.MethodGet, "", url.Values{"operation_id": {operation.OperationID}}, nil)
 	if err != nil {
 		return cprOAuthFailure(operation, "receipt_unavailable"), false, nil
 	}
@@ -302,7 +275,7 @@ func FinishCprOAuthOperation(ctx context.Context, identity AuthIdentity, id, kin
 	if kind == "complete" {
 		payload["callback_url"] = callbackURL
 	}
-	receipt, sendErr := cprOAuthRequest(remoteCtx, http.MethodPost, "/"+kind, payload)
+	receipt, sendErr := cprOAuthRequest(remoteCtx, http.MethodPost, "/"+kind, nil, payload)
 	if sendErr != nil {
 		// 发送结果未知时仅GET确认，同一授权码永远保持一次POST
 		view, _, err := readCprOAuthReceipt(remoteCtx, claimed)

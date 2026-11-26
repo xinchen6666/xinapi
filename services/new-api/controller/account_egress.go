@@ -79,13 +79,16 @@ func PreviewAccountEgressSubscription(c *gin.Context) {
 	}
 	data, err := service.ReadSubscriptionPreview(c.Request.Context(), sourceURL)
 	if err != nil {
+		result, code := accountEgressErrorOutcome(err)
 		var previewErr *service.SubscriptionPreviewError
 		if errors.As(err, &previewErr) {
 			common.ApiErrorStatus(c, http.StatusUnprocessableEntity, previewErr.Message, gin.H{"code": previewErr.Code})
-			return
+		} else {
+			common.ApiErrorStatus(c, http.StatusServiceUnavailable, common.NewMessage("Account and egress service is unavailable"), gin.H{"code": accountEgressUnavailableCode})
 		}
-		common.ApiErrorStatus(c, http.StatusServiceUnavailable, common.NewMessage("Account and egress service is unavailable"), gin.H{"code": "account_egress_unavailable"})
+		accountEgressAudit(c, "account_egress.subscription_preview", "subscription_source", "", "", result, code)
 		return
 	}
 	common.ApiSuccess(c, data)
+	accountEgressAudit(c, "account_egress.subscription_preview", "subscription_source", "", "", "success", "")
 }

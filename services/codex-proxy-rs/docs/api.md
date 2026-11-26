@@ -1238,7 +1238,7 @@ config 返回 `{ name, plaintextKey }`，仅读取服务端会话绑定的当前
 | `POST` | `/api/admin/accounts/refresh` | `{ accountId }` | 手工刷新 OAuth credential（`idToken` / `accessToken` / `refreshToken`），不刷新额度 |
 | `POST` | `/api/admin/accounts/recover` | `{ accountId }` | 停用账号只启用调度；已启用账号强制清除本地错误/额度/cooldown 事实，不访问上游 |
 | `POST` | `/api/admin/accounts/update` | `{ accountId, enabled, concurrencyLimit, weight, groupIds, name?, notes?, modelAccess?, outboundProxyId?, connection? }` | 一次更新账号设置；`connection` 支持 OpenAI OAuth 传输方式及 API Key 连接配置，见下文 |
-| `POST` | `/api/admin/accounts/batch-update` | `{ accountIds, enabled?, concurrencyLimit?, weight?, groupIds?, modelAccess?, outboundProxyId? }` | 一次事务更新所选账号；仅修改提供的字段，至少提供一项修改 |
+| `POST` | `/api/admin/accounts/batch-update` | `{ accountIds, enabled?, concurrencyLimit?, weight?, groupIds?, expectedGroupIds?, modelAccess?, outboundProxyId? }` | 一次事务更新所选账号；仅修改提供的字段，至少提供一项修改 |
 | `POST` | `/api/admin/accounts/delete` | `{ provider, accountIds }` | 批量删除 1–200 个账号 |
 | `GET` | `/api/admin/accounts/quota` | `accountId` | 读取当前额度，不强制访问上游；Provider 未提供额度能力时返回空额度投影 |
 | `GET` | `/api/admin/accounts/quota-forecast` | `accountId` | 按需读取周/月容量预测、源窗口剩余估算与采样依据，不刷新上游额度 |
@@ -1295,6 +1295,8 @@ config 返回 `{ name, plaintextKey }`，仅读取服务端会话绑定的当前
 此时 `rateLimitedUntil` 是最早探测时间，到期后仍保持 `rate_limited`，直到探测成功或手动恢复。
 未要求探测时，该字段表示冷却结束时间。`protectionRules` 返回触发时的规则快照 `[{ id, name }]`，
 没有保护原因时为空数组，修改或删除当前规则不改写此快照。错误保护与上游限流独立恢复，解除保护不保证其他限制已经解除
+
+`expectedGroupIds` 显式启用单账号分组条件更新，`groupIds` 为目标集合，两者均可为空数组，顺序无关。请求可同时包含 `enabled`；当前分组与预期有差异时，事务返回 HTTP 409，账号设置和分组保持原值。
 
 OpenAI OAuth 账号的 `capabilities.quotaSettingsSupported` 为真。通过 `POST /api/admin/accounts/batch-update`
 提交 `{"accountIds":["acct_1"],"quotaSettings":{"codex:18000s":{"limitPercent":99,"warmup":null},"codex:604800s":{"limitPercent":95,"warmup":{"model":"gpt-5.5"}}}}`。
@@ -3636,13 +3638,20 @@ URL、规范连接、待审核事实和批准历史整体加密保存在 Postgre
 
 | 方法与 CPR 路径 | 请求 | 结果 |
 | --- | --- | --- |
-| `GET /api/admin/engines` | 空 | `{items: EngineView[]}` |
+| `GET /api/admin/engines` | 空 | `{items,capacity:{limit,used,available}}` |
 | `POST /api/admin/engines/start` | `{owner:{kind,id},source_id,node_id}` | `{engine: EngineView}` |
-| `POST /api/admin/engines/stop` | `{entry_id}` | `{engine: EngineView}` |
+| `POST /api/admin/engines/stop` | `{entry_id}` | 维护入口，返回 `{engine: EngineView}` |
+| `POST /api/admin/engines/stop-account` | `{entry_id}` | 校验已发布账号绑定的节点版本后停止入口 |
+| `POST /api/admin/engines/reclaim` | `{operation_id}` | 回收满足到期条件的 OAuth 预留，返回 `{operation_id,status:"cancelled"}` |
+| `POST /api/admin/engines/test-node` | `{source_id,node_id,version_id}` | 独立验证已批准节点，返回 `success,latency_ms,exit_ip,exit_ipv4,exit_ipv6` |
 
 `owner.kind` 为 `account` 或 `reservation`。账号使用原生 `acct_…` ID并验证其存在；授权预留项使用规范UUID，可先于账号授权建立。来源／节点UUID从持久文档规范化，等价大小写写法命中同一入口。`entry_id` 为服务端生成的稳定标识，调用者按响应使用。
 
 `EngineView` 包含 `entry_id,owner,source_id,node_id,version_id,node_name,protocol,listen_host,listen_port,state,pid,started_at,rss_bytes,cpu_seconds,cold_start_ms,last_error`。状态取 `starting/running/stopped/failed`，CPU为累计秒数。v1节点登记升级后保留原端口占位，`owner=null`、`version_id`为空；新归属拥有独立入口。
+
+列表的 `occupies_slot` 表示该进程已占用许可；OAuth 预留使用授权操作 ID，并附 `expires_at` 和 `reclaimable`。真实已发布账号与当前入口事实一致时提供 `stoppable`。正式账号、授权预留和临时验证共用同一 Host 容量。工作台停止走 `stop-account`；恢复走第 16 节的 `reconcile`，沿用已发布连接版本。回收仅面向已到期的预留，仓储核对交换状态和账号、代理、路由引用后领取回收。
+
+独立验证读取当前已批准可用的连接版本，启动临时入口后再次核对当前版本，再连接部署配置的出口观测服务。执行预算为 58 秒，清理等待预算为 10 秒；完成、超时或请求取消均触发监督任务终止子进程并归还槽位。账号绑定与发布版本保持原样。操作审计使用管理请求 ID 和稳定实体标识。
 
 同owner重复启动复用存活实例。所属来源、节点或连接版本变化返回 `engine_binding_conflict`，显式换路见第16节的受管路由流程。停止可取消正在启动的实例，回执在该实例回收后完成；停止中的重复启动返回取消状态。各入口的进程等待相互独立。Host关闭统一发送终止信号并等待回收，异常退出主动回收，重启后登记和入口凭据保持、进程状态为stopped。
 
@@ -3656,7 +3665,8 @@ URL、规范连接、待审核事实和批准历史整体加密保存在 Postgre
 | 503 | `engine_artifact_identity` / `engine_binary_missing` | 制品摘要、平台、身份或路径校验失败 |
 | 503 | `engine_registry_unavailable` / `engine_configuration_invalid` | 登记读写或部署参数错误 |
 | 503 | `engine_host_unavailable` / `engine_process_failed` / `engine_store_unavailable` / `engine_shutting_down` | 基础设施故障或宿主关闭 |
-| 504 | `engine_start_timeout` | 启动预算耗尽，监督任务继续完成回收 |
+| 409 | `engine_node_version_changed` / `engine_stop_forbidden` | 已批准版本已变化，或入口归属与已发布绑定有差异 |
+| 504 | `engine_start_timeout` / `engine_node_test_timeout` | 启动或独立验证预算耗尽，监督任务继续完成回收 |
 
 制品固定为v1.19.33 linux/amd64-compatible，启动前校验实际ELF摘要，认证controller再次核对版本。生成配置保留允许的HTTP TLS、SNI、证书验证、内联证书与header字段；超出能力的执行选项明确拒绝。SOCKS只接收显式 `dns-mode=remote` 的TCP路径；本地／缺省DNS及UDP选项拒绝。Mihomo内建localhost映射沿用其原行为。
 
@@ -3675,7 +3685,7 @@ URL、规范连接、待审核事实和批准历史整体加密保存在 Postgre
 
 | 方法与路径 | 输入 | 行为 |
 | --- | --- | --- |
-| GET `/api/admin/managed-routes` | `account_id` | 当前节点、generation、代理ID、账号实际代理ID、脱敏endpoint与观测 |
+| GET `/api/admin/managed-routes` | `account_id` | 当前节点、generation、代理ID与启用状态、账号实际代理ID、当前代次的 `applied_operation_id`、脱敏endpoint与观测 |
 | GET `/api/admin/managed-routes/operations` | `operation_id` | 操作及当前路由／引擎事实，含requires_reconciliation |
 | POST `/api/admin/managed-routes/prepare` | `{operation_id,account_id,expected_generation,source_id,node_id}` | 创建候选，旁路启动并验证出口；原入口保持 |
 | POST `/api/admin/managed-routes/approve` | `{operation_id}` | 校验来源／账号绑定／代次，终止旧连接并发布候选 |

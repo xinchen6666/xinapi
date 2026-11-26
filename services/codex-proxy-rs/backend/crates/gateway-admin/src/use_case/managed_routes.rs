@@ -39,7 +39,11 @@ pub trait ManagedRoutesService: Send + Sync {
         operation_id: &str,
         context: &MutationContext,
     ) -> Result<RouteReceipt, AdminError>;
-    async fn abort(&self, operation_id: &str) -> Result<RouteReceipt, AdminError>;
+    async fn abort(
+        &self,
+        operation_id: &str,
+        context: &MutationContext,
+    ) -> Result<RouteReceipt, AdminError>;
     async fn operation(&self, operation_id: &str) -> Result<RouteReceipt, AdminError>;
     async fn route(&self, account_id: &str) -> Result<ManagedRoute, AdminError>;
 }
@@ -69,6 +73,10 @@ impl DefaultManagedRoutesService {
             active: Mutex::new(BTreeSet::new()),
         }
     }
+    pub(crate) fn lock_account(&self, account_id: &str) -> Result<Active<'_>, AdminError> {
+        Active::begin(&self.active, account_id)
+    }
+
     fn store(&self) -> Result<&Arc<dyn ManagedRouteStore>, AdminError> {
         self.store.as_ref().ok_or_else(unavailable)
     }
@@ -415,13 +423,14 @@ impl ManagedRoutesService for DefaultManagedRoutesService {
                     };
                     let failed = self
                         .store()?
-                        .fail(
+                        .fail_with_context(
                             id,
                             if restored {
                                 "route_candidate_superseded"
                             } else {
                                 "route_restore_required"
                             },
+                            Some(context),
                         )
                         .await
                         .map_err(store_error)?;
@@ -462,7 +471,7 @@ impl ManagedRoutesService for DefaultManagedRoutesService {
                     .map_err(engine_error)?;
                 let failed = self
                     .store()?
-                    .fail(id, "route_prepare_interrupted")
+                    .fail_with_context(id, "route_prepare_interrupted", Some(context))
                     .await
                     .map_err(store_error)?;
                 self.receipt(failed).await
@@ -470,7 +479,7 @@ impl ManagedRoutesService for DefaultManagedRoutesService {
             _ => self.receipt(operation).await,
         }
     }
-    async fn abort(&self, id: &str) -> Result<RouteReceipt, AdminError> {
+    async fn abort(&self, id: &str, context: &MutationContext) -> Result<RouteReceipt, AdminError> {
         let operation = self.store()?.operation(id).await.map_err(store_error)?;
         let _guard = Active::begin(&self.active, &operation.account_id)?;
         if operation.phase == RoutePhase::Applied {
@@ -505,13 +514,14 @@ impl ManagedRoutesService for DefaultManagedRoutesService {
         }
         let failed = self
             .store()?
-            .fail(
+            .fail_with_context(
                 id,
                 if restored {
                     "route_operation_cancelled"
                 } else {
                     "route_restore_required"
                 },
+                Some(context),
             )
             .await
             .map_err(store_error)?;
@@ -530,7 +540,7 @@ impl ManagedRoutesService for DefaultManagedRoutesService {
             .ok_or_else(|| AdminError::new(AdminErrorKind::NotFound, "受管路由记录缺失"))
     }
 }
-struct Active<'a> {
+pub(crate) struct Active<'a> {
     entries: &'a Mutex<BTreeSet<String>>,
     id: String,
 }

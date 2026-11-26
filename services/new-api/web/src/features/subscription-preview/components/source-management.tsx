@@ -25,6 +25,8 @@ import { ErrorState } from '@/components/error-state'
 import { LoadingState } from '@/components/loading-state'
 import { Button } from '@/components/ui/button'
 import { FieldError } from '@/components/ui/field'
+import type { ApprovedNodeTarget } from '@/features/account-egress/console-api'
+import { NodeTestDialog } from '@/features/account-egress/node-test-dialog'
 import {
   ADMIN_PERMISSION_RESOURCES,
   ADMIN_PERMISSION_ACTIONS,
@@ -53,18 +55,31 @@ export function SourceManagement(props: { onReadDenied: () => void }) {
     ADMIN_PERMISSION_RESOURCES.ACCOUNT_EGRESS,
     ADMIN_PERMISSION_ACTIONS.MANAGE_SOURCES
   )
+  const sessionId = useAuthStore((state) => state.auth.session?.sid)
+  const canVerify = hasPermission(
+    user,
+    ADMIN_PERMISSION_RESOURCES.ACCOUNT_EGRESS,
+    ADMIN_PERMISSION_ACTIONS.MANAGE_EGRESS
+  )
+  const [verifyTarget, setVerifyTarget] = useState<
+    (ApprovedNodeTarget & { name: string }) | null
+  >(null)
   const [sourceId, setSourceId] = useState('')
   const [editor, setEditor] = useState<'create' | 'update' | null>(null)
+  const sourcesKey = ['account-egress', user?.id, 'sources', sessionId]
+  const sourceDetailKey = ['account-egress', user?.id, 'source', sessionId]
   const sources = useQuery({
-    queryKey: ['subscription-sources', user?.id],
-    queryFn: listSources,
+    queryKey: sourcesKey,
+    queryFn: ({ signal }) => listSources(signal),
+    gcTime: 0,
     retry: false,
     meta: { errorToast: false },
   })
-  const detailKey = ['subscription-source-detail', user?.id, sourceId]
+  const detailKey = [...sourceDetailKey, sourceId]
   const detail = useQuery({
     queryKey: detailKey,
-    queryFn: () => sourceDetail(sourceId),
+    queryFn: ({ signal }) => sourceDetail(sourceId, signal),
+    gcTime: 0,
     enabled: !!sourceId,
     retry: false,
     meta: { errorToast: false },
@@ -79,19 +94,16 @@ export function SourceManagement(props: { onReadDenied: () => void }) {
 
   const updated = (value: SourceDetail) => {
     setSourceId(value.source.id)
-    queryClient.setQueryData(
-      ['subscription-source-detail', user?.id, value.source.id],
-      value
-    )
+    queryClient.setQueryData([...sourceDetailKey, value.source.id], value)
     void queryClient.invalidateQueries({
-      queryKey: ['subscription-sources', user?.id],
+      queryKey: sourcesKey,
     })
   }
   const failed = (error: unknown) => {
     if (isAxiosError(error) && error.response?.status === 409) {
       void queryClient.invalidateQueries({ queryKey: detailKey })
       void queryClient.invalidateQueries({
-        queryKey: ['subscription-sources', user?.id],
+        queryKey: sourcesKey,
       })
     }
   }
@@ -214,7 +226,20 @@ export function SourceManagement(props: { onReadDenied: () => void }) {
             <FieldError>{getServerErrorMessage(operationError)}</FieldError>
           ) : null}
           <h3 className='font-semibold'>{t('Approved nodes')}</h3>
-          <ApprovedNodes nodes={detail.data.nodes} />
+          <ApprovedNodes
+            nodes={detail.data.nodes}
+            onVerify={
+              canVerify
+                ? (node) =>
+                    setVerifyTarget({
+                      source_id: detail.data.source.id,
+                      node_id: node.id,
+                      version_id: node.version_id,
+                      name: node.name,
+                    })
+                : undefined
+            }
+          />
           {detail.data.review ? (
             <SourceReviewPanel
               key={`${detail.data.review.id}:${detail.data.source.revision}`}
@@ -229,6 +254,12 @@ export function SourceManagement(props: { onReadDenied: () => void }) {
           ) : null}
         </section>
       ) : null}
+      {canVerify && verifyTarget && (
+        <NodeTestDialog
+          target={verifyTarget}
+          onClose={() => setVerifyTarget(null)}
+        />
+      )}
       {canWrite && editor ? (
         <SourceEditor
           key={`${editor}:${detail.data?.source.id ?? 'new'}`}

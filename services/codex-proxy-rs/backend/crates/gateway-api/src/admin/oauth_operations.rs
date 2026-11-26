@@ -31,7 +31,7 @@ where
         .route("/api/admin/oauth-operations/complete", post(complete::<S>))
         .route("/api/admin/oauth-operations/cancel", post(cancel::<S>))
 }
-fn error(error: gateway_admin::model::AdminError) -> AdminError {
+pub(super) fn error(error: gateway_admin::model::AdminError) -> AdminError {
     use gateway_admin::model::AdminErrorKind;
     let reason = match error.kind() {
         AdminErrorKind::Conflict => "oauth_operation_conflict",

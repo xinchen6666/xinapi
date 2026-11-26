@@ -31,7 +31,15 @@ pub trait ManagedRouteStore: Send + Sync {
         endpoint: OutboundProxy,
         context: &MutationContext,
     ) -> AdminStoreResult<(RouteOperation, Revision)>;
-    async fn fail(&self, operation_id: &str, reason: &str) -> AdminStoreResult<RouteOperation>;
+    async fn fail(&self, operation_id: &str, reason: &str) -> AdminStoreResult<RouteOperation> {
+        self.fail_with_context(operation_id, reason, None).await
+    }
+    async fn fail_with_context(
+        &self,
+        operation_id: &str,
+        reason: &str,
+        context: Option<&MutationContext>,
+    ) -> AdminStoreResult<RouteOperation>;
     async fn operation(&self, operation_id: &str) -> AdminStoreResult<RouteOperation>;
     async fn route(&self, account_id: &str) -> AdminStoreResult<Option<ManagedRoute>>;
 }

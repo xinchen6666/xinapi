@@ -1,7 +1,7 @@
 //! 每个入口的子进程监督、认证就绪与终止回执
 
 use super::{
-    artifact,
+    Inner, artifact,
     config::{self, EngineSettings},
     entries::EntryRecord,
     observation,
@@ -26,11 +26,12 @@ use tokio::{
     io::{AsyncReadExt as _, AsyncWriteExt as _},
     net::TcpStream,
     process::{Child, Command},
-    sync::{OwnedSemaphorePermit, oneshot, watch},
+    sync::{Mutex, OwnedSemaphorePermit, oneshot, watch},
     time::{Instant, timeout, timeout_at},
 };
 
 pub(super) const STOP_GRACE: Duration = Duration::from_secs(3);
+pub(super) const CLEANUP_WAIT: Duration = Duration::from_secs(10);
 
 pub(super) struct Launch {
     pub facts: EngineFacts,
@@ -42,7 +43,9 @@ pub(super) struct Launch {
     pub deadline: Instant,
     pub permit: OwnedSemaphorePermit,
     pub ready: oneshot::Sender<Result<EngineSnapshot, Error>>,
-    pub done: watch::Sender<bool>,
+    pub done: watch::Sender<Option<Result<(), Error>>>,
+    pub inner: Arc<Mutex<Inner>>,
+    pub temporary: bool,
 }
 
 /// 监督任务独占 Child，管理请求取消后仍负责等待进程退出
@@ -58,18 +61,41 @@ pub(super) async fn supervise(launch: Launch) {
         permit,
         ready,
         done,
+        inner,
+        temporary,
     } = launch;
     let started = Instant::now();
     let mut ready = Some(ready);
-    let prepared = prepare(&facts, &mut record, &settings, &root, &cancel, deadline).await;
+    let directory = if temporary {
+        root.join("node-tests").join(&record.entry_id)
+    } else {
+        root.join(&record.entry_id)
+    };
+    let prepared = prepare(
+        &facts,
+        &mut record,
+        &settings,
+        &directory,
+        &cancel,
+        deadline,
+    )
+    .await;
     let (mut child, logs) = match prepared {
         Ok(value) => value,
         Err(error) => {
             finish(&status, &cancel, Some(error));
-            drop(permit);
-            done.send_replace(true);
+            let cleaned = release_slot(
+                &inner,
+                temporary,
+                &record.entry_id,
+                directory,
+                permit,
+                &status,
+            )
+            .await;
+            done.send_replace(Some(cleaned));
             if let Some(reply) = ready.take() {
-                let _ = reply.send(Err(error));
+                let _ = reply.send(Err(cleaned.err().unwrap_or(error)));
             }
             return;
         }
@@ -119,11 +145,52 @@ pub(super) async fn supervise(launch: Launch) {
         }
     }
     finish(&status, &cancel, outcome);
-    drop(permit);
-    done.send_replace(true);
+    let cleaned = release_slot(
+        &inner,
+        temporary,
+        &record.entry_id,
+        directory,
+        permit,
+        &status,
+    )
+    .await;
+    done.send_replace(Some(cleaned));
     if let Some(reply) = ready.take() {
-        let _ = reply.send(Err(outcome.unwrap_or(Error::Cancelled)));
+        let _ = reply.send(Err(cleaned.err().or(outcome).unwrap_or(Error::Cancelled)));
     }
+}
+
+// 临时入口在进程结束和目录清理后归还槽位
+async fn release_slot(
+    inner: &Mutex<Inner>,
+    temporary: bool,
+    entry_id: &str,
+    directory: PathBuf,
+    permit: OwnedSemaphorePermit,
+    status: &watch::Sender<EngineSnapshot>,
+) -> Result<(), Error> {
+    let cleaned = if temporary {
+        match tokio::task::spawn_blocking(move || std::fs::remove_dir_all(directory)).await {
+            Ok(Ok(())) => Ok(()),
+            Ok(Err(error)) if error.kind() == std::io::ErrorKind::NotFound => Ok(()),
+            _ => {
+                tracing::warn!(entry_id, "Temporary engine directory cleanup failed");
+                Err(Error::Unavailable)
+            }
+        }
+    } else {
+        Ok(())
+    };
+    let mut inner = inner.lock().await;
+    if temporary {
+        if let Ok(registry) = &mut inner.registry {
+            registry.release_temporary(entry_id);
+        }
+        inner.runs.remove(entry_id);
+    }
+    status.send_modify(|s| s.occupies_slot = false);
+    drop(permit);
+    cleaned
 }
 
 fn finish(
@@ -154,14 +221,20 @@ async fn prepare(
     facts: &EngineFacts,
     record: &mut EntryRecord,
     settings: &EngineSettings,
-    root: &Path,
+    directory: &Path,
     cancel: &CancellationToken,
     deadline: Instant,
 ) -> Result<(Child, Vec<tokio::task::JoinHandle<()>>), Error> {
     if cancel.is_cancelled() {
         return Err(Error::Cancelled);
     }
-    let verified = artifact::verify(&settings.binary).await?;
+    let verified = tokio::select! {
+        biased;
+        _ = cancel.cancelled() => return Err(Error::Cancelled),
+        result = timeout_at(deadline, artifact::verify(&settings.binary)) => {
+            result.map_err(|_| Error::StartTimeout)??
+        }
+    };
     if cancel.is_cancelled() {
         return Err(Error::Cancelled);
     }
@@ -174,9 +247,14 @@ async fn prepare(
     let controller = std::net::TcpListener::bind(("127.0.0.1", record.control_port))
         .map_err(|_| Error::PortConflict)?;
     record.control_secret = random_secret()?;
-    let directory = root.join(&record.entry_id);
-    std::fs::create_dir_all(&directory).map_err(|_| Error::Unavailable)?;
-    std::fs::set_permissions(&directory, std::fs::Permissions::from_mode(0o700))
+    let mut directory_builder = std::fs::DirBuilder::new();
+    use std::os::unix::fs::DirBuilderExt as _;
+    directory_builder
+        .recursive(true)
+        .mode(0o700)
+        .create(directory)
+        .map_err(|_| Error::Unavailable)?;
+    std::fs::set_permissions(directory, std::fs::Permissions::from_mode(0o700))
         .map_err(|_| Error::Unavailable)?;
     let text = config::render_config(
         facts,
@@ -201,12 +279,12 @@ async fn prepare(
     drop(controller);
     let mut child = Command::new(verified.executable())
         .arg("-d")
-        .arg(&directory)
+        .arg(directory)
         .arg("-f")
         .arg(&path)
         .env_clear()
         .env("PATH", "/usr/bin:/bin")
-        .env("HOME", &directory)
+        .env("HOME", directory)
         .env("TZ", "UTC")
         .stdin(Stdio::null())
         .stdout(Stdio::piped())
@@ -346,7 +424,7 @@ async fn terminate(child: &mut Child, pid: u32) {
         let group = Pid::from_raw(raw);
         let _ = killpg(group, Signal::SIGTERM);
         let _ = killpg(group, Signal::SIGCONT);
-        if timeout(STOP_GRACE, child.wait()).await.is_ok() {
+        if matches!(timeout(STOP_GRACE, child.wait()).await, Ok(Ok(_))) {
             return;
         }
         let _ = killpg(group, Signal::SIGKILL);

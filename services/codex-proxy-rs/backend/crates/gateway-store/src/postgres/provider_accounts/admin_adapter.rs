@@ -7,7 +7,9 @@ use std::sync::Arc;
 use gateway_core::provider_ports::ProviderCooldownPort;
 
 use super::*;
-use crate::postgres::ObservabilityQueryBudget;
+use crate::postgres::{
+    AdminSecurityAuditRepository, ObservabilityQueryBudget, PgAdminSecurityAuditRepository,
+};
 
 fn account_capacity(
     account: &AccountRecord,
@@ -230,6 +232,23 @@ impl PgAdminAccountStore {
 
 #[async_trait]
 impl AccountStore for PgAdminAccountStore {
+    async fn record_account_quota_refresh(
+        &self,
+        account_id: &str,
+        context: &MutationContext,
+    ) -> AdminStoreResult<()> {
+        let event = mutation_audit(
+            context,
+            MutationAuditOperation::ProviderAccountQuotaRefresh,
+            account_id,
+            Vec::new(),
+        );
+        PgAdminSecurityAuditRepository::new(self.pool.clone())
+            .append_admin_audit_event(event)
+            .await
+            .map_err(|error| admin_store_error("provider account", error))
+    }
+
     async fn load_account_record(
         &self,
         account_id: &CoreProviderAccountId,
@@ -832,6 +851,50 @@ impl AccountStore for PgAdminAccountStore {
         Ok(AccountsUpdateResult {
             config_revision,
             account_ids,
+        })
+    }
+
+    async fn update_account_groups(
+        &self,
+        command: UpdateAccountGroups,
+        context: &MutationContext,
+    ) -> AdminStoreResult<AccountsUpdateResult> {
+        let mut changed_fields = vec!["groups".to_owned()];
+        if command.enabled.is_some() {
+            changed_fields.push("enabled".to_owned());
+        }
+        let account_id = command.account_id;
+        let config_revision = self
+            .accounts
+            .apply_provider_account_admin_update(
+                BatchUpdateProviderAccountsAdmin {
+                    account_ids: vec![account_id.to_string()],
+                    pauses: Default::default(),
+                    quota_settings: None,
+                    auto_use_quota_credits: None,
+                    name: None,
+                    notes: None,
+                    enabled: command.enabled,
+                    concurrency_limit: None,
+                    weight: None,
+                    model_access: None,
+                    group_ids: Some(command.group_ids),
+                    outbound_proxy: None,
+                    audit: mutation_audit(
+                        context,
+                        MutationAuditOperation::ProviderAccountBatchUpdate,
+                        account_id.as_str(),
+                        changed_fields,
+                    ),
+                },
+                Some(&command.expected_group_ids),
+            )
+            .await
+            .map_err(|error| admin_store_error(ENTITY, error))
+            .and_then(admin_revision)?;
+        Ok(AccountsUpdateResult {
+            config_revision,
+            account_ids: vec![account_id],
         })
     }
 

@@ -277,6 +277,27 @@ pub trait AccountStore:
         context: &MutationContext,
     ) -> AdminStoreResult<AccountsUpdateResult>;
 
+    /// 在同一事务核对当前分组、更新账号并记录审计
+    async fn record_account_quota_refresh(
+        &self,
+        _account_id: &str,
+        _context: &MutationContext,
+    ) -> AdminStoreResult<()> {
+        Ok(())
+    }
+
+    async fn update_account_groups(
+        &self,
+        _command: crate::model::accounts::UpdateAccountGroups,
+        _context: &MutationContext,
+    ) -> AdminStoreResult<AccountsUpdateResult> {
+        Err(AdminStoreError::new(
+            AdminStoreErrorKind::Unavailable,
+            "provider accounts",
+            "conditional group update is unavailable",
+        ))
+    }
+
     async fn delete_accounts(
         &self,
         command: DeleteAccounts,

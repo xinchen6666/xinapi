@@ -59,11 +59,13 @@ pub struct ManagedRoute {
     pub route_id: String,
     pub account_id: String,
     pub proxy_id: Option<String>,
+    pub proxy_enabled: Option<bool>,
     pub account_proxy_id: Option<String>,
     pub generation: u64,
     pub current: Option<RouteNode>,
     pub observation: Option<RouteObservation>,
     pub applying_operation_id: Option<String>,
+    pub applied_operation_id: Option<String>,
     pub endpoint: Option<String>,
     pub updated_at: DateTime<Utc>,
 }
