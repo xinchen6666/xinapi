@@ -1,0 +1,45 @@
+{
+  "scope": "X12 and X14 trial guidance fixes with X15 dual-account verification",
+  "checked_at": "2026-11-27T17:59:42+08:00",
+  "result": "passed_scoped",
+  "implementation": {
+    "member_guide": "Owned platform-token selection via the existing model-list API; only model and public endpoint returned. CPR uses current-origin Responses/input; ordinary unambiguous OpenAI channels keep Chat/messages.",
+    "route_panel": "Reads existing approved source by stable node identity; withdrawn node shows paused sending, failed source reads show unconfirmed state, and saved exit information is labelled as a previous observation.",
+    "data_plane_and_schema": "unchanged",
+    "formal_test_files": "unchanged"
+  },
+  "environment": {
+    "services": "real New API, CPR, PostgreSQL, two Redis instances and Mihomo in isolated Compose",
+    "upstream": "constructed OAuth and model responses through two independent private proxy nodes",
+    "browser": "Chromium 149 with a trusted isolated TLS issuer",
+    "go": "1.26.10",
+    "bun": "1.4.4",
+    "node_a_peer": "10.243.99.20",
+    "node_b_peer": "10.243.99.22"
+  },
+  "verified": [
+    "Two separately authorized accounts and two member groups each complete concurrent JSON and SSE using the expected account label and socket peer",
+    "Two TLS WebSocket sessions retain their own account and egress over two native continuation turns",
+    "Withdrawing node A sends no A generations while member B still succeeds; approving A again restores later successful calls",
+    "Approving a new version of node A preserves the account's published historical version and actual old peer",
+    "Actual browser-copied Responses command completes with confirmed usage; credentials are passed privately to the verifier",
+    "Owned-token request examples keep the existing model array; another user's token ID is rejected; internal credentials are absent",
+    "A CPR-only ungranted key receives an empty example; an ordinary OpenAI-only key receives the Chat endpoint",
+    "Browser route detail shows a withdrawn-node warning and historical observation; injected source-read failure shows unconfirmed state and refresh recovers the view",
+    "390-pixel route dialog has no page-width overflow",
+    "Both member totals equal recorded consumption"
+  ],
+  "checks": {
+    "frontend_typecheck_files": 1542,
+    "existing_overview_tests_passed": 6,
+    "existing_user_model_tests_passed": 2,
+    "lint_files": 3,
+    "production_frontend_and_go_build": "passed",
+    "locales": 7
+  },
+  "remaining": [
+    "Official third-party login and public upstream accounts or nodes",
+    "Named production client versions and long-duration load",
+    "Public distribution, production deployment and X17 maintenance exercises"
+  ]
+}
