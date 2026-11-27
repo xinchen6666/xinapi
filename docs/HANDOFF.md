@@ -1,6 +1,14 @@
 # 当前交接
 
-## 当前：X13 成员授权与内部身份
+## 当前：X14 模型数据面与成员用量
+
+X13 经复审以普通合并提交进入主干，[PR #13](https://github.com/xinchen6666/xinapi/pull/13)与[主干双镜像](https://github.com/xinchen6666/xinapi/actions/runs/45883410576)成功。原 `main` 工作树已快进，用户维护编辑保持。
+
+[X14 PR #14](https://github.com/xinchen6666/xinapi/pull/14)从更新主干交付 Responses 同步、SSE、WS 多轮与工具回填的实际链路验证，成员日志公开已确认／估算／未知用量。真实 New API、CPR、Mihomo 通过自造上游完成故障及取消验证，详见[X14 日志](worklog/X14.md)与[使用说明](COMPOSE.md#x14-responses-与成员用量)。
+
+**下一步 X15：**从来源审批、账号授权与成员授组核对系统整体使用路径，记录受控节点及自造上游的实际出口、用量与归属。公网第三方账号和节点按专项授权验证，生产部署分别安排。
+
+## 历史：X13 成员授权与内部身份
 
 X12 已完成合并前审阅修订，[PR #12](https://github.com/xinchen6666/xinapi/pull/12)通过普通合并提交进入 `main`，[主干双镜像](https://github.com/xinchen6666/xinapi/actions/runs/45866915134)成功。原工作树已快进，用户维护编辑保持。
 

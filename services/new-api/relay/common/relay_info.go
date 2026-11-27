@@ -56,6 +56,15 @@ type ResponsesUsageInfo struct {
 	BuiltInTools map[string]*BuildInToolInfo
 }
 
+// ResponsesUsageStatus 标明本次 Responses 数量的来源精度，与价格和资金来源分别记录
+type ResponsesUsageStatus string
+
+const (
+	ResponsesUsageConfirmed ResponsesUsageStatus = "confirmed"
+	ResponsesUsageEstimated ResponsesUsageStatus = "estimated"
+	ResponsesUsageUnknown   ResponsesUsageStatus = "unknown"
+)
+
 type ChannelMeta struct {
 	ChannelType          int
 	ChannelId            int
@@ -100,6 +109,7 @@ type RelayInfo struct {
 	RelayMode              int
 	OriginModelName        string
 	ResponseModel          *ResponseModel
+	ResponsesUsageStatus   ResponsesUsageStatus
 
 	// BillingModelName is the pricing identity for this request. It is kept
 	// separate from OriginModelName and UpstreamModelName so virtual pricing
@@ -279,6 +289,7 @@ func (info *RelayInfo) RequestedImageCount() int {
 }
 
 func (info *RelayInfo) InitChannelMeta(c *gin.Context) {
+	info.ResponsesUsageStatus = ""
 	info.ResponseModel = nil
 	info.FinalRequestRelayFormat = ""
 	info.RequestConversionChain = nil

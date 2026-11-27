@@ -1,5 +1,8 @@
 {
   "translation": {
+    "Confirmed usage": "Подтверждённый расход",
+    "Estimated usage": "Оценочный расход",
+    "Usage unknown": "Расход неизвестен",
     "Upstream access": "Доступ к провайдеру",
     "Grant upstream access": "Разрешить доступ к провайдеру",
     "Grant CPR model access to the selected account groups.": "Разрешить модели CPR через выбранные группы аккаунтов.",

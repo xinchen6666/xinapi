@@ -1,5 +1,8 @@
 {
   "translation": {
+    "Confirmed usage": "確認済み使用量",
+    "Estimated usage": "推定使用量",
+    "Usage unknown": "使用量未確定",
     "Upstream access": "上流アクセス",
     "Grant upstream access": "上流アクセスを許可",
     "Grant CPR model access to the selected account groups.": "選択したグループで CPR モデルへのアクセスを許可します。",

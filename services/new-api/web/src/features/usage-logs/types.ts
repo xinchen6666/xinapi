@@ -199,7 +199,10 @@ export type RequestPluginAdminStep = {
   findings?: { rule: string; category?: string; count: number }[]
 }
 
+export type UsageStatus = 'confirmed' | 'estimated' | 'unknown'
+
 export interface LogOtherData {
+  usage_status?: UsageStatus
   admin_info?: {
     request_policy?: PolicyEvent[]
     request_plugins?: RequestPluginAdminStep[]

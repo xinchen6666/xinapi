@@ -41,6 +41,7 @@ import {
 import { ModelBadge, ResponseModelDetails } from './model-badge'
 import { StreamTpsCell, TimingMetricsCell } from './timing-metrics-cell'
 import { useUsageLogsContext } from './usage-logs-provider'
+import { UsageStatusBadge } from './usage-status-badge'
 
 type FieldName =
   | 'model'
@@ -313,6 +314,9 @@ export function CommonLogMobileCard<TData>(props: {
             </span>
           )}
         </div>
+      )}
+      {displayable && props.cells.has('prompt_tokens') && (
+        <UsageStatusBadge other={other} />
       )}
       {contentCell && (
         <div className='relative min-w-0 border-t pt-2 [&_button]:min-h-8 [&_button]:w-full [&_button]:max-w-full [&_button]:pr-5 [&_button]:text-sm [&_button>span]:line-clamp-2 [&_button>span]:[overflow-wrap:anywhere] [&_button>span]:whitespace-normal'>

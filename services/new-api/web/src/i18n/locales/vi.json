@@ -1,5 +1,8 @@
 {
   "translation": {
+    "Confirmed usage": "Mức sử dụng đã xác nhận",
+    "Estimated usage": "Mức sử dụng ước tính",
+    "Usage unknown": "Mức sử dụng chưa xác định",
     "Upstream access": "Quyền truy cập thượng nguồn",
     "Grant upstream access": "Cấp quyền truy cập thượng nguồn",
     "Grant CPR model access to the selected account groups.": "Cho phép gọi mô hình CPR qua các nhóm tài khoản đã chọn.",

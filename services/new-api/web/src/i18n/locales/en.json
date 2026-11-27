@@ -1,5 +1,8 @@
 {
   "translation": {
+    "Confirmed usage": "Confirmed usage",
+    "Estimated usage": "Estimated usage",
+    "Usage unknown": "Usage unknown",
     "Upstream access": "Upstream access",
     "Grant upstream access": "Grant upstream access",
     "Grant CPR model access to the selected account groups.": "Grant CPR model access to the selected account groups.",
