@@ -1,0 +1,37 @@
+{
+  "task": "X16",
+  "checked_at": "2026-11-27T14:43:42+08:00",
+  "result": "passed_scoped",
+  "environment": {
+    "checkout": "separate fresh clone of main after PR 15",
+    "platform": "single Linux amd64 host",
+    "docker_engine": "29.1.3",
+    "compose": "2.40.3",
+    "nginx": "1.24.0",
+    "browser": "Chromium 149",
+    "postgresql": "18.7",
+    "redis": "8.10.3",
+    "mihomo": "1.19.33"
+  },
+  "local_application_images": {
+    "new_api": "xinapi/new-api:x16-local; repository Dockerfile, Go 1.26.10 and Bun 1.4.4",
+    "cpr": "xinapi/cpr:x16-local; locked fresh-checkout source, Rust 1.99.1 two-job integration build, runtime and frontend layers from the repository recipe; CLI 3.54.2",
+    "distribution": "local integration tags, no public registry publication"
+  },
+  "effects_observed": [
+    "Empty PostgreSQL volume initialized two application databases; both Redis instances and both application services ready",
+    "Configuration generator retained existing private configuration on rerun",
+    "Docker published only New API to the host loopback; Mihomo mounted read-only; gateway, databases and fixture services had no published host ports",
+    "Isolated nginx HTTPS was the browser and model entry; TLS clients verified the test CA and hostname",
+    "Chromium executed the actual first administrator setup and HTTPS login; refresh cookie was Secure, HttpOnly and Strict",
+    "Explicit first CPR management credential issuance and 0600 file import; dashboard management worked without an import-time application restart",
+    "Source creation, review and approval; approved-node verification using real Mihomo",
+    "Single controlled OAuth token exchange with persisted completion and audit",
+    "Account group assignment and two independent member grants; server-assigned channel ID activated by recreating New API only",
+    "HTTPS JSON and SSE through the selected account; terminal usage, function-tool round-trip and member consumption totals checked",
+    "WSS through nginx carried two turns and native continuation; the next turn on that socket was rejected after member revocation",
+    "Cross-origin sensitive requests rejected; another member group produced no upstream generation"
+  ],
+  "first_use_run": {"safe_pass_lines": 18, "formal_test_source_changes": 0},
+  "excluded": ["public production deployment", "official browser OAuth sign-in", "real third-party accounts and nodes", "public exit observation", "release distribution"]
+}
