@@ -59,6 +59,12 @@ CPR 首次保存来源时在其持久运行数据目录创建 `subscription.key`
 挂载为 cpr-data 命名卷；升级应沿用原数据库与该运行数据卷。来源及连接内容以认证密文保存，
 缺少已有部署密钥时，来源读写会提示存储服务错误。节点批准与实际引擎运行是独立步骤，当前账号和出口保持原值。
 
+## X08 受管节点协议
+
+批准节点可使用 HTTP／HTTPS、显式远端 DNS 的 SOCKS5，以及受管 Mihomo 的 Shadowsocks、VMess、VLESS、Trojan。Shadowsocks 覆盖三类经典 AEAD；VMess 使用 `alterId=0` 的 TCP／WS，可选 TLS；VLESS 与 Trojan 使用 TLS 的 TCP／WS。节点验证核对实际连接选项、认证和证书，成功后再用于授权或换路。完整字段与范围见 [引擎合同](../services/codex-proxy-rs/docs/api.md#15-受管引擎入口)。
+
+Reality、Vision、gRPC、协议插件、smux 和 WS 早发数据仍属待扩展选项。升级后的旧来源保留原批准记录；刷新并明确批准后取得新能力标记。TLS 节点使用受管容器的系统证书信任，私有 CA 由部署者安装到系统信任位置；受管子进程仅接收固定运行环境。
+
 ## X12 管理工作台
 
 从 New API 的「账号与出口」打开来源与节点、上游账号、账号授权及引擎。旧「订阅预览」链接进入工作台的来源与节点页签。

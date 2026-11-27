@@ -1,0 +1,48 @@
+{
+  "task": "X08 protocol support",
+  "checked_at": "2026-11-27T20:31:32+08:00",
+  "result": "passed_scoped",
+  "kernel": "Mihomo v1.19.33 linux amd64 compatible, both real server and managed client",
+  "scenarios": [
+    "SS AES-128-GCM TCP",
+    "SS AES-256-GCM TCP",
+    "SS ChaCha20-IETF-Poly1305 TCP",
+    "VMess AEAD TCP",
+    "VMess AEAD WS with TLS",
+    "VMess AEAD TCP with TLS",
+    "VLESS TCP with TLS",
+    "VLESS WS with TLS",
+    "Trojan TCP with TLS",
+    "Trojan WS with TLS"
+  ],
+  "observed": {
+    "source_formats": ["Clash JSON", "Clash YAML", "URI list", "Base64 URI list"],
+    "node_handshakes": 10,
+    "model_transports_per_scenario": ["JSON", "SSE", "WSS"],
+    "completed_model_requests": 30,
+    "controlled_oauth_exchange_protocols": ["ss", "vmess", "vless", "trojan"],
+    "actual_target_peers": {"ss": "10.243.100.20", "vmess": "10.243.100.21", "vless": "10.243.100.22", "trojan": "10.243.100.23"},
+    "stopped_server_cases": 4,
+    "target_generation_increments_during_failures": 0,
+    "negative_cases": ["wrong SS credential", "wrong TLS certificate hostname", "unapproved dialer-proxy field"],
+    "target_traffic_during_negative_cases": 0,
+    "tls_verification": "enabled; isolated CA installed in the container system trust store"
+  },
+  "checks": {
+    "locked_rust_build": "passed",
+    "rustfmt": "passed",
+    "clippy_admin_host_libs": "passed with -D warnings",
+    "architecture_tests": {"passed": 16, "failed": 0},
+    "existing_admin_subscription_tests": {"passed": 16, "failed": 0},
+    "existing_api_subscription_tests": {"passed": 7, "failed": 0},
+    "formal_test_files": "2 existing files updated under explicit user authorization; 5 protocol expectations synchronized",
+    "regressions_checked_at": "2026-11-27T22:34:21+08:00"
+  },
+  "boundaries": [
+    "Actual services and protocol handshakes with constructed credentials and upstream responses in a private isolated network",
+    "TCP-only managed entry, single approved node and existing fail-closed admission preserved",
+    "Existing approvals retain stored capabilities until explicit refresh and approval",
+    "Reality, Vision, gRPC, plugin transports, smux, early-data and HTTP upgrade remain outside this scope",
+    "Public third-party authorization, public nodes, other architectures and long-duration load remain unverified"
+  ]
+}

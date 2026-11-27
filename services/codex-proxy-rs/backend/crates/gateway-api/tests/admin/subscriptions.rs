@@ -104,6 +104,7 @@ async fn preview_should_return_the_whitelisted_field_set() {
             "  - {name: alpha, type: socks5, server: 198.51.100.1, port: 1080}\n",
             "  - {name: beta, type: ss, server: 198.51.100.2, port: 8388, ",
             "cipher: aes-128-gcm, password: secret-password}\n",
+            "  - {name: gamma, type: wireguard, server: 198.51.100.3, port: 51820}\n",
         ),
     );
 
@@ -129,7 +130,7 @@ async fn preview_should_return_the_whitelisted_field_set() {
     );
     assert_eq!(data["source_url"], SOURCE_URL);
     assert_eq!(data["format"], "clash_yaml");
-    assert_eq!(data["accepted"], 1);
+    assert_eq!(data["accepted"], 2);
     assert_eq!(data["rejected"], 1);
     assert!(
         data["fetched_bytes"]
@@ -138,7 +139,7 @@ async fn preview_should_return_the_whitelisted_field_set() {
     );
 
     let candidates = data["candidates"].as_array().expect("candidates");
-    assert_eq!(candidates.len(), 2);
+    assert_eq!(candidates.len(), 3);
     for candidate in candidates {
         let mut keys = candidate
             .as_object()
@@ -153,7 +154,9 @@ async fn preview_should_return_the_whitelisted_field_set() {
     assert_eq!(candidates[0]["protocol"], "socks5");
     assert_eq!(candidates[0]["supported"], true);
     assert_eq!(candidates[1]["protocol"], "ss");
-    assert_eq!(candidates[1]["supported"], false);
+    assert_eq!(candidates[1]["supported"], true);
+    assert_eq!(candidates[2]["protocol"], "unknown");
+    assert_eq!(candidates[2]["supported"], false);
 
     let diagnostics = data["diagnostics"].as_array().expect("diagnostics");
     assert_eq!(diagnostics.len(), 1);
@@ -166,7 +169,7 @@ async fn preview_should_return_the_whitelisted_field_set() {
     keys.sort();
     assert_eq!(keys, vec!["code", "message", "subject"]);
     assert_eq!(diagnostics[0]["code"], "unsupported_protocol");
-    assert_eq!(diagnostics[0]["subject"], "beta");
+    assert_eq!(diagnostics[0]["subject"], "gamma");
 }
 
 #[tokio::test]

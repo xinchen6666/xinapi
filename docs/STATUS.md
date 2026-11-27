@@ -2,7 +2,7 @@
 
 目标：[xinchen6666/xinapi](https://github.com/xinchen6666/xinapi)，单机 Docker Compose。更新：2026-11-27（Asia/Shanghai）。**本表是 X 任务的唯一进度来源**；主干收拢与部署状态分别见[交接单](HANDOFF.md)。
 
-本轮 X12／X14 试用修订与 X15 双账号联调已交付 [PR #18](https://github.com/xinchen6666/xinapi/pull/18)，实际范围见[修订日志](worklog/X12-X14-trial.md)。
+本轮 X12／X14 试用修订与 X15 双账号联调已普通合入主干，实际范围见[修订日志](worklog/X12-X14-trial.md)。X08 四类协议扩展已交付 [PR #19](https://github.com/xinchen6666/xinapi/pull/19)，10 组合实际模型链路与获准同步后的 23 项回归通过，见[协议工作日志](worklog/X08-protocols.md)。
 
 | ID | 状态 | 负责人／工作域 | 最近事实或验收入口 |
 | --- | --- | --- | --- |

@@ -87,13 +87,14 @@ impl NodeProtocol {
         }
     }
 
-    /// 网关当前可物化的协议
-    ///
-    /// 账号出站代理只接受 http、https、socks5、socks5h 地址，
-    /// 其余协议要等 Mihomo 引擎接入后才有物化路径
+    /// 可交由受管 Mihomo 执行的协议族
+    /// 连接参数和传输组合在节点验证时按内核合同逐项检查
     #[must_use]
     pub const fn is_materializable(self) -> bool {
-        matches!(self, Self::Http | Self::Socks5)
+        matches!(
+            self,
+            Self::Http | Self::Socks5 | Self::Ss | Self::Vmess | Self::Vless | Self::Trojan
+        )
     }
 }
 

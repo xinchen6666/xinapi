@@ -107,6 +107,7 @@ fn connection_key(key: &str) -> bool {
             | "sni"
             | "servername"
             | "skip-cert-verify"
+            | "name-cert-verify"
             | "alpn"
             | "client-fingerprint"
             | "fingerprint"
