@@ -15,4 +15,5 @@
 - Chromium 149 验证可信 HTTPS 登录、复制命令真实执行、授权待配置空态、节点撤下及恢复、注入来源读取 503 后的待确认状态和刷新；[390px 窄屏](../evidence/trial-mobile-withdrawn.png)保留完整提示。接口另验证他人 token ID 拒绝、模型限制、普通 OpenAI 的 Chat 示例及凭据留在服务器。
 - Bun 1.4.4 类型检查 1,542 文件通过，3 个变更前端文件 lint 零问题，6 项现有概览回归和生产构建通过。Go 1.26.10 构建及 2 项既有模型列表回归通过；正式测试源码保持原样。完整事实见[结构化结果](../evidence/X12-X14-trial.json)。
 - 过程中前端首次挂载只含 web 子目录，类型检查提示缺少父目录既有 fixture，改为完整模块挂载后通过；复制验证器按 shell 续行语义修正解析；一次恢复审批后的即时模型调用尚待已有账号状态更新，后续核对账号状态与完整复跑均通过。运行修正留在私有验证目录。
+- 交付 [PR #18](https://github.com/xinchen6666/xinapi/pull/18)，[实现版本 PR 检查](https://github.com/xinchen6666/xinapi/actions/runs/45980240614)通过。工作树原始编辑与私有配置、数据卷均保留；公开发行和正式部署另行安排。
 - 参考 OWASP [授权](https://cheatsheetseries.owasp.org/cheatsheets/Authorization_Cheat_Sheet.html)与[会话](https://cheatsheetseries.owasp.org/cheatsheets/Session_Management_Cheat_Sheet.html)中的对象归属和秘密保护原则。真实第三方账号、节点协议扩展、官方客户端专项、公开发行和 X17 保留后续授权范围。

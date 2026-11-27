@@ -2,7 +2,7 @@
 
 ## 当前：X12／X14 试用修订与双账号验证
 
-X18 交接 [PR #17](https://github.com/xinchen6666/xinapi/pull/17)已复核普通合入 `main`，[主干检查](https://github.com/xinchen6666/xinapi/actions/runs/45964387806)通过。本轮在独立工作树修订成员 Responses 引导和节点撤下后的停发提示，详情见[修订日志](worklog/X12-X14-trial.md)。原首页及维护编辑保留。
+X18 交接 [PR #17](https://github.com/xinchen6666/xinapi/pull/17)已复核普通合入 `main`，[主干检查](https://github.com/xinchen6666/xinapi/actions/runs/45964387806)通过。本轮 [PR #18](https://github.com/xinchen6666/xinapi/pull/18)在独立工作树修订成员 Responses 引导和节点撤下后的停发提示，详情见[修订日志](worklog/X12-X14-trial.md)。原首页及维护编辑保留。
 
 双成员分别使用独立 OAuth 账号与批准节点，JSON／SSE／WSS 成功、A 停发时 B 继续、固定历史版本和用量均已实测。浏览器复制请求可执行，节点历史 IP 与待确认状态清楚区分，参考[结构化结果](evidence/X12-X14-trial.json)。
 
