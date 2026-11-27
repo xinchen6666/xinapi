@@ -1,5 +1,12 @@
 {
   "translation": {
+    "Published node: {{node}}": "Nút đã công bố: {{node}}",
+    "No model is available for this API key": "Hiện chưa có mô hình khả dụng cho khóa API này",
+    "Ask an administrator to check model access and group access.": "Hãy nhờ quản trị viên kiểm tra quyền truy cập mô hình và nhóm.",
+    "Sending paused: {{node}} was removed from the approved source.": "Đã tạm dừng gửi: {{node}} đã được gỡ khỏi nguồn được phê duyệt.",
+    "To resume sending, select another approved node and publish the route.": "Để tiếp tục gửi, hãy chọn nút khác đã được phê duyệt và công bố tuyến.",
+    "Node availability is unconfirmed. Refresh to check the source.": "Trạng thái khả dụng của nút đang chờ xác nhận. Hãy làm mới để kiểm tra nguồn.",
+    "Last recorded egress observation": "Kết quả quan sát đầu ra được ghi nhận lần trước",
     "Confirmed usage": "Mức sử dụng đã xác nhận",
     "Estimated usage": "Mức sử dụng ước tính",
     "Usage unknown": "Mức sử dụng chưa xác định",

@@ -1,5 +1,12 @@
 {
   "translation": {
+    "Published node: {{node}}": "Опубликованный узел: {{node}}",
+    "No model is available for this API key": "Для этого API-ключа нет доступной модели",
+    "Ask an administrator to check model access and group access.": "Попросите администратора проверить доступ к моделям и группам.",
+    "Sending paused: {{node}} was removed from the approved source.": "Отправка приостановлена: {{node}} удалён из одобренного источника.",
+    "To resume sending, select another approved node and publish the route.": "Чтобы возобновить отправку, выберите другой одобренный узел и опубликуйте маршрут.",
+    "Node availability is unconfirmed. Refresh to check the source.": "Доступность узла требует подтверждения. Обновите данные источника.",
+    "Last recorded egress observation": "Последнее сохранённое наблюдение выхода",
     "Confirmed usage": "Подтверждённый расход",
     "Estimated usage": "Оценочный расход",
     "Usage unknown": "Расход неизвестен",
