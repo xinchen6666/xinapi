@@ -1,6 +1,14 @@
 # 当前交接
 
-## 当前：X16 单机 HTTPS 安装与首次使用
+## 当前：X18 私有候选与接手
+
+[X16 PR #16](https://github.com/xinchen6666/xinapi/pull/16)复核补齐 Docker Engine 28.0.0 最低要求，以普通合并进入 `main`，[主干检查](https://github.com/xinchen6666/xinapi/actions/runs/45955733999)通过。源代码状态与候选制品及生产部署分别记录。
+
+[X18 PR #17](https://github.com/xinchen6666/xinapi/pull/17)交付 [候选接手与许可说明](RELEASE.md)及[实测日志](worklog/X18.md)。`x18-rc1-linux-amd64` 的本机源码包、两套应用镜像包、许可与安装说明配套。两镜像重载后通过新空卷的 HTTPS 设置、显式管理 Key 导入、受控 OAuth、成员授权、JSON／SSE／WSS 及文档 curl 调用。
+
+**下一步：**由所有者确认是否面向团队发行、选定分发渠道并核对对应源码及归属材料。公开版标签、生产部署和外部账号验证随授权推进；X17 继续暂缓。
+
+## 历史：X16 单机 HTTPS 安装与首次使用
 
 X15 已复审并普通合并至 `main`，[PR #15](https://github.com/xinchen6666/xinapi/pull/15)与[主干镜像检查](https://github.com/xinchen6666/xinapi/actions/runs/45945333027)通过。X16 使用独立新克隆，原工作目录编辑保留。
 
