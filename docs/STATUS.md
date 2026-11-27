@@ -19,9 +19,9 @@
 | X13 | done | lead；成员授权、固定渠道与管理界面 | [PR #13](https://github.com/xinchen6666/xinapi/pull/13)经复审以普通合并提交进入主干，主干双镜像成功；成员授权实际验证见[工作日志](worklog/X13.md) |
 | X14 | done | lead；模型转发、用量事实与联调 | [PR #14](https://github.com/xinchen6666/xinapi/pull/14)经复审以普通合并提交进入主干，主干双镜像成功；真实模型链路与成员用量实测见[工作日志](worklog/X14.md) |
 | X15 | done | lead；系统集成与受控出口 | [PR #15](https://github.com/xinchen6666/xinapi/pull/15)经复审普通合并入主干；连续业务结果、私网双栈及恢复审计见[工作日志](worklog/X15.md) |
-| X16 | done | lead；单机安装与首次使用 | [PR #16](https://github.com/xinchen6666/xinapi/pull/16)交付安装手册、HTTPS nginx 示例及只读 Mihomo 挂载；从新克隆实跑首次设置、授权、JSON／SSE／WSS，见[工作日志](worklog/X16.md) |
+| X16 | done | lead；单机安装与首次使用 | [PR #16](https://github.com/xinchen6666/xinapi/pull/16)复核补齐 Docker 版本要求并普通合入主干；首次设置、授权、JSON／SSE／WSS 见[工作日志](worklog/X16.md) |
 | X17 | pending | 专项演练暂缓 | 等待单独确认维护范围和时间；X18 直接依赖 X15 与 X16 |
-| X18 | pending | 版本发布 | 候选标签、接手试用、实际覆盖说明 |
+| X18 | done | lead；本机候选与接手 | [PR #17](https://github.com/xinchen6666/xinapi/pull/17)交付候选、许可与接手说明，双镜像重载后首用和 HTTPS JSON／SSE／WSS 通过；公开发行与生产部署待确认 |
 
 `pending` 表示排队；`in_progress` 表示正在实施或交付；`blocked` 表示存在具体障碍；`done` 表示功能目标与该步 GitHub 交付均已核对。工作分支同步、合入 `main`、服务器部署分别记录。V01–V03 的最新覆盖见 E022，其余场景以各证据条目为准。已完成的 D01–D05 属于前期研究，证据见[验证记录](VALIDATION.md)，X 业务开发成果按本表记录。
 

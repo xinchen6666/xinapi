@@ -9,7 +9,7 @@ git clone https://github.com/xinchen6666/xinapi.git
 cd xinapi
 ```
 
-切换到本次使用的发布版本或已审阅的源码分支。先按 [镜像构建说明](BUILD.md#本机构建) 依次构建两套应用镜像，或从受信渠道把指定版本载入本机。下例应用标签 `x16-local` 指本机演练产物。准备与该部署配套的 PostgreSQL 18 和 Redis 8 本地镜像；已有构建及真实服务版本见 [X16 日志](worklog/X16.md)。安装 Mihomo v1.19.33 Linux amd64 compatible 可执行文件到宿主固定位置，权限应允许容器 UID 10001 读取和执行。来源及许可见 [上游清单](UPSTREAM.md)。
+切换到本次使用的发布版本或已审阅的源码分支。先按 [镜像构建说明](BUILD.md#本机构建) 依次构建两套应用镜像，或从受信渠道把指定版本载入本机。[X18 候选接手说明](RELEASE.md)列出两套候选标签和导入命令；下例 `x16-local` 是本机演练标签。准备与该部署配套的 PostgreSQL 18 和 Redis 8 本地镜像；已有构建及真实服务版本见 [X16 日志](worklog/X16.md)。安装 Mihomo v1.19.33 Linux amd64 compatible 可执行文件到宿主固定位置，权限应允许容器 UID 10001 读取和执行。来源及许可见 [上游清单](UPSTREAM.md)。
 
 ## 2. 创建私有配置并启动五服务
 

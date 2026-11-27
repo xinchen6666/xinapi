@@ -1,0 +1,37 @@
+{
+  "task": "X18",
+  "candidate": "x18-rc1-linux-amd64",
+  "checked_at": "2026-11-27T15:12:51+08:00",
+  "result": "passed_scoped",
+  "source": "reviewed X16 source plus X18 handoff documentation; remote branch starts at X16 merge",
+  "images": {
+    "new_api": "xinapi/new-api:x18-rc1-linux-amd64",
+    "cpr": "xinapi/cpr:x18-rc1-linux-amd64",
+    "built_from": "X16 validated local application builds; CPR 3.54.2 integration profile",
+    "load_verified": true,
+    "architecture": "linux/amd64",
+    "contains_mihomo": false
+  },
+  "environment": {
+    "docker": "29.1.3",
+    "compose": "2.40.3",
+    "nginx": "1.24.0",
+    "postgresql": "18.7",
+    "redis": "8.10.3",
+    "mihomo": "1.19.33"
+  },
+  "observed": [
+    "Both local candidate image tags were removed and loaded again from the handoff archive; original X16 tags retained",
+    "Fresh project, PostgreSQL volume and private configuration initialized with the loaded candidate images",
+    "CPR management key issued once and explicitly installed as a private file",
+    "HTTPS setup, source approval, node verification, controlled OAuth token exchange, account grouping, member grants and actual channel activation",
+    "Confirmed HTTPS Responses JSON, SSE and two-turn nginx WSS; member scope and revocation applied",
+    "Representative documented curl invocation completed with confirmed upstream usage",
+    "Member consumption records matched accumulated usage",
+    "Only New API loopback was published by the Compose project; Mihomo mounted read-only",
+    "New API and CPR license files available inside their images; component license and corresponding-source guidance supplied"
+  ],
+  "first_use_pass_lines": 18,
+  "formal_test_source_changes": 0,
+  "excluded": ["public release or registry upload", "production deployment", "official browser OAuth", "public upstream accounts and proxy nodes", "long-duration load", "other architectures", "X17 maintenance exercises"]
+}
