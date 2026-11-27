@@ -18,7 +18,7 @@
 | X12 | done | lead；CPR 引擎／账号、Go BFF、Web | [PR #12](https://github.com/xinchen6666/xinapi/pull/12)经审阅修订以普通合并提交进入主干，主干双镜像成功；管理工作台实测见[工作日志](worklog/X12.md) |
 | X13 | done | lead；成员授权、固定渠道与管理界面 | [PR #13](https://github.com/xinchen6666/xinapi/pull/13)经复审以普通合并提交进入主干，主干双镜像成功；成员授权实际验证见[工作日志](worklog/X13.md) |
 | X14 | done | lead；模型转发、用量事实与联调 | 从更新主干交付[PR #14](https://github.com/xinchen6666/xinapi/pull/14)，真实 CPR／Mihomo 模型链路、14 组运行及成员页面验证通过，见[工作日志](worklog/X14.md) |
-| X15 | pending | 跨服务测试 | 模拟矩阵／获授权的真实验收分别记账 |
+| X15 | in_progress | lead；系统集成与受控出口 | X14 合入主干后启动 `task/X15-system-integration`，范围见[工作日志](worklog/X15.md) |
 | X16 | pending | 单机交付 | 从新克隆安装、首次管理员使用 |
 | X17 | pending | 专项演练暂缓 | 等待单独确认维护范围和时间；X18 直接依赖 X15 与 X16 |
 | X18 | pending | 版本发布 | 候选标签、接手试用、实际覆盖说明 |
