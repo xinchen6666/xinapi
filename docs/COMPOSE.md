@@ -27,7 +27,7 @@ python3 -B tools/start_compose.py --wait-only --timeout 120
 docker compose ps
 ```
 
-默认入口 `http://127.0.0.1:3000`。其他宿主回环端口由 `XINAPI_PORT` 指定。首次安装由部署者在受信本机完成 New API 初始化，再决定何时开放团队入口。本阶段为本机 HTTP 联调，外部反代与 TLS 配置属于后续交付。
+默认入口 `http://127.0.0.1:3000`。其他宿主回环端口由 `XINAPI_PORT` 指定。本机 HTTP 方式适用于本机调试；完整安装与首次使用走 [单机 HTTPS 安装](INSTALL.md)。
 
 ## 两层管理员
 

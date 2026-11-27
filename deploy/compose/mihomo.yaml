@@ -1,0 +1,12 @@
+# Apply after the root compose.yaml for managed account egress.
+services:
+  cpr:
+    environment:
+      CPR_MIHOMO_BIN: /app/bin/mihomo
+    volumes:
+      - type: bind
+        source: ${XINAPI_MIHOMO_PATH:?Set the absolute host path to the Mihomo executable}
+        target: /app/bin/mihomo
+        read_only: true
+        bind:
+          create_host_path: false
