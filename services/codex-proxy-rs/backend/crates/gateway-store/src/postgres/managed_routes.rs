@@ -366,6 +366,7 @@ impl ManagedRouteStore for PgManagedRouteStore {
             if op.phase == "applied" {
                 if op.published_proxy_url.as_deref() != Some(endpoint.expose_url()) { return Err(conflict()); }
                 let revision = op.published_config_revision.ok_or_else(||invalid("applied receipt lacks config revision"))?;
+                audit(&mut tx, context, MutationAuditOperation::ManagedRouteReconcile, &op.route_id.to_string(), &[], None).await?;
                 return Ok((op.view()?,AdminRevision::new(unsigned(revision)?).map_err(|_|invalid("invalid config revision"))?));
             }
             if op.phase != "applying" || !op.observation.as_ref().is_some_and(|v|v.success) { return Err(conflict()); }
