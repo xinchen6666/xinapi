@@ -1,6 +1,14 @@
 # 当前交接
 
-## 当前：X14 模型数据面与成员用量
+## 当前：X15 系统集成与出口验证
+
+X14 经复审以普通合并提交进入 `main`，[PR #14](https://github.com/xinchen6666/xinapi/pull/14)与[主干双镜像](https://github.com/xinchen6666/xinapi/actions/runs/45917951313)成功。原 `main` 已快进，维护文档编辑保留。
+
+[X15 PR #15](https://github.com/xinchen6666/xinapi/pull/15)交付受控 OAuth 到成员模型调用的连续集成结果，并补齐已发布路由恢复的当次请求审计。新隔离栈实际完成来源审批、授权、分组、成员授组、调用、换路、故障停发、IPv4／IPv6 私网观测和既有 WS 撤权；23 条连续结果与 20 条管理审计关联见[X15 日志](worklog/X15.md)。
+
+**下一步 X16：**从新克隆完成单机安装和首次管理员使用路径，复用长期私有配置、明确镜像及 Mihomo 只读挂载。公网第三方账号、节点与官方浏览器登录仍按专项授权验证，受控私网观测与公网事实分别记录。X17 专项演练继续暂缓。
+
+## 历史：X14 模型数据面与成员用量
 
 X13 经复审以普通合并提交进入主干，[PR #13](https://github.com/xinchen6666/xinapi/pull/13)与[主干双镜像](https://github.com/xinchen6666/xinapi/actions/runs/45883410576)成功。原 `main` 工作树已快进，用户维护编辑保持。
 

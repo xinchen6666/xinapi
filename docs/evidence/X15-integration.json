@@ -1,0 +1,66 @@
+{
+  "task": "X15",
+  "environment": "isolated single-host Docker Compose",
+  "result": "passed",
+  "components": {
+    "new_api": "production Go 1.26.10 build with embedded web",
+    "cpr": "production Rust 1.99.1 build",
+    "mihomo": "v1.19.33 linux/amd64",
+    "postgresql": "18.7",
+    "browser": "Chromium 149"
+  },
+  "actors_and_accounts": "constructed administrator, two members and controlled OAuth account",
+  "upstream": "local TLS OAuth and Responses service with constructed credentials and protocol responses",
+  "actual_target_observations": {
+    "node_a_ipv4": "10.243.95.20",
+    "node_b_ipv4": "10.243.95.22",
+    "node_b_ipv6": "fd42:243:95::22",
+    "token_exchange": "observed through a selected proxy node",
+    "quota_and_catalog": "observed through the managed proxy nodes",
+    "model_generation": "observed through both selected IPv4 nodes and the selected IPv6 node",
+    "browser": "accessed the New API local interface separately from CPR upstream transport",
+    "public_exit": "not_run"
+  },
+  "verified_behaviors": [
+    "New API source creation, refresh and explicit approval",
+    "Approved node connection verification and request-correlated administrator audit",
+    "Controlled OAuth single code exchange and durable completion readback",
+    "Account group conditional update, stale-update rejection and quota refresh",
+    "Two members require explicit distinct upstream group grants",
+    "OAuth-backed JSON and SSE report input 20 and output 7",
+    "Missing usage is estimated and explicit zero remains confirmed zero",
+    "Function call and full-history tool result reach the controlled upstream",
+    "A member outside the account group sends zero target generations",
+    "Source revision preserves node identity and the account's published version",
+    "Explicit route publication moves the actual target peer from node A to node B",
+    "Blocking the required node prevents target generation",
+    "Published route recovery preserves the generation and records the current request audit",
+    "Independent node verification and a model generation observe the actual IPv6 peer",
+    "Stopping a required account engine keeps the target idle; receipt-based restoration works",
+    "Native OAuth WebSocket continuation retains member ownership",
+    "Member revocation denies the existing socket's next turn and subsequent HTTP sends",
+    "Explicit new authorization permits later requests",
+    "Member accumulated usage equals recorded consumption",
+    "Administrator action audits remain correlated with the actual remote mutations"
+  ],
+  "continuous_run": {
+    "safe_pass_lines": 23,
+    "correlated_management_action_records": 20,
+    "source_and_oauth": "new source and new controlled authorization in one continuous run",
+    "formal_test_source_changes": 0
+  },
+  "repair": {
+    "trigger": "reconciling an already published route returned the original receipt after restarting the account engine, with no current-request CPR audit",
+    "behavior": "append reconcile/managed_route with the current mutation context in the existing transaction",
+    "configuration_revision": "preserved",
+    "route_generation": "preserved",
+    "existing_audit_regressions_passed": 4
+  },
+  "remaining_scope": [
+    "Official browser OAuth sign-in",
+    "Third-party live account and public-node authorization",
+    "Public IPv4 and IPv6 exit observations",
+    "Long-duration load",
+    "Production installation and deployment"
+  ]
+}
