@@ -1,5 +1,12 @@
 {
   "translation": {
+    "Published node: {{node}}": "Published node: {{node}}",
+    "No model is available for this API key": "No model is available for this API key",
+    "Ask an administrator to check model access and group access.": "Ask an administrator to check model access and group access.",
+    "Sending paused: {{node}} was removed from the approved source.": "Sending paused: {{node}} was removed from the approved source.",
+    "To resume sending, select another approved node and publish the route.": "To resume sending, select another approved node and publish the route.",
+    "Node availability is unconfirmed. Refresh to check the source.": "Node availability is unconfirmed. Refresh to check the source.",
+    "Last recorded egress observation": "Last recorded egress observation",
     "Confirmed usage": "Confirmed usage",
     "Estimated usage": "Estimated usage",
     "Usage unknown": "Usage unknown",

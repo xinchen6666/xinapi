@@ -1,5 +1,12 @@
 {
   "translation": {
+    "Published node: {{node}}": "已发布节点：{{node}}",
+    "No model is available for this API key": "当前 API Key 暂无可用模型",
+    "Ask an administrator to check model access and group access.": "请联系管理员核对模型与分组授权。",
+    "Sending paused: {{node}} was removed from the approved source.": "发送已暂停：{{node}} 已从批准来源撤下。",
+    "To resume sending, select another approved node and publish the route.": "要恢复发送，请选择其他已批准节点并发布路由。",
+    "Node availability is unconfirmed. Refresh to check the source.": "节点可用状态待确认，请刷新并核对来源。",
+    "Last recorded egress observation": "上次记录的出口观测",
     "Confirmed usage": "已确认用量",
     "Estimated usage": "估算用量",
     "Usage unknown": "用量待确认",
