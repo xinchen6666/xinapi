@@ -1,6 +1,14 @@
 # 当前交接
 
-## 当前：X15 系统集成与出口验证
+## 当前：X16 单机 HTTPS 安装与首次使用
+
+X15 已复审并普通合并至 `main`，[PR #15](https://github.com/xinchen6666/xinapi/pull/15)与[主干镜像检查](https://github.com/xinchen6666/xinapi/actions/runs/45945333027)通过。X16 使用独立新克隆，原工作目录编辑保留。
+
+[X16 PR #16](https://github.com/xinchen6666/xinapi/pull/16)交付 [单机安装手册](INSTALL.md)、宿主 nginx HTTPS 示例和 Mihomo 只读挂载。空卷五服务实跑首次设置、显式 Key 导入、受控 OAuth、成员授组及 HTTPS JSON／SSE／WSS，覆盖证书、同源拒绝、续接归属和撤权；详见[实测日志](worklog/X16.md)与[结构化结果](evidence/X16-installation.json)。本地集成镜像及私有数据保留，生产部署单独安排。
+
+**下一步：**X17 专项演练继续暂缓，依路线图由 X18 承接源码、镜像和文档的发行交接。公开制品分发方式、公开版本标识和正式部署由所有者确认。
+
+## 历史：X15 系统集成与出口验证
 
 X14 经复审以普通合并提交进入 `main`，[PR #14](https://github.com/xinchen6666/xinapi/pull/14)与[主干双镜像](https://github.com/xinchen6666/xinapi/actions/runs/45917951313)成功。原 `main` 已快进，维护文档编辑保留。
 
