@@ -3559,7 +3559,7 @@ URI 列表中的错误行则逐项进入诊断。公开响应保留元数据，�
 下载默认仅接受公网 HTTPS。每次首跳、跳转及 provider 都校验全部 DNS 地址，并将连接固定到审核后的地址集合；
 TLS SNI、Host 与证书校验继续使用原始主机。私网、环回、链路本地、多播、保留地址以及映射至这些范围的 IPv6 地址均被拒绝。
 明文 HTTP 仅向 `subscriptions.insecure_test_hosts` 精确列出的测试主机开放，允许本地自造源联调；同名 HTTPS 仍执行公网策略。
-生产模板保持空测试名单。每次请求剥离 URL userinfo，传输只带固定协商头，Cookie 与管理凭据留在各自服务边界。
+生产模板保持空测试名单。每次请求剥离 URL userinfo，传输只带固定协商头，使用 `User-Agent: clash.meta (xinapi)` 请求完整节点文档；Cookie 与管理凭据留在各自服务边界。
 
 正文限 2 MiB，解压后限 8 MiB。主文档与全部 provider 下载共用 10 秒预算，单次下载最多跟随 3 次跳转。
 每份文档最多展开 32 个 HTTP provider；provider 深度为一层。成功项并入候选，失败项保留主文档并给出诊断。
@@ -3674,10 +3674,12 @@ URL、规范连接、待审核事实和批准历史整体加密保存在 Postgre
 | --- | --- |
 | Shadowsocks | TCP，`aes-128-gcm`、`aes-256-gcm`、`chacha20-ietf-poly1305` |
 | VMess | AEAD `alterId=0`，cipher 默认 `auto`，另支持 `aes-128-gcm`、`chacha20-poly1305`、`none`；TCP／WS，可选 TLS |
-| VLESS | 普通 flow，显式 TLS，TCP／WS |
+| VLESS | 普通 flow，显式 TLS，TCP／WS；TLS／WS 可携带内联 ECH 配置 |
 | Trojan | 固有 TLS，TCP／WS |
 
 VMess／VLESS 使用 `servername`，Trojan 使用 `sni`；TLS 使用系统信任及对应证书校验选项。内联客户端证书与私钥成对，外部路径返回 `engine_node_unsupported`。WS 支持路径和请求头，TLS WS 的 ALPN 为 `http/1.1`。Reality、Vision、gRPC、插件、smux、early-data、HTTP upgrade 和额外路由覆盖保持范围外，返回同一明确错误。Mihomo 内建 localhost 映射沿用其原行为。
+
+VLESS 导出器的 `alterId=0`、`cipher=auto` 和空／null flow 归一为省略形状。TLS／WS 下的 `ech-opts` 接受布尔 `enable`、标准 Base64 `config` 及可选合法域名 `query-server-name`；开启 ECH 时要求非空内联配置，由 Mihomo 原样执行握手，失败保持错误结果。仅依赖 DNS 发现 ECH 的形状仍返回 `engine_node_unsupported`。
 
 `running` 表示已完成本机controller与数据入口认证握手；上游代理认证、目标可达性和公网出口验证属于节点检测与绑定流程。真实上游拒绝时数据请求失败。
 
