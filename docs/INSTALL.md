@@ -1,6 +1,6 @@
 # 单机 HTTPS 安装与首次使用
 
-本手册适用于 Linux amd64、Docker Engine、Compose v2、Python 3 和宿主 nginx。New API 是团队唯一的 HTTPS 入口；CPR、PostgreSQL 和两套 Redis 留在容器网络。已有安装继续沿用原项目名、私有配置目录和数据卷。
+本手册适用于 Linux amd64、Docker Engine 28.0.0 或更新版本、Compose v2、Python 3 和宿主 nginx。Docker 沿用默认 bridge/NAT 隔离策略，New API 只发布宿主回环 HTTP，团队统一使用 nginx HTTPS；CPR、PostgreSQL 和两套 Redis 留在容器网络。[Docker 回环端口说明](https://docs.docker.com/engine/network/port-publishing/#publishing-ports)解释了版本要求。已有安装继续沿用原项目名、私有配置目录和数据卷。
 
 ## 1. 准备明确版本的本地镜像
 
