@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"slices"
@@ -32,6 +33,98 @@ import (
 var openAIModels []dto.OpenAIModels
 var openAIModelsMap map[string]dto.OpenAIModels
 var channelId2Models map[int][]string
+
+// userRequestExample 只返回当前平台 Key 可用的模型与公开接口路径
+// 指引沿现有权限读取，实际发送仍由数据面独立验证
+type userRequestExample struct {
+	Model    string `json:"model"`
+	Endpoint string `json:"endpoint"`
+}
+
+func firstRequestExample(userGroup string, token *model.Token, modelNames []string) (*userRequestExample, error) {
+	if token.Status != common.TokenStatusEnabled || (token.ExpiredTime != -1 && token.ExpiredTime <= time.Now().Unix()) || (!token.UnlimitedQuota && token.RemainQuota <= 0) {
+		return nil, nil
+	}
+	group := token.Group
+	if group == "" {
+		group = userGroup
+	}
+	if !service.GroupInUserUsableGroups(userGroup, group) || (token.Group != "" && group != "auto" && !service.IsUserSelectableGroup(userGroup, group)) {
+		return nil, nil
+	}
+	groups := []string{group}
+	if group == "auto" {
+		if token.AutoGroups == "" {
+			groups = service.GetUserAutoGroup(userGroup)
+		} else {
+			configured, err := token.GetAutoGroups()
+			if err != nil {
+				return nil, err
+			}
+			groups = service.FilterUserTokenAutoGroups(userGroup, configured)
+		}
+	}
+	abilities, err := model.GetAllEnableAbilityWithChannels()
+	if err != nil {
+		return nil, err
+	}
+	limits := token.GetModelLimitsMap()
+	channels := make(map[int]*model.Channel)
+	accessChecked, accessAllowed := false, false
+	for _, name := range modelNames {
+		if token.ModelLimitsEnabled && !limits[name] && !limits[ratio_setting.RoutingMatchModelName(name)] {
+			continue
+		}
+		endpoint, supported := "", true
+		for _, ability := range abilities {
+			if ability.Model != name || !slices.Contains(groups, ability.Group) {
+				continue
+			}
+			channel, cached := channels[ability.ChannelId]
+			if !cached {
+				channel, err = model.GetChannelById(ability.ChannelId, false)
+				if err != nil {
+					return nil, err
+				}
+				channels[ability.ChannelId] = channel
+			}
+			if channel.Status != common.ChannelStatusEnabled {
+				continue
+			}
+			managed, channelErr := service.CheckCprMemberChannel(channel)
+			if channelErr != nil || channel.Type != constant.ChannelTypeOpenAI {
+				supported = false
+				break
+			}
+			path := "/v1/chat/completions"
+			if managed {
+				if !accessChecked {
+					access, accessErr := model.GetActiveCprMemberAccess(token.UserId)
+					if accessErr != nil && !errors.Is(accessErr, model.ErrCprMemberAccessDenied) {
+						return nil, accessErr
+					}
+					accessAllowed = accessErr == nil && access != nil
+					accessChecked = true
+				}
+				if !accessAllowed {
+					supported = false
+					break
+				}
+				path = "/v1/responses"
+			}
+			// 同名模型沿全部可选渠道使用同一示例协议，混合协议交给管理员确认
+			if endpoint != "" && endpoint != path {
+				supported = false
+				break
+			}
+			endpoint = path
+		}
+		if supported && endpoint != "" {
+			return &userRequestExample{Model: name, Endpoint: endpoint}, nil
+		}
+	}
+	return nil, nil
+}
 
 func init() {
 	// https://platform.openai.com/docs/models/model-endpoint-compatibility

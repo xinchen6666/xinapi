@@ -48,12 +48,18 @@ export async function getSelf() {
   return res.data
 }
 
-export async function getUserModels(): Promise<{
+export async function getUserModels(exampleTokenId?: number): Promise<{
   success: boolean
   message?: string
   data?: string[]
+  request_example?: {
+    model: string
+    endpoint: '/v1/responses' | '/v1/chat/completions'
+  } | null
 }> {
-  const res = await api.get('/api/user/models')
+  const res = await api.get('/api/user/models', {
+    params: exampleTokenId ? { example_token_id: exampleTokenId } : undefined,
+  })
   return res.data
 }
 
