@@ -72,6 +72,10 @@ func firstRequestExample(userGroup string, token *model.Token, modelNames []stri
 	channels := make(map[int]*model.Channel)
 	accessChecked, accessAllowed := false, false
 	for _, name := range modelNames {
+		// 首次示例聚焦对话，已知图像与嵌入模型留给各自接口
+		if common.IsImageGenerationModel(name) || strings.HasPrefix(strings.ToLower(ratio_setting.RoutingMatchModelName(name)), "text-embedding-") {
+			continue
+		}
 		if token.ModelLimitsEnabled && !limits[name] && !limits[ratio_setting.RoutingMatchModelName(name)] {
 			continue
 		}
@@ -97,6 +101,9 @@ func firstRequestExample(userGroup string, token *model.Token, modelNames []stri
 				break
 			}
 			path := "/v1/chat/completions"
+			if common.IsOpenAIResponseOnlyModel(name) {
+				path = "/v1/responses"
+			}
 			if managed {
 				if !accessChecked {
 					access, accessErr := model.GetActiveCprMemberAccess(token.UserId)

@@ -25,6 +25,7 @@
     "Actual browser-copied Responses command completes with confirmed usage; credentials are passed privately to the verifier",
     "Owned-token request examples keep the existing model array; another user's token ID is rejected; internal credentials are absent",
     "A CPR-only ungranted key receives an empty example; an ordinary OpenAI-only key receives the Chat endpoint",
+    "Keys limited to known embedding or image models receive an empty conversation example; a known Responses-only model receives the Responses endpoint",
     "Browser route detail shows a withdrawn-node warning and historical observation; injected source-read failure shows unconfirmed state and refresh recovers the view",
     "390-pixel route dialog has no page-width overflow",
     "Both member totals equal recorded consumption"
