@@ -1,7 +1,7 @@
 {
   "task": "X08 protocol support",
   "checked_at": "2026-11-27T20:31:32+08:00",
-  "result": "runtime_passed_with_legacy_test_expectations",
+  "result": "passed_scoped",
   "kernel": "Mihomo v1.19.33 linux amd64 compatible, both real server and managed client",
   "scenarios": [
     "SS AES-128-GCM TCP",
@@ -33,9 +33,10 @@
     "rustfmt": "passed",
     "clippy_admin_host_libs": "passed with -D warnings",
     "architecture_tests": {"passed": 16, "failed": 0},
-    "existing_admin_subscription_tests": {"passed": 12, "failed_old_protocol_expectations": 4},
-    "existing_api_subscription_tests": {"passed": 6, "failed_old_protocol_expectations": 1},
-    "formal_test_files": "unchanged"
+    "existing_admin_subscription_tests": {"passed": 16, "failed": 0},
+    "existing_api_subscription_tests": {"passed": 7, "failed": 0},
+    "formal_test_files": "2 existing files updated under explicit user authorization; 5 protocol expectations synchronized",
+    "regressions_checked_at": "2026-11-27T22:34:21+08:00"
   },
   "boundaries": [
     "Actual services and protocol handshakes with constructed credentials and upstream responses in a private isolated network",

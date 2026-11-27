@@ -137,11 +137,13 @@ rules:
     assert_eq!(result.format, SubscriptionFormat::ClashYaml);
     assert_eq!(result.source_url, MAIN_URL);
     assert_eq!(result.candidates.len(), 6);
-    assert_eq!(result.accepted, 2);
-    assert_eq!(result.rejected, 4);
+    assert_eq!(result.accepted, 4);
+    assert_eq!(result.rejected, 2);
     assert_eq!(protocol(&result, "alpha"), NodeProtocol::Ss);
     assert_eq!(protocol(&result, "beta"), NodeProtocol::Vmess);
     assert_eq!(protocol(&result, "epsilon"), NodeProtocol::Unknown);
+    assert!(supported(&result, "alpha"));
+    assert!(supported(&result, "beta"));
     assert!(supported(&result, "gamma"));
     assert!(supported(&result, "delta"));
     assert_eq!(
@@ -150,7 +152,7 @@ rules:
             .iter()
             .filter(|diagnostic| diagnostic.code.as_str() == "unsupported_protocol")
             .count(),
-        3
+        1
     );
     let unreadable = result
         .diagnostics
@@ -174,9 +176,10 @@ async fn clash_json_preview_recognizes_the_same_node_shape() {
 
     assert_eq!(result.format, SubscriptionFormat::ClashJson);
     assert_eq!(result.candidates.len(), 2);
-    assert_eq!(result.accepted, 1);
-    assert_eq!(result.rejected, 1);
+    assert_eq!(result.accepted, 2);
+    assert_eq!(result.rejected, 0);
     assert_eq!(protocol(&result, "alpha"), NodeProtocol::Trojan);
+    assert!(supported(&result, "alpha"));
     assert!(supported(&result, "beta"));
 }
 
@@ -218,8 +221,8 @@ async fn uri_list_preview_reads_fragments_and_reports_unreadable_lines() {
             .count(),
         1
     );
-    assert_eq!(result.accepted, 2);
-    assert_eq!(result.rejected, result.candidates.len() - 2);
+    assert_eq!(result.accepted, 6);
+    assert_eq!(result.rejected, result.candidates.len() - 6);
 }
 
 #[tokio::test]
@@ -465,10 +468,10 @@ async fn malformed_connections_stay_rejected_while_valid_native_nodes_remain_ava
         {"name":"valid-vless","type":"vless","server":"192.0.2.3","port":443,"uuid":"11111111-1111-1111-1111-111111111111"}
     ]}"#);
     let result = preview(source, MAIN_URL).await;
-    assert_eq!(result.accepted, 0);
+    assert_eq!(result.accepted, 1);
     assert!(result.candidates[..3].iter().all(|node| !node.parse_valid));
     assert!(result.candidates[3].parse_valid);
-    assert!(!result.candidates[3].supported);
+    assert!(result.candidates[3].supported);
 }
 
 #[tokio::test]
