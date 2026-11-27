@@ -31,6 +31,8 @@ impl HttpSubscriptionSource {
 
     fn client_builder() -> reqwest::ClientBuilder {
         reqwest::Client::builder()
+            // 声明受管内核能力，让订阅服务返回包含完整 ECH 参数的节点文档
+            .user_agent("clash.meta (xinapi)")
             .redirect(reqwest::redirect::Policy::none())
             .no_proxy()
             // 原始传输与解压后正文分别计量，始终由 read_document 承担解压

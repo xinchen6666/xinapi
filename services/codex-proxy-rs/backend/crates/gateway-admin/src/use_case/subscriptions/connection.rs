@@ -78,8 +78,18 @@ pub(super) fn from_clash(
     {
         result.remove("tls");
     }
-    if protocol == NodeProtocol::Vmess && result.get("alterId").and_then(Value::as_u64) == Some(0) {
+    if matches!(protocol, NodeProtocol::Vmess | NodeProtocol::Vless)
+        && result.get("alterId").and_then(Value::as_u64) == Some(0)
+    {
         result.remove("alterId");
+    }
+    // 通用导出器为 VLESS 附带的空 flow 与默认值均归一到省略形状
+    if protocol == NodeProtocol::Vless
+        && result
+            .get("flow")
+            .is_some_and(|value| value.is_null() || value.as_str() == Some(""))
+    {
+        result.remove("flow");
     }
     if matches!(protocol, NodeProtocol::Vmess | NodeProtocol::Vless)
         && result.get("cipher").and_then(Value::as_str) == Some("auto")
@@ -215,7 +225,24 @@ fn validate_nested(key: &str, value: &Value) -> Result<(), &'static str> {
             "brutal-opts",
         ],
         "brutal-opts" => &["enabled", "up", "down"],
-        "ech-opts" => &["enable", "config"],
+        "ech-opts" => {
+            let object = value.as_object().ok_or(VALUE_ERROR)?;
+            for (field, item) in object {
+                match field.as_str() {
+                    "enable" if item.is_boolean() => {}
+                    "config" if item.is_string() => {}
+                    "query-server-name"
+                        if item.as_str().is_some_and(|name| {
+                            !name.is_empty()
+                                && !name.chars().any(char::is_whitespace)
+                                && !name.chars().any(char::is_control)
+                        }) => {}
+                    "enable" | "config" | "query-server-name" => return Err(VALUE_ERROR),
+                    _ => return Err(OPTION_ERROR),
+                }
+            }
+            return Ok(());
+        }
         "quic-opts" => &["key", "security", "header"],
         "headers" | "http-headers" => {
             let object = value.as_object().ok_or(VALUE_ERROR)?;

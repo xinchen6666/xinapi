@@ -1,6 +1,14 @@
 # 当前交接
 
-## 当前：X08 四类节点协议扩展
+## 当前：X16 真实部署与 ECH 节点接入
+
+[PR #19](https://github.com/xinchen6666/xinapi/pull/19)已普通合入主干，[主干镜像构建](https://github.com/xinchen6666/xinapi/actions/runs/46034381508)通过。用户授权在独立目标主机部署，并明确选择补齐实际订阅的 ECH 兼容；详情见[部署日志](worklog/X16-live.md)。
+
+目标五服务和独立 Caddy HTTPS 站点已就绪，管理员在开放站点前私有初始化，公开注册关闭；浏览器登录通过，原有两个站点继续服务。真实订阅有五个 VLESS TLS／WS＋ECH 节点，已审批并全部通过实际连接验证；一个 AnyTLS 保持范围外。域名、订阅、认证及出口信息留在部署者私有环境，公开结果见[部署证据](evidence/X16-live.json)。
+
+接手人完成官方 OAuth 后，将账号加入 Team 组，按实际模型目录配置专用渠道，再授予成员上游访问并完成首个请求。当前计划 5 位成员，实际并发和账号容量留待授权后观察。开发机负责构建，约 2 GiB 目标机使用小内存配置运行，原项目和卷保持。
+
+## 历史：X08 四类节点协议扩展
 
 前序 [PR #18](https://github.com/xinchen6666/xinapi/pull/18)已普通合入 `main`，[主干镜像检查](https://github.com/xinchen6666/xinapi/actions/runs/45986245091)通过。用户选择 VLESS／Trojan／Shadowsocks／VMess 协议族后，本轮接通对应受管执行路径；源码与实际覆盖见[协议日志](worklog/X08-protocols.md)。
 

@@ -63,6 +63,8 @@ CPR 首次保存来源时在其持久运行数据目录创建 `subscription.key`
 
 批准节点可使用 HTTP／HTTPS、显式远端 DNS 的 SOCKS5，以及受管 Mihomo 的 Shadowsocks、VMess、VLESS、Trojan。Shadowsocks 覆盖三类经典 AEAD；VMess 使用 `alterId=0` 的 TCP／WS，可选 TLS；VLESS 与 Trojan 使用 TLS 的 TCP／WS。节点验证核对实际连接选项、认证和证书，成功后再用于授权或换路。完整字段与范围见 [引擎合同](../services/codex-proxy-rs/docs/api.md#15-受管引擎入口)。
 
+VLESS TLS／WS 可使用 `ech-opts` 中的内联 ECH 配置，开启时要求非空标准 Base64 `config`；`query-server-name` 按合法域名保留。订阅下载以固定 `clash.meta (xinapi)` 标识协商完整节点文档。ECH 及证书验证按源配置执行，握手失败返回错误。AnyTLS 和仅含 ECH DNS 发现参数的节点仍在范围外。
+
 Reality、Vision、gRPC、协议插件、smux 和 WS 早发数据仍属待扩展选项。升级后的旧来源保留原批准记录；刷新并明确批准后取得新能力标记。TLS 节点使用受管容器的系统证书信任，私有 CA 由部署者安装到系统信任位置；受管子进程仅接收固定运行环境。
 
 ## X12 管理工作台

@@ -1,0 +1,53 @@
+{
+  "task": "X16 live deployment with X08 inline ECH compatibility",
+  "checked_at": "2026-11-28T02:04:00+08:00",
+  "result": "deployment_and_nodes_passed_account_authorization_pending",
+  "environment": {
+    "os": "Ubuntu 24.04 x86_64",
+    "memory_class": "2 GiB",
+    "docker_engine": "29.1.3",
+    "compose": "2.40.3",
+    "planned_members": 5,
+    "entry": "existing Caddy with isolated HTTPS virtual host",
+    "services": ["New API", "CPR", "PostgreSQL", "New API Redis", "CPR Redis"],
+    "new_api_image": "xinapi/new-api:20261128-live",
+    "cpr_image": "xinapi/cpr:20261128-live-ech2",
+    "mihomo": "v1.19.33 linux amd64 compatible",
+    "managed_engine_slots": 2
+  },
+  "checks": {
+    "dns_address": "resolved",
+    "public_https": "trusted certificate and HTTP 200",
+    "browser_login": "passed",
+    "session_cookie": "Secure, HttpOnly, SameSite Strict",
+    "public_registration": "disabled",
+    "initial_setup": "completed before public reverse proxy activation",
+    "private_cpr_key_import": "passed",
+    "team_group": "created",
+    "upstream_accounts": 0,
+    "existing_sites": "both retained and responding",
+    "service_start": "all five ready",
+    "frontend_typecheck_and_build": "passed",
+    "go_production_build": "passed",
+    "rust_release_build": "passed optimized",
+    "rustfmt": "passed",
+    "clippy": "Admin and Host release libraries passed -D warnings",
+    "one_off_production_module_checks": ["preserve enabled ECH, certificate validation and websocket options", "equivalent exporter defaults preserve normalized identity", "malformed ECH, missing inline config and out-of-scope options rejected"],
+    "formal_test_files": "unchanged",
+    "independent_source_review": "passed"
+  },
+  "subscription": {
+    "total_nodes": 6,
+    "supported_and_approved": 5,
+    "out_of_scope_anytls": 1,
+    "negotiation": "fixed clash.meta (xinapi) user agent requests complete Clash YAML",
+    "supported_path": "VLESS TLS WebSocket with enabled inline ECH",
+    "certificate_validation": "enabled",
+    "actual_node_tests_passed": 5,
+    "actual_node_tests_failed": 0,
+    "observed_latency_ms": [1316, 1292, 1101, 1170, 192],
+    "secret_material": "retained only in private deployment storage"
+  },
+  "remaining": ["Account holder completes official OAuth", "Actual account model catalog determines channel configuration", "Grant each member access and issue their platform key", "First real upstream model request and concurrent capacity observation"],
+  "limits": ["Public node connection validation is distinct from upstream account and model validation", "Five members is a planned deployment size rather than a measured concurrency guarantee", "ECH requires inline configuration in the supported VLESS TLS WebSocket path"]
+}

@@ -2,6 +2,7 @@
 
 use std::collections::BTreeSet;
 
+use base64::Engine as _;
 use gateway_admin::model::engines::{EngineFacts, EngineServiceError};
 use serde_json::{Map, Value, json};
 
@@ -193,6 +194,56 @@ pub(super) fn render_proxy(facts: &EngineFacts) -> Result<Value, EngineServiceEr
                 ]
                 .iter()
                 .any(|header| pem.starts_with(header))
+                {
+                    return Err(EngineServiceError::NodeUnsupported);
+                }
+                proxy.insert(key.clone(), value.clone());
+            }
+            "ech-opts" if protocol == "vless" && tls && network == "ws" => {
+                let options = value
+                    .as_object()
+                    .ok_or(EngineServiceError::NodeUnsupported)?;
+                let enabled = options
+                    .get("enable")
+                    .and_then(Value::as_bool)
+                    .ok_or(EngineServiceError::NodeUnsupported)?;
+                for (field, item) in options {
+                    match field.as_str() {
+                        "enable" => {}
+                        "config" => {
+                            let encoded = string(item)?;
+                            if !encoded.is_empty() {
+                                base64::engine::general_purpose::STANDARD
+                                    .decode(encoded)
+                                    .map_err(|_| EngineServiceError::NodeUnsupported)?;
+                            }
+                        }
+                        "query-server-name" => {
+                            let name = text(item)?;
+                            if name.len() > 253
+                                || name.parse::<std::net::IpAddr>().is_ok()
+                                || !name.split('.').all(|label| {
+                                    !label.is_empty()
+                                        && label.len() <= 63
+                                        && !label.starts_with('-')
+                                        && !label.ends_with('-')
+                                        && label
+                                            .bytes()
+                                            .all(|c| c.is_ascii_alphanumeric() || c == b'-')
+                                })
+                            {
+                                return Err(EngineServiceError::NodeUnsupported);
+                            }
+                        }
+                        _ => return Err(EngineServiceError::NodeUnsupported),
+                    }
+                }
+                // 内联 ECH 配置沿官方优先级传递，握手内容与拒绝语义由内核处理
+                if enabled
+                    && options
+                        .get("config")
+                        .and_then(Value::as_str)
+                        .is_none_or(str::is_empty)
                 {
                     return Err(EngineServiceError::NodeUnsupported);
                 }
