@@ -3544,14 +3544,14 @@ GET/HEAD 不接受正文。响应状态码为 200–599，内容类型元数据�
 | `source_url` | 提交值原样回显，只返回当前管理员会话 |
 | `format` | `clash_yaml`、`clash_json`、`uri_list`、`base64_document` |
 | `fetched_bytes` | 主文档解压后字节数 |
-| `accepted` | 原生传输可用节点数，即 `supported=true` 的数量 |
+| `accepted` | 协议执行路径可用节点数，即 `supported=true` 的数量；实际连接参数及上游连通性仍由节点验证确认 |
 | `rejected` | 其余节点数，与 accepted 之和等于 candidates 长度 |
 | `candidates` | `{name, protocol, parse_valid, supported}`，协议取 `ss`、`vmess`、`vless`、`trojan`、`hysteria2`、`tuic`、`socks5`、`http`、`unknown` |
 | `diagnostics` | `{code, message, subject}`，subject 为节点名、provider 名或字段名 |
 
-`parse_valid` 表示对应协议的地址、端口与必要认证字段校验通过；额外协议及破损节点保持 false。
-`supported` 还要求网关具备原生传输路径，当前为 HTTP/SOCKS5。其余有效协议等待 Mihomo 接入。
-解析有效性与原生传输能力分别展示，端口或凭据校验通过仍需后续连通性验证。
+`parse_valid` 表示协议的地址、端口与必要认证字段校验通过；破损节点保持 false。
+`supported` 表示该协议族具有受管执行路径，涵盖 HTTP、SOCKS5、Shadowsocks、VMess、VLESS 和 Trojan。
+解析、批准与连通性分别确认；Host 在验证和启动时校验具体传输选项，第 15 节列出执行范围。已有批准记录保留原能力标记，刷新并明确批准后按当前实现更新。
 
 短 Base64 和大文档包装均按解码后的文档判断格式。已识别的 YAML/JSON 语法失败返回文档错误，
 URI 列表中的错误行则逐项进入诊断。公开响应保留元数据，规范连接文档只由服务端匹配与密文持久化消费。
@@ -3668,7 +3668,16 @@ URL、规范连接、待审核事实和批准历史整体加密保存在 Postgre
 | 409 | `engine_node_version_changed` / `engine_stop_forbidden` | 已批准版本已变化，或入口归属与已发布绑定有差异 |
 | 504 | `engine_start_timeout` / `engine_node_test_timeout` | 启动或独立验证预算耗尽，监督任务继续完成回收 |
 
-制品固定为v1.19.33 linux/amd64-compatible，启动前校验实际ELF摘要，认证controller再次核对版本。生成配置保留允许的HTTP TLS、SNI、证书验证、内联证书与header字段；超出能力的执行选项明确拒绝。SOCKS只接收显式 `dns-mode=remote` 的TCP路径；本地／缺省DNS及UDP选项拒绝。Mihomo内建localhost映射沿用其原行为。
+制品固定为 v1.19.33 linux/amd64-compatible，认证 controller 核对版本。生成配置只选择当前批准节点，数据入口保持 TCP、回环及独立认证。HTTP 的 TLS、SNI、内联证书和 header 合同保持；SOCKS 采用显式 `dns-mode=remote` 的 TCP 路径。
+
+| 协议 | 执行范围 |
+| --- | --- |
+| Shadowsocks | TCP，`aes-128-gcm`、`aes-256-gcm`、`chacha20-ietf-poly1305` |
+| VMess | AEAD `alterId=0`，cipher 默认 `auto`，另支持 `aes-128-gcm`、`chacha20-poly1305`、`none`；TCP／WS，可选 TLS |
+| VLESS | 普通 flow，显式 TLS，TCP／WS |
+| Trojan | 固有 TLS，TCP／WS |
+
+VMess／VLESS 使用 `servername`，Trojan 使用 `sni`；TLS 使用系统信任及对应证书校验选项。内联客户端证书与私钥成对，外部路径返回 `engine_node_unsupported`。WS 支持路径和请求头，TLS WS 的 ALPN 为 `http/1.1`。Reality、Vision、gRPC、插件、smux、early-data、HTTP upgrade 和额外路由覆盖保持范围外，返回同一明确错误。Mihomo 内建 localhost 映射沿用其原行为。
 
 `running` 表示已完成本机controller与数据入口认证握手；上游代理认证、目标可达性和公网出口验证属于节点检测与绑定流程。真实上游拒绝时数据请求失败。
 

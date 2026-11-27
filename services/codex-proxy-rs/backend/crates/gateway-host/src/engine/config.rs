@@ -58,7 +58,7 @@ fn parse_env<T: FromStr>(name: &str, fallback: T) -> Result<T, EngineServiceErro
     }
 }
 
-/// 原生 HTTP/SOCKS 字段按 v1.19.33 的 HttpOption、Socks5Option 合同生成
+/// 受管节点按 v1.19.33 官方出站合同生成，入口始终固定到单个批准连接
 pub(super) fn render_config(
     facts: &EngineFacts,
     listen_port: u16,
@@ -116,6 +116,9 @@ pub(super) fn validate_connection(facts: &EngineFacts) -> Result<(), EngineServi
 }
 
 fn render_proxy(facts: &EngineFacts) -> Result<Value, EngineServiceError> {
+    if matches!(facts.protocol.as_str(), "ss" | "vmess" | "vless" | "trojan") {
+        return super::protocols::render_proxy(facts);
+    }
     let input = facts
         .connection
         .as_object()

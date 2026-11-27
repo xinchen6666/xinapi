@@ -1,6 +1,14 @@
 # 当前交接
 
-## 当前：X12／X14 试用修订与双账号验证
+## 当前：X08 四类节点协议扩展
+
+前序 [PR #18](https://github.com/xinchen6666/xinapi/pull/18)已普通合入 `main`，[主干镜像检查](https://github.com/xinchen6666/xinapi/actions/runs/45986245091)通过。用户选择 VLESS／Trojan／Shadowsocks／VMess 协议族后，本轮接通对应受管执行路径；源码与实际覆盖见[协议日志](worklog/X08-protocols.md)。
+
+真实 Mihomo 服务端与受管客户端验证了 10 个组合，均完成 JSON／SSE／WSS 和目标端 socket 出口观测；四协议停止服务端时均停发，错误认证、错误证书主机名与额外路由选项均拒绝。格式和严格 Clippy、架构检查通过。既有订阅及 API 用例共 5 项仍固定旧能力数量，正式测试原样保留，差异待同步。
+
+支持范围以[受管节点协议](COMPOSE.md#x08-受管节点协议)为准。Reality、Vision、gRPC、插件、smux 与真实公网账号／节点仍按专项确认，公开发行和 X17 继续保留。
+
+## 历史：X12／X14 试用修订与双账号验证
 
 X18 交接 [PR #17](https://github.com/xinchen6666/xinapi/pull/17)已复核普通合入 `main`，[主干检查](https://github.com/xinchen6666/xinapi/actions/runs/45964387806)通过。本轮 [PR #18](https://github.com/xinchen6666/xinapi/pull/18)在独立工作树修订成员 Responses 引导和节点撤下后的停发提示，详情见[修订日志](worklog/X12-X14-trial.md)。原首页及维护编辑保留。
 

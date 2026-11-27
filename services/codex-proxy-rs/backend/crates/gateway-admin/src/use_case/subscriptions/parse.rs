@@ -584,11 +584,11 @@ fn scheme_protocol(scheme: &str) -> NodeProtocol {
 fn unsupported_message(protocol: NodeProtocol) -> String {
     match protocol {
         NodeProtocol::Unknown => {
-            "The node protocol is unrecognized; this gateway materializes http and socks5 nodes."
+            "The node protocol is unrecognized; this gateway materializes http, socks5, ss, vmess, vless and trojan nodes."
                 .to_owned()
         }
         other => format!(
-            "Protocol {} is recognized; this gateway materializes http and socks5 nodes.",
+            "Protocol {} is recognized; this gateway materializes http, socks5, ss, vmess, vless and trojan nodes.",
             other.as_str()
         ),
     }

@@ -5,6 +5,7 @@ mod artifact;
 mod config;
 mod entries;
 mod observation;
+mod protocols;
 mod runtime;
 
 use async_trait::async_trait;
