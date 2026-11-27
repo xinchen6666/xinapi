@@ -1,5 +1,12 @@
 {
   "translation": {
+    "Published node: {{node}}": "公開済みノード：{{node}}",
+    "No model is available for this API key": "この API キーで利用できるモデルがありません",
+    "Ask an administrator to check model access and group access.": "モデルとグループへのアクセス権を管理者に確認してください。",
+    "Sending paused: {{node}} was removed from the approved source.": "送信を一時停止しました。{{node}} は承認済みソースから削除されています。",
+    "To resume sending, select another approved node and publish the route.": "送信を再開するには、別の承認済みノードを選択してルートを公開してください。",
+    "Node availability is unconfirmed. Refresh to check the source.": "ノードの利用可否を確認中です。更新してソースを確認してください。",
+    "Last recorded egress observation": "前回記録された出口の観測",
     "Confirmed usage": "確認済み使用量",
     "Estimated usage": "推定使用量",
     "Usage unknown": "使用量未確定",

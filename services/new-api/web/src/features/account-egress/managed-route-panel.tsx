@@ -30,8 +30,10 @@ import { v4 as newOperationId } from 'uuid'
 import { ConfirmDialog } from '@/components/confirm-dialog'
 import { ErrorState } from '@/components/error-state'
 import { LoadingState } from '@/components/loading-state'
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { sourceDetail } from '@/features/subscription-preview/source-api'
 import { toIntlLocale } from '@/i18n/languages'
 import { formatNumber } from '@/lib/format'
 import {
@@ -86,6 +88,34 @@ export function ManagedRoutePanel(props: RoutePanelProps) {
   const [idError, setIdError] = useState(false)
   const accountId = props.account.id
   const route = props.route.data
+  const publishedNode = route?.current
+  const sourceId = publishedNode?.source_id ?? ''
+  const source = useQuery({
+    queryKey: [
+      'account-egress',
+      props.userId,
+      'source',
+      props.sessionId,
+      sourceId,
+    ],
+    queryFn: ({ signal }) => sourceDetail(sourceId, signal),
+    enabled: props.route.isSuccess && !!sourceId,
+    refetchOnMount: 'always',
+    retry: false,
+    gcTime: 0,
+    meta: { errorToast: false },
+  })
+  // 来源节点按稳定 ID 核对，账号仍使用各自已发布的连接版本。
+  const nodeAvailable =
+    source.isSuccess &&
+    !source.isFetching &&
+    !source.isPaused &&
+    source.data.source.id === sourceId &&
+    Array.isArray(source.data.nodes)
+      ? source.data.nodes.some(
+          (node) => node.id === publishedNode?.node_id && node.available
+        )
+      : undefined
   const activeId = route?.applying_operation_id
   const appliedId = route?.applied_operation_id
   const operationId = unknownId || activeId || recentId || appliedId || ''
@@ -180,6 +210,7 @@ export function ManagedRoutePanel(props: RoutePanelProps) {
   const canReauthorize =
     props.canAuthorize &&
     props.account.enabled &&
+    nodeAvailable === true &&
     bound &&
     ownedProxy &&
     route?.proxy_enabled === true &&
@@ -218,6 +249,7 @@ export function ManagedRoutePanel(props: RoutePanelProps) {
     !activeId &&
     !pending &&
     !!appliedId &&
+    nodeAvailable === true &&
     bound &&
     ownedProxy &&
     route?.proxy_enabled === true &&
@@ -296,9 +328,13 @@ export function ManagedRoutePanel(props: RoutePanelProps) {
             size='sm'
             variant='outline'
             disabled={
-              busy || props.route.isFetching || operationQuery.isFetching
+              busy ||
+              props.route.isFetching ||
+              operationQuery.isFetching ||
+              source.isFetching
             }
             onClick={() => {
+              if (sourceId) void source.refetch()
               if (operationId) void readOperation()
               else void props.route.refetch()
             }}
@@ -318,12 +354,45 @@ export function ManagedRoutePanel(props: RoutePanelProps) {
       {props.route.isSuccess && (
         <>
           <p className='text-sm'>
-            {bound && route?.current
-              ? t('Bound to {{node}}', { node: route.current.node_name })
-              : t('No managed route is bound.')}
-            {' · '}
+            {bound && publishedNode ? (
+              <>
+                {t('Published node: {{node}}', {
+                  node: publishedNode.node_name,
+                })}
+                {' · '}
+              </>
+            ) : (
+              <>
+                {t('No managed route is bound.')}
+                {' · '}
+              </>
+            )}
             {t('Route generation')}: {formatNumber(generation, locale)}
           </p>
+          {bound && publishedNode && nodeAvailable === false && (
+            <Alert variant='destructive'>
+              <AlertTitle>
+                {t(
+                  'Sending paused: {{node}} was removed from the approved source.',
+                  {
+                    node: publishedNode.node_name,
+                  }
+                )}
+              </AlertTitle>
+              <AlertDescription>
+                {t(
+                  'To resume sending, select another approved node and publish the route.'
+                )}
+              </AlertDescription>
+            </Alert>
+          )}
+          {bound && nodeAvailable === undefined && !source.isFetching && (
+            <p role='status' className='text-muted-foreground text-sm'>
+              {t(
+                'Node availability is unconfirmed. Refresh to check the source.'
+              )}
+            </p>
+          )}
           {bound && route?.current && (
             <RouteNodeSummary
               node={route.current}
@@ -558,6 +627,9 @@ function RouteNodeSummary(props: {
       </p>
       {observation && (
         <div className='flex flex-wrap gap-x-3 gap-y-1'>
+          <p className='basis-full font-medium'>
+            {t('Last recorded egress observation')}
+          </p>
           <span>
             {t('Latency (ms)')}: {formatNumber(observation.latency_ms, locale)}
           </span>

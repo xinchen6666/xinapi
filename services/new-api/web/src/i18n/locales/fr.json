@@ -1,5 +1,12 @@
 {
   "translation": {
+    "Published node: {{node}}": "Nœud publié : {{node}}",
+    "No model is available for this API key": "Aucun modèle disponible pour cette clé API",
+    "Ask an administrator to check model access and group access.": "Demandez à un administrateur de vérifier les accès aux modèles et aux groupes.",
+    "Sending paused: {{node}} was removed from the approved source.": "Envoi suspendu : {{node}} a été retiré de la source approuvée.",
+    "To resume sending, select another approved node and publish the route.": "Pour reprendre l’envoi, sélectionnez un autre nœud approuvé et publiez la route.",
+    "Node availability is unconfirmed. Refresh to check the source.": "La disponibilité du nœud reste à confirmer. Actualisez pour vérifier la source.",
+    "Last recorded egress observation": "Dernière observation de sortie enregistrée",
     "Confirmed usage": "Utilisation confirmée",
     "Estimated usage": "Utilisation estimée",
     "Usage unknown": "Utilisation inconnue",

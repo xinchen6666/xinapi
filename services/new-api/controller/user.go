@@ -642,11 +642,27 @@ func GetUserModels(c *gin.Context) {
 			groupsToQuery = []string{group}
 		}
 	}
-	c.JSON(http.StatusOK, gin.H{
-		"success": true,
-		"message": "",
-		"data":    service.GetGroupsEnabledModels(groupsToQuery),
-	})
+	models := service.GetGroupsEnabledModels(groupsToQuery)
+	response := gin.H{"success": true, "message": "", "data": models}
+	if raw, requested := c.GetQuery("example_token_id"); requested {
+		tokenID, err := strconv.Atoi(raw)
+		if err != nil || tokenID <= 0 || id != c.GetInt("id") {
+			common.ApiErrorT(c, "Invalid parameters")
+			return
+		}
+		token, err := model.GetTokenByIds(tokenID, c.GetInt("id"))
+		if err != nil {
+			common.ApiError(c, err)
+			return
+		}
+		example, err := firstRequestExample(user.Group, token, models)
+		if err != nil {
+			common.ApiError(c, err)
+			return
+		}
+		response["request_example"] = example
+	}
+	c.JSON(http.StatusOK, response)
 }
 
 func UpdateUser(c *gin.Context) {

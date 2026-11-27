@@ -115,6 +115,7 @@ interface RequestExample {
   keyId?: number
   displayKey: string
   ready: boolean
+  loading: boolean
 }
 
 interface HeroSignal {
@@ -145,19 +146,15 @@ function getCurrentOrigin(): string {
   return window.location.origin
 }
 
-function normalizeEndpoint(sourceUrl?: string): string {
-  const fallback = `${getCurrentOrigin()}/v1/chat/completions`
-  const trimmed = sourceUrl?.trim()
-  if (!trimmed) return fallback
-
-  const withoutTrailingSlash = trimmed.replace(/\/+$/, '')
-  if (withoutTrailingSlash.endsWith('/v1/chat/completions')) {
-    return withoutTrailingSlash
-  }
-  if (withoutTrailingSlash.endsWith('/v1')) {
-    return `${withoutTrailingSlash}/chat/completions`
-  }
-  return `${withoutTrailingSlash}/v1/chat/completions`
+function normalizeEndpoint(
+  sourceUrl: string | undefined,
+  path: string
+): string {
+  const source = sourceUrl?.trim() || getCurrentOrigin()
+  const base = source
+    .replace(/\/+$/, '')
+    .replace(/\/v1(?:\/chat\/completions|\/responses)?$/, '')
+  return `${base}${path}`
 }
 
 function getPreferredKey(keys: ApiKey[]): ApiKey | null {
@@ -175,11 +172,18 @@ function buildCurlCommand(args: {
   apiKey: string
   model: string
 }): string {
+  const payload = args.endpoint.endsWith('/v1/responses')
+    ? { model: args.model, input: 'Say hello in one sentence.' }
+    : {
+        model: args.model,
+        messages: [{ role: 'user', content: 'Say hello in one sentence.' }],
+      }
+  const shellBody = JSON.stringify(payload).replaceAll("'", "'\\''")
   return [
     `curl ${args.endpoint} \\`,
     '  -H "Content-Type: application/json" \\',
     `  -H "Authorization: Bearer ${args.apiKey}" \\`,
-    `  -d '{"model":"${args.model}","messages":[{"role":"user","content":"Say hello in one sentence."}]}'`,
+    `  -d '${shellBody}'`,
   ].join('\n')
 }
 
@@ -293,7 +297,7 @@ function RequestPreview(props: {
   })
   const previewLines = previewCurl.split('\n')
   const handleCopyRequest = async () => {
-    if (!props.example.keyId || isCopying) return
+    if (!props.example.ready || !props.example.keyId || isCopying) return
 
     setIsCopying(true)
     try {
@@ -348,7 +352,7 @@ function RequestPreview(props: {
               {t('First API request')}
             </div>
             <div className='text-muted-foreground truncate text-xs'>
-              {props.example.ready
+              {props.example.keyId
                 ? props.example.keyName
                 : t('Create an API key to unlock the real request')}
             </div>
@@ -366,7 +370,8 @@ function RequestPreview(props: {
             <Copy data-icon='inline-start' />
             {isCopying ? t('Loading') : t('Copy')}
           </Button>
-        ) : (
+        ) : null}
+        {!props.example.keyId && (
           <Button size='sm' variant='outline' render={<Link to='/keys' />}>
             {t('Create API Key')}
           </Button>
@@ -380,15 +385,35 @@ function RequestPreview(props: {
           <span className='bg-success size-2 rounded-full' />
         </div>
         <div className='flex flex-col gap-1 overflow-hidden'>
-          {previewLines.map((line) => (
-            <code
-              key={line}
-              className='text-muted-foreground truncate'
-              title={line}
+          {props.example.ready &&
+            previewLines.map((line) => (
+              <code
+                key={line}
+                className='text-muted-foreground truncate'
+                title={line}
+              >
+                {line}
+              </code>
+            ))}
+          {!props.example.ready && (
+            <p
+              role='status'
+              className='text-muted-foreground whitespace-normal'
             >
-              {line}
-            </code>
-          ))}
+              {props.example.loading
+                ? t('Loading')
+                : t('No model is available for this API key')}
+            </p>
+          )}
+          {!props.example.ready &&
+            !props.example.loading &&
+            props.example.keyId && (
+              <p className='text-muted-foreground whitespace-normal'>
+                {t(
+                  'Ask an administrator to check model access and group access.'
+                )}
+              </p>
+            )}
         </div>
       </div>
 
@@ -490,19 +515,24 @@ export function OverviewDashboard() {
     staleTime: 60 * 1000,
   })
 
-  const modelsQuery = useQuery({
-    queryKey: ['dashboard', 'overview', 'user-models'],
-    queryFn: async () => {
-      const result = requireServerSuccess(await getUserModels())
-      return result.success ? (result.data ?? []) : []
-    },
-    staleTime: 5 * 60 * 1000,
-  })
-
   const preferredKey = useMemo(
     () => getPreferredKey(apiKeysQuery.data ?? []),
     [apiKeysQuery.data]
   )
+
+  const modelsQuery = useQuery({
+    queryKey: [
+      'dashboard',
+      'overview',
+      'user-models',
+      user?.id,
+      preferredKey?.id,
+    ],
+    queryFn: async () =>
+      requireServerSuccess(await getUserModels(preferredKey?.id)),
+    enabled: !!preferredKey?.id,
+    staleTime: 0,
+  })
 
   const startSteps = useMemo<StartStep[]>(
     () => [
@@ -583,7 +613,7 @@ export function OverviewDashboard() {
       },
       {
         label: t('Model selected'),
-        value: modelsQuery.data?.[0] ?? t('Loading'),
+        value: modelsQuery.data?.request_example?.model ?? '—',
         icon: Timer,
         tone: 'chart-4',
       },
@@ -592,10 +622,23 @@ export function OverviewDashboard() {
   )
 
   const requestExample = useMemo<RequestExample>(() => {
-    const endpoint = normalizeEndpoint(apiInfoItems[0]?.url)
-    const model = modelsQuery.data?.[0] ?? 'gpt-4o-mini'
+    const example = modelsQuery.data?.request_example
+    const endpoint = example
+      ? normalizeEndpoint(
+          example.endpoint === '/v1/responses'
+            ? undefined
+            : apiInfoItems[0]?.url,
+          example.endpoint
+        )
+      : ''
+    const model = example?.model ?? ''
     const keyName = preferredKey?.name ?? t('No API key yet')
-    const ready = Boolean(preferredKey?.id && model)
+    const ready = Boolean(
+      preferredKey?.id &&
+      model &&
+      modelsQuery.isSuccess &&
+      !modelsQuery.isFetching
+    )
 
     return {
       endpoint,
@@ -606,8 +649,16 @@ export function OverviewDashboard() {
         ? formatDisplayKey(`sk-${preferredKey.key}`)
         : 'sk-...',
       ready,
+      loading: modelsQuery.isFetching,
     }
-  }, [apiInfoItems, modelsQuery.data, preferredKey, t])
+  }, [
+    apiInfoItems,
+    modelsQuery.data,
+    modelsQuery.isFetching,
+    modelsQuery.isSuccess,
+    preferredKey,
+    t,
+  ])
 
   const completedStepCount = startSteps.filter((step) => step.completed).length
   const setupComplete = completedStepCount === startSteps.length
