@@ -110,6 +110,27 @@ export async function completeAccountOAuth(
   }
 }
 
+export async function importAccountToken(input: {
+  provider: 'openai'
+  name: string
+  source_id: string
+  node_id: string
+  access_token: string
+}): Promise<AccountOAuthReceipt> {
+  try {
+    const response = await api.post<Response<AccountOAuthReceipt>>(
+      '/api/account-egress/token-import',
+      input,
+      { singleUseAuthorization: true, skipBusinessError: true }
+    )
+    return requireServerSuccess(response.data).data
+  } catch (error) {
+    throw new AccountOAuthError(error)
+  } finally {
+    input.access_token = ''
+  }
+}
+
 export async function cancelAccountOAuth(
   operationId: string
 ): Promise<AccountOAuthReceipt> {

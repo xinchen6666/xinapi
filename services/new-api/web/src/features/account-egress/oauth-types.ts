@@ -25,8 +25,10 @@ export type AccountOAuthStatus =
   | 'failed'
   | 'unknown'
   | 'cancelled'
+  | 'expired'
 
 export type AccountOAuthReceipt = {
+  name?: string
   operation_id: string
   status: AccountOAuthStatus
   provider: AccountOAuthProvider
@@ -38,6 +40,7 @@ export type AccountOAuthReceipt = {
   proxy_id?: string | null
   route_generation: number
   reason?: string | null
+  authorization_url?: string
 }
 
 export type AccountOAuthStarted = AccountOAuthReceipt & {

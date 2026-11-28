@@ -122,7 +122,10 @@ export function useOAuthReceipt(props: Props) {
   const canComplete =
     receipt.data?.status === 'pending' && !expired && !attempted
   const link = receipt.data
-    ? accountAuthorizationLink(props.authorizationUrl, receipt.data.provider)
+    ? accountAuthorizationLink(
+        receipt.data.authorization_url ?? props.authorizationUrl,
+        receipt.data.provider
+      )
     : null
 
   const confirmCompletion = async () => {
@@ -176,7 +179,9 @@ export function useOAuthReceipt(props: Props) {
   const restart =
     receipt.data &&
     ((expired && receipt.data.status === 'pending') ||
-      ['unknown', 'failed', 'cancelled'].includes(receipt.data.status))
+      ['unknown', 'failed', 'cancelled', 'expired'].includes(
+        receipt.data.status
+      ))
 
   return {
     receipt,

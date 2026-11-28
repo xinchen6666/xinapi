@@ -8,7 +8,7 @@ use axum::{
     response::IntoResponse,
     routing::{get, post},
 };
-use gateway_admin::model::oauth_operations::StartOAuthOperation;
+use gateway_admin::model::oauth_operations::{ImportManagedToken, StartOAuthOperation};
 use serde::{Deserialize, Serialize};
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -28,6 +28,10 @@ where
     Router::new()
         .route("/api/admin/oauth-operations", get(read::<S>))
         .route("/api/admin/oauth-operations/start", post(start::<S>))
+        .route(
+            "/api/admin/oauth-operations/import-token",
+            post(import_token::<S>),
+        )
         .route("/api/admin/oauth-operations/complete", post(complete::<S>))
         .route("/api/admin/oauth-operations/cancel", post(cancel::<S>))
 }
@@ -46,7 +50,10 @@ fn response<T: Serialize>(value: T) -> Result<impl IntoResponse, AdminError> {
     let body = serde_json::to_vec(&AdminEnvelope::ok(value)).map_err(|_| AdminError::internal())?;
     Ok((
         StatusCode::OK,
-        [(header::CONTENT_TYPE, "application/json")],
+        [
+            (header::CONTENT_TYPE, "application/json"),
+            (header::CACHE_CONTROL, "no-store"),
+        ],
         body,
     ))
 }
@@ -84,6 +91,24 @@ where
             .map_err(error)?,
     )
 }
+async fn import_token<S>(
+    auth: AdminAuth,
+    State(state): State<S>,
+    AdminJson(command): AdminJson<ImportManagedToken>,
+) -> Result<impl IntoResponse, AdminError>
+where
+    S: crate::auth::SessionState + Send + Sync,
+{
+    response(
+        state
+            .admin_services()
+            .credentials()
+            .import_managed_token(command, &auth.context().mutation_context())
+            .await
+            .map_err(error)?,
+    )
+}
+
 async fn complete<S>(
     auth: AdminAuth,
     State(state): State<S>,

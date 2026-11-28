@@ -292,6 +292,16 @@ pub trait ProviderAdmin: Send + Sync {
         command: PrepareCredentialImport,
     ) -> Result<PreparedCredentialImport, ProviderAdminError>;
 
+    /// 托管 Token 导入由 Provider 验证上游身份，Admin 负责固定出口与原子提交
+    async fn prepare_managed_token_import(
+        &self,
+        _pending: crate::model::provider_credentials::PendingAuthorizationMutation,
+        _account_id: ProviderAccountId,
+        _access_token: String,
+    ) -> Result<PreparedAuthorizationCommit, ProviderAdminError> {
+        Err(ProviderAdminError::new(ProviderAdminErrorKind::Unsupported))
+    }
+
     async fn start_authorization(
         &self,
         pending: crate::model::provider_credentials::PendingAuthorizationMutation,

@@ -1073,6 +1073,61 @@ impl CodexCredentialAdminService {
         Ok(PreparedCodexAccountImport { accounts })
     }
 
+    /// 托管单 Token 入口复用身份解析，敏感材料仅随内存准备对象流转
+    pub(crate) async fn prepare_managed_access_token(
+        &self,
+        account_id: String,
+        name: String,
+        access_token: String,
+        proxy: &gateway_core::account::OutboundProxy,
+    ) -> Result<NewProviderAccount, CodexCredentialAdminError> {
+        let mut expires_at = parse_access_token_expiration(&access_token);
+        if expires_at.is_some_and(|expiry| expiry <= Utc::now()) {
+            return Err(CodexCredentialAdminError::InvalidCredential);
+        }
+        let metadata = if access_token.starts_with("at-") {
+            expires_at = None;
+            self.personal_access_token_client
+                .as_ref()
+                .ok_or(PersonalAccessTokenError::Unavailable)?
+                .personal_access_token_metadata(&access_token, Some(proxy))
+                .await?
+        } else {
+            parse_chatgpt_jwt_claims(&access_token)
+                .map_err(|_| CodexCredentialAdminError::InvalidCredential)?
+        };
+        if metadata
+            .chatgpt_user_id
+            .as_deref()
+            .is_none_or(str::is_empty)
+            || metadata
+                .chatgpt_account_id
+                .as_deref()
+                .is_none_or(str::is_empty)
+        {
+            return Err(CodexCredentialAdminError::InvalidCredential);
+        }
+        let prepared =
+            CodexCredentialAdmin.prepare_unresolved_oauth(UnresolvedCodexOAuthCredential {
+                account_id,
+                name,
+                installation_id: uuid::Uuid::new_v4().to_string(),
+                secret: CodexOAuthSecret {
+                    access_token: SecretString::from(access_token),
+                    refresh_token: None,
+                    id_token: None,
+                },
+                metadata,
+                access_token_expires_at: expires_at,
+                next_refresh_at: None,
+                enabled: true,
+            })?;
+        Ok(NewProviderAccount {
+            account: prepared.account.with_outbound_proxy(Some(proxy.clone())),
+            ..prepared
+        })
+    }
+
     async fn resolve_import_tokens(
         &self,
         account_id: &ProviderAccountId,

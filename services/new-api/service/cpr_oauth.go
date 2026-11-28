@@ -25,6 +25,7 @@ type CprOAuthStartInput struct {
 
 // CprOAuthView是浏览器可见的脱敏操作与确认回执
 type CprOAuthView struct {
+	Name             string `json:"name,omitempty"`
 	OperationID      string `json:"operation_id"`
 	Status           string `json:"status"`
 	Provider         string `json:"provider"`
@@ -68,7 +69,7 @@ func cprOAuthRequest(ctx context.Context, method, path string, query url.Values,
 	}
 	view = *envelope.Data
 	switch view.Status {
-	case "pending", "completing", "completed", "failed", "unknown", "cancelled":
+	case "pending", "completing", "completed", "failed", "unknown", "cancelled", "expired":
 	default:
 		return CprOAuthView{}, ErrAccountEgressUnavailable
 	}
@@ -79,7 +80,7 @@ func cprOAuthRequest(ctx context.Context, method, path string, query url.Values,
 }
 
 func cprOAuthView(operation *model.CprOAuthOperation) CprOAuthView {
-	return CprOAuthView{OperationID: operation.OperationID, Status: operation.Status, Provider: operation.Provider, AccountID: operation.AccountID, ExpiresAt: time.Unix(operation.ExpiresAt, 0).UTC().Format(time.RFC3339), SourceID: operation.SourceID, NodeID: operation.NodeID, VersionID: operation.VersionID, ProxyID: operation.ProxyID, RouteGeneration: operation.RouteGeneration, Reason: operation.Reason}
+	return CprOAuthView{Name: operation.Name, OperationID: operation.OperationID, Status: operation.Status, Provider: operation.Provider, AccountID: operation.AccountID, ExpiresAt: time.Unix(operation.ExpiresAt, 0).UTC().Format(time.RFC3339), SourceID: operation.SourceID, NodeID: operation.NodeID, VersionID: operation.VersionID, ProxyID: operation.ProxyID, RouteGeneration: operation.RouteGeneration, Reason: operation.Reason}
 }
 
 func cprOAuthFailure(operation *model.CprOAuthOperation, reason string) CprOAuthView {
@@ -88,20 +89,32 @@ func cprOAuthFailure(operation *model.CprOAuthOperation, reason string) CprOAuth
 	return cprOAuthView(operation)
 }
 
-// cprOAuthApplyReceipt返回是否确认远端仍为pending，供显式取消释放启动结果未知的预留
-// 已进入unknown的操作始终只允许确认终态或取消，完成交换需明确创建新操作
+// 回执保留服务端操作事实，链接只在所属会话的有效待登录操作中返回
 func cprOAuthApplyReceipt(operation *model.CprOAuthOperation, receipt CprOAuthView, starting bool) (CprOAuthView, bool) {
 	now := time.Now().Unix()
 	if receipt.OperationID != operation.OperationID || receipt.Provider != operation.Provider {
 		return cprOAuthFailure(operation, "receipt_mismatch"), false
 	}
 	expiry, err := time.Parse(time.RFC3339, receipt.ExpiresAt)
-	terminal := receipt.Status == "completed" || receipt.Status == "cancelled" || receipt.Status == "failed"
+	terminal := receipt.Status == "completed" || receipt.Status == "cancelled" || receipt.Status == "failed" || receipt.Status == "expired"
 	if receipt.Status == "unknown" || err != nil || (!terminal && (expiry.Unix() <= now || operation.ExpiresAt <= now)) {
 		return cprOAuthFailure(operation, "receipt_unknown"), false
 	}
 	if operation.TargetAccountID != "" && receipt.AccountID != operation.TargetAccountID {
 		return cprOAuthFailure(operation, "receipt_mismatch"), false
+	}
+	if operation.AttemptKind == "token_import" && operation.VersionID == "" {
+		if receipt.SourceID != operation.SourceID || receipt.NodeID != operation.NodeID || receipt.AccountID == "" || receipt.VersionID == "" || receipt.ProxyID == "" || receipt.RouteGeneration <= 0 || !terminal {
+			return cprOAuthFailure(operation, "receipt_unknown"), false
+		}
+		operation.AccountID = receipt.AccountID
+		operation.VersionID = receipt.VersionID
+		operation.ProxyID = receipt.ProxyID
+		operation.RouteGeneration = receipt.RouteGeneration
+		operation.ExpiresAt = expiry.Unix()
+		operation.Status = receipt.Status
+		operation.Reason = receipt.Reason
+		return cprOAuthView(operation), false
 	}
 	firstBinding := operation.VersionID == "" && operation.AttemptAt == 0
 	if firstBinding && operation.CancelAttemptAt > 0 && receipt.Status == "cancelled" {
@@ -133,7 +146,7 @@ func cprOAuthApplyReceipt(operation *model.CprOAuthOperation, receipt CprOAuthVi
 		operation.ProxyID = receipt.ProxyID
 		operation.RouteGeneration = receipt.RouteGeneration
 		operation.ExpiresAt = expiry.Unix()
-		if !starting {
+		if operation.AttemptAt != 0 || operation.CancelAttemptAt != 0 {
 			return cprOAuthFailure(operation, "start_unknown"), true
 		}
 		authorization, err := url.Parse(receipt.AuthorizationURL)
@@ -150,15 +163,19 @@ func cprOAuthApplyReceipt(operation *model.CprOAuthOperation, receipt CprOAuthVi
 		return cprOAuthFailure(operation, "receipt_mismatch"), false
 	}
 	switch receipt.Status {
-	case "completed", "failed", "cancelled":
+	case "completed", "failed", "cancelled", "expired":
 		operation.Status = receipt.Status
-		operation.Reason = ""
+		operation.Reason = receipt.Reason
 	case "pending":
 		if operation.AttemptAt != 0 || operation.CancelAttemptAt != 0 || operation.Status != "pending" {
 			return cprOAuthFailure(operation, "completion_unknown"), true
 		}
 		operation.Reason = ""
-		return cprOAuthView(operation), true
+		view := cprOAuthView(operation)
+		if authorization, err := url.Parse(receipt.AuthorizationURL); err == nil && authorization.Host != "" && authorization.User == nil && (authorization.Scheme == "https" || authorization.Scheme == "http") {
+			view.AuthorizationURL = receipt.AuthorizationURL
+		}
+		return view, true
 	default:
 		return cprOAuthFailure(operation, "completion_unknown"), false
 	}
@@ -226,6 +243,7 @@ func ListCprOAuthOperations(ctx context.Context, identity AuthIdentity) ([]CprOA
 		if err != nil {
 			return nil, err
 		}
+		view.AuthorizationURL = ""
 		views = append(views, view)
 	}
 	return views, nil
@@ -247,6 +265,16 @@ func FinishCprOAuthOperation(ctx context.Context, identity AuthIdentity, id, kin
 			return view, nil
 		}
 	} else {
+		if kind == "complete" && storedStatus == "unknown" && view.Status == "pending" && remotePending && operation.AttemptAt == 0 && operation.CancelAttemptAt == 0 {
+			saved, saveErr := model.SaveCprOAuthReceipt(operation)
+			if saveErr != nil {
+				return CprOAuthView{}, saveErr
+			}
+			if !saved {
+				return CprOAuthView{}, model.ErrCprOAuthConflict
+			}
+			storedStatus = "pending"
+		}
 		if kind != "complete" || storedStatus != "pending" || view.Status != "pending" || !remotePending || operation.AttemptAt != 0 || operation.CancelAttemptAt != 0 {
 			return view, nil
 		}

@@ -44,6 +44,7 @@ func registerAccountEgressRoutes(apiRouter *gin.RouterGroup) {
 	sources.POST("/subscription-sources/refresh", controller.RefreshSubscriptionSource)
 	sources.POST("/subscription-sources/approve", controller.ApproveSubscriptionSource)
 
+	group.POST("/token-import", middleware.RequirePermission(authz.AccountEgressAuthorize), middleware.RequireBrowserSessionOrigin(), middleware.CriticalRateLimit(), controller.ImportCprAccountToken)
 	oauth := group.Group("/oauth/operations", middleware.RequirePermission(authz.AccountEgressAuthorize))
 	oauth.GET("", controller.ListCprOAuthOperations)
 	oauth.GET("/:operation_id", controller.GetCprOAuthOperation)

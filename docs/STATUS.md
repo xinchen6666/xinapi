@@ -2,7 +2,7 @@
 
 目标：[xinchen6666/xinapi](https://github.com/xinchen6666/xinapi)，单机 Docker Compose。更新：2026-11-28（Asia/Shanghai）。**本表是 X 任务的唯一进度来源**；主干收拢与部署状态分别见[交接单](HANDOFF.md)。
 
-X08 四类协议扩展已通过 [PR #19](https://github.com/xinchen6666/xinapi/pull/19)合入主干。当前 X16 目标五服务、HTTPS 和管理员入口已部署，真实五条 VLESS ECH 节点全部验证通过，实际模型调用等待账号持有人 OAuth，见[部署日志](worklog/X16-live.md)。
+当前 X11 官方登录与 Token 导入双入口已实现并部署，链接重开、取消终态、固定出口和隔离模型调用验证通过。真实账号由持有人在页面接入，见[账号接入修订](worklog/X11-account-access.md)。X16 的五服务与五条 ECH 节点继续运行。
 
 | ID | 状态 | 负责人／工作域 | 最近事实或验收入口 |
 | --- | --- | --- | --- |

@@ -93,6 +93,36 @@ func StartCprOAuthOperation(c *gin.Context) {
 	accountEgressOAuthAudit(c, "start", "", view, err)
 }
 
+func ImportCprAccountToken(c *gin.Context) {
+	identity, ok := cprOAuthIdentity(c)
+	if !ok {
+		return
+	}
+	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, 32<<10)
+	var input service.CprTokenImportInput
+	if err := common.DecodeJsonBody(c.Request.Body, &input); err != nil {
+		cprOAuthInvalid(c)
+		return
+	}
+	input.Name = strings.TrimSpace(input.Name)
+	input.AccessToken = strings.TrimSpace(input.AccessToken)
+	if input.Provider != "openai" || input.Name == "" || utf8.RuneCountInString(input.Name) > 100 || strings.ContainsFunc(input.Name, unicode.IsControl) || input.AccessToken == "" || len(input.AccessToken) > 16<<10 || strings.ContainsFunc(input.AccessToken, func(r rune) bool { return unicode.IsSpace(r) || unicode.IsControl(r) }) {
+		cprOAuthInvalid(c)
+		return
+	}
+	source, e1 := uuid.Parse(input.SourceID)
+	node, e2 := uuid.Parse(input.NodeID)
+	if e1 != nil || e2 != nil {
+		cprOAuthInvalid(c)
+		return
+	}
+	input.SourceID, input.NodeID = source.String(), node.String()
+	view, err := service.ImportCprAccountToken(c.Request.Context(), identity, input)
+	input.AccessToken = ""
+	cprOAuthResponse(c, view, err)
+	accountEgressOAuthAudit(c, "import_token", "", view, err)
+}
+
 func ListCprOAuthOperations(c *gin.Context) {
 	identity, ok := cprOAuthIdentity(c)
 	if !ok {
@@ -165,6 +195,7 @@ func accountEgressOAuthAudit(c *gin.Context, action, id string, view service.Cpr
 	if err == nil {
 		switch {
 		case action == "start" && view.Status == "pending",
+			action == "import_token" && view.Status == "completed",
 			action == "complete" && view.Status == "completed",
 			action == "cancel" && view.Status == "cancelled":
 			result = "success"

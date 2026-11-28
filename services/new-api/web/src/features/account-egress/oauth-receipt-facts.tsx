@@ -34,6 +34,7 @@ export function OAuthStatus(props: { status: AccountOAuthStatus }) {
     failed: t('Authorization failed'),
     unknown: t('Authorization result unknown'),
     cancelled: t('Authorization cancelled'),
+    expired: t('Authorization expired'),
   }
   return (
     <Badge variant={props.status === 'failed' ? 'destructive' : 'secondary'}>
@@ -48,7 +49,10 @@ export function OAuthReceiptFacts(props: { receipt: AccountOAuthReceipt }) {
   const receipt = props.receipt
   const fields = [
     [t('Provider'), receipt.provider === 'openai' ? 'OpenAI' : 'xAI'],
-    [t('Account ID'), receipt.account_id || '—'],
+    [
+      t('Account ID'),
+      receipt.status === 'completed' ? receipt.account_id || '—' : '—',
+    ],
     [t('Approved source'), receipt.source_id || '—'],
     [t('Approved node'), receipt.node_id || '—'],
     [t('Connection version'), receipt.version_id || '—'],
