@@ -368,6 +368,12 @@ E001–E006 是 X01 之前的历史证据，仅支持当时的工作与版本；
 - 前端类型与构建、Go 生产构建、Rust release 优化编译、格式和 Admin／Host 严格 Clippy 通过；直接调用生产模块的一次性验证覆盖 ECH 透传、等价默认字段和错误选项拒绝。独立源码复核通过，正式测试文件保持原样。
 - 官方 OAuth、实际模型目录、成员渠道和真实模型首用留给账号持有人接手；5 人属于计划使用规模，持续容量尚待实际观察。
 
+### E041 X11：官方登录与 Token 双入口
+
+- [修订日志](worklog/X11-account-access.md)和[结果](evidence/X11-account-access.json)记录链接重读、取消终态、到期状态、Token 实际上游验证与账号固定出口提交。会话隔离、匿名与跨站拒绝、错误 Token 清理通过。
+- 自造凭据经真实五服务完成官方单次回调交换、Token 导入、JSON／SSE／WSS 与停发；SQLite／MySQL／PostgreSQL 运行既有回执 CRUD／CAS 和会话检查通过。页面、Go、Rust 构建及限定静态检查通过，正式测试文件保持。
+- Chromium 实测重开／刷新链接、Token 清空和结果提示；[官方登录截图](evidence/account-official-login.png)与[Token 入口截图](evidence/account-token-import.png)均为隔离自造数据。正式站点双入口与原取消记录已复验，实际用户凭据由本人提交。
+
 ## 未来记录模板
 
 每个run使用唯一证据ID，写：任务ID；checked_at（时区ISO时间）；执行者；证据种类；真实提交/工作区摘要；脱敏环境；实际命令/步骤；预期；实际；`passed/failed/partial/skipped/not_run`；本地持久证据路径；缺口；失效条件。未执行的命令只放计划，不放实际记录。

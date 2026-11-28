@@ -1,0 +1,20 @@
+{
+  "task": "X11 official login and access token import",
+  "checked_at": "2026-11-28T15:25:00+08:00",
+  "result": "implemented_verified_and_deployed",
+  "reference": {"repository": "yang0/chatgpt2api-dsh", "version": "0.6.3", "adopted": "access-token entry and clear import result", "retained": "official browser OAuth, state, PKCE and fixed approved egress"},
+  "changes": ["pending authorization link can be read again by the owning session", "cancelled and failed terminal states survive expiry", "expired pending authorization has an explicit status", "token import validates upstream access through an approved node", "existing atomic account and managed route commit reused", "official login guidance and token import UI in seven languages"],
+  "verification": {
+    "frontend": "typecheck, targeted lint and production build passed",
+    "go": "vet and build passed",
+    "rust": "format, strict Clippy and optimized release build passed",
+    "real_isolated_services": ["reopened link retains original URL without exchange", "cancelled expiry and pending expiry", "official callback exchange occurs once", "valid token creates account and mandatory managed route", "invalid token returns failure and frees reservation", "JSON SSE WSS through imported account fixed egress", "stopped egress produces zero upstream generation"],
+    "security": ["another login session cannot read authorization link", "anonymous token import denied", "cross-origin token import denied", "expired link absent", "token omitted from receipt and cleared from form"],
+    "databases": {"sqlite": "3.50.4: receipt create/save/CAS and session checks passed", "mysql": "8.4.13: receipt create/save/CAS and session checks passed", "postgresql": "18.7: receipt create/save/CAS and session checks passed"},
+    "browser": "real Chromium guided authorization, reopen/reload, cancellation and token form validation passed",
+    "independent_source_review": "passed",
+    "formal_test_files": "unchanged"
+  },
+  "deployment": {"new_api_image": "xinapi/new-api:20261128-account-access", "cpr_image": "xinapi/cpr:20261128-account-access", "five_services": "ready", "existing_cancelled_records": "2 read as cancelled after expiry", "public_https": "200", "other_sites": "both responding", "real_upstream_account_login": "performed by account holder"},
+  "scope": ["Controlled token and model responses are synthetic; actual application, protocol servers and database paths executed", "Production checks preserve existing accounts and only open forms", "Token import carries no refresh token; official reauthorization provides refresh credentials", "Password and TOTP automation remains outside this change"]
+}

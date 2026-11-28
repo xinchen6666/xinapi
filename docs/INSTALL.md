@@ -64,7 +64,7 @@ python3 -B tools/start_compose.py --timeout 180
    ```
 
    New API 从只读挂载重新读取私有 Key；页面重试即可核对导入结果。已有目标文件时保留它。浏览器只使用 New API 登录会话。
-3. 在「账号与出口 → 来源与节点」创建来源，刷新并审阅差异，明确批准节点。对所选节点执行「验证连接」，再从「账号授权」选择该节点开始 OAuth；在同一 New API 登录会话提交回调并读取完成回执。浏览器第三方登录的网络与 CPR 服务端出口分别确认。
+3. 在「账号与出口 → 来源与节点」创建来源，刷新并明确批准节点，执行「验证连接」。随后进入「账号授权」，选择一种接入方式：**官方登录**选择节点后生成链接，打开官方页面完成登录，再从地址栏复制含 code/state 的完整 localhost 回调地址，在同一 New API 会话提交；即使 localhost 页面出现连接错误，地址栏仍可复制。关闭弹窗后可在原会话重新读取有效链接。**导入 Access Token**选择节点，在本人已登录的 ChatGPT 会话页复制 accessToken 的值，粘贴后点「导入并验证」；输入随提交立即清空，服务器经所选节点验证 Token 并保存账号。两种方式完成后都显示接入成功，详细步骤同时展示在页面。
 4. 使用 CPR 内部管理入口创建一个账号组，例如调用 `POST /api/admin/account-groups/create`，请求体为 `{"name":"Team","color":"#2563EBFF"}`，管理 Key 保持在部署者受保护的调用环境。从 New API 的账号详情将已授权账号加入该组。
 5. 在 New API 创建 [专用渠道](COMPOSE.md#x13-成员授权)：OpenAI 兼容、服务根 `http://cpr:8080`、启用所需模型和 Responses WebSocket。填写独立占位 Key，代理和覆盖留空。记录实际渠道 ID，设为 `new-api.env` 的 `XINAPI_CPR_CHANNEL_ID`，再执行：
 

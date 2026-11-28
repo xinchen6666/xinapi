@@ -3724,16 +3724,19 @@ VLESS 导出器的 `alterId=0`、`cipher=auto` 和空／null flow 归一为省�
 | 方法与路径 | 输入 | 结果 |
 | --- | --- | --- |
 | POST `/api/admin/oauth-operations/start` | `{operation_id,provider,name,source_id?,node_id?,account_id?}` | 同操作固定归属与路由；pending时包含authorization_url |
-| GET `/api/admin/oauth-operations` | `operation_id` | 纯只读脱敏操作与完成回执 |
+| GET `/api/admin/oauth-operations` | `operation_id` | 只读回执；有效 pending 操作包含原 authorization_url |
+| POST `/api/admin/oauth-operations/import-token` | `{operation_id,provider:"openai",name,source_id,node_id,access_token}` | 经批准节点验证 Token 后原子提交账号与固定路由；同操作仅返回既有结果 |
 | POST `/api/admin/oauth-operations/complete` | `{operation_id,callback_url}` | 领取一次交换，重复请求只读已有结果 |
 | POST `/api/admin/oauth-operations/cancel` | `{operation_id}` | 显式终结并回收零引用预留，可重复补齐清理 |
 
 operation_id使用UUID，provider为openai或xai，name为1–100字符。新授权提供source_id／node_id；重新授权提供account_id并沿用当前路由。响应成功均为200，公开字段为operation_id、status、provider、account_id、expires_at、source_id、node_id、version_id、proxy_id、route_generation；新授权的目标generation为1，授权成功后保持同一组冻结字段。
 
-status为pending、completed、failed、cancelled或unknown。preparing与completing等确认尚缺的内部状态显示unknown。授权期限为10分钟，完成回执沿用24小时保留期：授权期限之后仍可读取有效完成回执，真正回执缺失或过期显示unknown。GET保持纯读取，交换、引擎恢复和资源清理均由明确POST操作执行。未知结果的兑换保持关闭，新授权需要新操作ID。
+status 为 pending、completed、failed、cancelled、expired 或 unknown。取消和失败终态优先于到期；待登录操作到期显示 expired，交换结果尚缺时显示 unknown。授权期限为10分钟，完成回执沿用24小时保留期。GET 保持纯读取：有效 pending 返回已保存链接，交换、引擎恢复和资源清理均由明确 POST 执行。启动响应丢失且服务端仍为待登录时，可在原会话重读链接；回调已经发送的操作只确认结果。
 
 完成事务同时保存凭据、专用代理、必须出口要求、路由、操作和完成回执。已发布新账号可用同operation_id调用受管路由reconcile恢复入口。取消仅回收零账号／代理／路由引用的新入口；正在交换且尚有效的操作保持保护，过期或明确结束的未知操作可显式终结，原交换领取事实继续保留。
 
 New API浏览器入口要求真实登录会话、管理员角色及account_egress.authorize权限：POST／GET `/api/account-egress/oauth/operations`，GET `/:operation_id`，POST `/:operation_id/complete`与`/:operation_id/cancel`。列表仅返回当前会话记录。管理员与登录会话及两级认证版本由服务端保存；跨管理员或登录会话返回404，角色和会话撤销立即影响后续操作。回调文本仅POST给固定CPR，由Provider校验state／PKCE；浏览器第三方登录使用浏览器网络。公开部署按New API要求配置HTTPS、安全Cookie与精确可信Origin。
 
-错误reason为oauth_operation_invalid、oauth_operation_conflict、oauth_operation_missing、oauth_operation_egress_failed或oauth_operation_unavailable。服务端错误只返回安全提示，flow、state、令牌与入口认证保持服务端持有；授权链接仅启动响应返回。
+错误 reason 为 oauth_operation_invalid、oauth_operation_conflict、oauth_operation_missing、oauth_operation_egress_failed 或 oauth_operation_unavailable。服务端错误只返回安全提示，flow、令牌与入口认证保持服务端持有；授权链接仅向所属管理员会话的启动与单条详情响应返回，响应禁止缓存。
+
+New API 提供 `POST /api/account-egress/token-import`，输入为 `{provider:"openai",name,source_id,node_id,access_token}`，操作 UUID 由 Go 服务端生成。要求当前浏览器登录会话、授权权限和可信 Origin。Token 仅单次转交 CPR，临时输入提交后清空，操作记录只保存归属和结果。支持单个有效 Access Token，身份字段从既有 Provider 解析，上游实际访问验证成功才创建账号；失败归还预留。账号、代理、必须出口要求与路由复用既有原子授权提交。纯 Access Token 沿自身有效期使用，自动续期凭据可通过官方重新授权取得。
