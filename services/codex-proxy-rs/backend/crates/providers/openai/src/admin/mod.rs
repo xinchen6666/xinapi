@@ -542,6 +542,42 @@ impl ProviderAdmin for OpenAiAdminProvider {
         })
     }
 
+    async fn prepare_managed_token_import(
+        &self,
+        pending: PendingAuthorizationMutation,
+        account_id: ProviderAccountId,
+        access_token: String,
+    ) -> Result<PreparedAuthorizationCommit, ProviderAdminError> {
+        if pending.provider_kind() != &self.provider_kind
+            || pending.managed_authorization().is_none()
+        {
+            return Err(provider_admin_error(ProviderAdminErrorKind::Invalid));
+        }
+        let AuthorizationMutationTarget::Create { name } = pending.target() else {
+            return Err(provider_admin_error(ProviderAdminErrorKind::Invalid));
+        };
+        let proxy = pending
+            .outbound_proxy()
+            .ok_or_else(|| provider_admin_error(ProviderAdminErrorKind::Invalid))?;
+        let prepared = self
+            .credentials
+            .prepare_managed_access_token(account_id.to_string(), name.clone(), access_token, proxy)
+            .await
+            .map_err(map_credential_admin_error)?;
+        self.quota
+            .verify_import_access(&prepared)
+            .await
+            .map_err(map_quota_error)?;
+        let prepared = self.preserve_existing_installation_id(prepared).await?;
+        Ok(PreparedAuthorizationCommit::new(
+            pending,
+            PreparedAuthorizationCredential::Create(Box::new(prepared_create(
+                prepared,
+                Utc::now(),
+            )?)),
+        ))
+    }
+
     async fn start_authorization(
         &self,
         pending: gateway_admin::model::provider_credentials::PendingAuthorizationMutation,

@@ -122,6 +122,37 @@ impl CodexCredentialQuotaService {
         Ok(())
     }
 
+    /// 导入前使用内存凭据验证实际上游访问，账号与额度尚未落库
+    pub(crate) async fn verify_import_access(
+        &self,
+        prepared: &gateway_core::account::NewProviderAccount,
+    ) -> Result<(), CodexCredentialQuotaError> {
+        let credential = crate::credential::CodexCredentialCodec::decode(&prepared.credential)
+            .map_err(|_| CodexCredentialQuotaError::InvalidCredentialData)?;
+        let runtime = PreparedCodexRuntimeCredential {
+            account: prepared.account.clone(),
+            credential,
+        };
+        let client = CodexBackendClient::new(
+            self.http.clone(),
+            self.base_url.clone(),
+            self.profile.clone(),
+        );
+        match fetch_usage_once(&client, &runtime).await {
+            Ok(value) if value.is_object() => Ok(()),
+            Ok(_) | Err(CodexQuotaFetchAttemptError::InvalidCredential) => {
+                Err(CodexCredentialQuotaError::InvalidCredentialData)
+            }
+            Err(CodexQuotaFetchAttemptError::Upstream(error)) => {
+                Err(CodexCredentialQuotaError::Upstream {
+                    status: upstream_error_status(&error),
+                    code: None,
+                    detail: "Token validation request failed".into(),
+                })
+            }
+        }
+    }
+
     pub async fn synchronize(&self) -> Result<CodexQuotaSyncSummary, CodexCredentialQuotaError> {
         self.synchronize_at(SystemTime::now()).await
     }

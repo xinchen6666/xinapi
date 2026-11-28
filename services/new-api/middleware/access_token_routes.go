@@ -40,6 +40,7 @@ func accessTokenScopeRule(scope string) accessTokenRouteRule {
 // full path. Session-only routes belong here even when they use RequirePermission;
 // routes using a Casbin permission as their PAT scope declare it at registration.
 var accessTokenRouteRules = map[string]accessTokenRouteRule{
+	"POST /api/account-egress/token-import":                            accessTokenSessionRule,
 	"GET /api/account-egress/oauth/operations":                         accessTokenSessionRule,
 	"POST /api/account-egress/oauth/operations":                        accessTokenSessionRule,
 	"GET /api/account-egress/oauth/operations/:operation_id":           accessTokenSessionRule,

@@ -78,7 +78,9 @@ export function OAuthReceiptDialog(props: Props) {
               {t('Refresh receipt')}
             </Button>
             {receipt.data &&
-              ['pending', 'unknown'].includes(receipt.data.status) && (
+              ['pending', 'unknown', 'expired'].includes(
+                receipt.data.status
+              ) && (
                 <Button
                   type='button'
                   variant='outline'

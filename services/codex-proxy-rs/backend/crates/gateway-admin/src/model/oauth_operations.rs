@@ -18,6 +18,18 @@ pub struct StartOAuthOperation {
     pub node_id: Option<String>,
 }
 
+/// Token 只随本次请求传递，持久操作保留归属与节点事实
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct ImportManagedToken {
+    pub operation_id: String,
+    pub provider: String,
+    pub name: String,
+    pub source_id: String,
+    pub node_id: String,
+    pub access_token: String,
+}
+
 /// 私有操作事实仅经服务层投影，flow与入口凭据保持服务端持有
 #[derive(Clone)]
 pub struct OAuthOperation {
@@ -51,8 +63,14 @@ impl OAuthOperation {
             } else {
                 "unknown"
             }
+        } else if matches!(self.phase.as_str(), "cancelled" | "failed") {
+            self.phase.as_str()
         } else if self.expires_at <= Utc::now() {
-            "unknown"
+            if matches!(self.phase.as_str(), "preparing" | "pending") {
+                "expired"
+            } else {
+                "unknown"
+            }
         } else {
             match self.phase.as_str() {
                 "pending" => "pending",

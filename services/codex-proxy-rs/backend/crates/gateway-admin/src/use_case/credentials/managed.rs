@@ -6,10 +6,12 @@ use crate::{
         AdminError, AdminErrorKind, MutationActor, MutationContext,
         engines::{EngineFacts, EngineOwner, EngineOwnerKind},
         managed_routes::{RouteNode, RouteObservation},
-        oauth_operations::{OAuthOperation, OAuthOperationView, StartOAuthOperation},
+        oauth_operations::{
+            ImportManagedToken, OAuthOperation, OAuthOperationView, StartOAuthOperation,
+        },
         provider_credentials::{
             AuthorizationMutationTarget, AuthorizationOwnerBinding, AuthorizationReceiptKey,
-            CompleteAuthorization, PendingAuthorizationMutation,
+            AuthorizationStarted, CompleteAuthorization, PendingAuthorizationMutation,
         },
     },
     ports::{
@@ -140,11 +142,50 @@ impl CredentialsService {
             .get(&id, &context.actor)
             .await
             .map_err(error)?
-            .map_or_else(|| OAuthOperationView::unknown(id), |op| op.view(false)))
+            .map_or_else(|| OAuthOperationView::unknown(id), |op| op.view(true)))
     }
     pub async fn start_oauth_operation(
         &self,
+        request: StartOAuthOperation,
+        context: &MutationContext,
+    ) -> Result<OAuthOperationView, AdminError> {
+        self.start_managed_operation(request, None, context).await
+    }
+
+    pub async fn import_managed_token(
+        &self,
+        command: ImportManagedToken,
+        context: &MutationContext,
+    ) -> Result<OAuthOperationView, AdminError> {
+        if command.provider != "openai"
+            || command.access_token.is_empty()
+            || command.access_token.len() > 16384
+            || command
+                .access_token
+                .chars()
+                .any(|c| c.is_whitespace() || c.is_control())
+        {
+            return Err(AdminError::invalid("请输入有效的 OpenAI Access Token"));
+        }
+        self.start_managed_operation(
+            StartOAuthOperation {
+                operation_id: command.operation_id,
+                provider: command.provider,
+                name: command.name,
+                account_id: None,
+                source_id: Some(command.source_id),
+                node_id: Some(command.node_id),
+            },
+            Some(command.access_token),
+            context,
+        )
+        .await
+    }
+
+    async fn start_managed_operation(
+        &self,
         mut request: StartOAuthOperation,
+        access_token: Option<String>,
         context: &MutationContext,
     ) -> Result<OAuthOperationView, AdminError> {
         let ports = self.managed()?;
@@ -274,6 +315,7 @@ impl CredentialsService {
         if !created {
             return Ok(operation.view(true));
         }
+        let importing = access_token.is_some();
         let result = async {
             let facts = self.authorization_facts(&operation).await?;
             ports
@@ -345,6 +387,70 @@ impl CredentialsService {
             .with_outbound_proxy_id(Some(operation.proxy_id.clone()))
             .with_managed_authorization(operation.request.operation_id.clone());
             let scope = self.for_provider(&kind)?;
+            if let Some(access_token) = access_token {
+                let id = &operation.request.operation_id;
+                let flow_id = format!("token-import:{id}");
+                ports
+                    .store
+                    .ready(
+                        id,
+                        &context.actor,
+                        AuthorizationStarted {
+                            flow_id: flow_id.clone(),
+                            authorization_url: String::new(),
+                            expires_at: operation.expires_at,
+                        },
+                        observation,
+                    )
+                    .await
+                    .map_err(error)?;
+                ports
+                    .store
+                    .claim(id, &context.actor)
+                    .await
+                    .map_err(error)?
+                    .ok_or_else(conflict)?;
+                let prepared = match scope
+                    .provider
+                    .prepare_managed_token_import(
+                        pending,
+                        ProviderAccountId::new(operation.planned_account_id.clone())
+                            .map_err(|_| conflict())?,
+                        access_token,
+                    )
+                    .await
+                {
+                    Ok(prepared) => prepared,
+                    Err(_) => {
+                        ports
+                            .store
+                            .fail(id, &context.actor, "token_import_rejected")
+                            .await
+                            .map_err(error)?;
+                        return Err(AdminError::invalid("Token 验证失败，请核对令牌与所选节点"));
+                    }
+                };
+                let prepared = super::super::validate_authorization_commit(
+                    &kind,
+                    context,
+                    prepared,
+                    "managed token import",
+                )
+                .await?;
+                let key = AuthorizationReceiptKey::new(kind.clone(), &flow_id, context)?;
+                let outcome = super::super::commit_authorization(
+                    self.accounts.as_ref(),
+                    prepared,
+                    key,
+                    None,
+                    context,
+                    "managed token import",
+                )
+                .await?;
+                self.publish_authorization(&scope.provider, outcome, &context.request_id)
+                    .await?;
+                return self.oauth_operation(id, context).await;
+            }
             let started = scope
                 .provider
                 .start_authorization(pending)
@@ -369,11 +475,20 @@ impl CredentialsService {
                 .fail(
                     &operation.request.operation_id,
                     &context.actor,
-                    "start_failed",
+                    if importing {
+                        "token_import_rejected"
+                    } else {
+                        "start_failed"
+                    },
                 )
                 .await;
             self.reclaim_authorization(&operation, &context.actor)
                 .await?;
+            if importing {
+                return self
+                    .oauth_operation(&operation.request.operation_id, context)
+                    .await;
+            }
         }
         result
     }
@@ -430,7 +545,13 @@ impl CredentialsService {
         let Some(operation) = ports.store.get(&id, &context.actor).await.map_err(error)? else {
             return Ok(OAuthOperationView::unknown(id));
         };
-        if operation.phase != "pending" || operation.expires_at <= Utc::now() {
+        if operation.phase != "pending"
+            || operation.expires_at <= Utc::now()
+            || operation
+                .flow_id
+                .as_deref()
+                .is_some_and(|flow| flow.starts_with("token-import:"))
+        {
             return Ok(operation.view(false));
         }
         if callback_url.is_empty()

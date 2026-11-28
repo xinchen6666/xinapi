@@ -323,7 +323,7 @@ impl OAuthOperationStore for PgOAuthOperationStore {
         owner: &MutationActor,
         reason: &str,
     ) -> AdminStoreResult<()> {
-        sqlx::query("update managed_oauth_operations set phase=case when phase='preparing' then 'failed' else phase end,reason=$3,authorization_url=null,updated_at=now() where operation_id=$1 and owner=$2 and phase in ('preparing','completing')").bind(id(operation_id)?).bind(Json(owner)).bind(reason).execute(&self.pool).await.map_err(unavailable)?;
+        sqlx::query("update managed_oauth_operations set phase=case when phase='preparing' or (phase='completing' and $3='token_import_rejected' and flow_id like 'token-import:%') then 'failed' else phase end,reason=$3,authorization_url=null,updated_at=now() where operation_id=$1 and owner=$2 and phase in ('preparing','completing')").bind(id(operation_id)?).bind(Json(owner)).bind(reason).execute(&self.pool).await.map_err(unavailable)?;
         Ok(())
     }
     async fn cancel(

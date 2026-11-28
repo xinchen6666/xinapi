@@ -33,7 +33,7 @@ import {
 import { Textarea } from '@/components/ui/textarea'
 
 import type { useOAuthReceipt } from './hooks/use-oauth-receipt'
-import { OAuthReceiptFacts } from './oauth-receipt-facts'
+import { OAuthReceiptFacts, OAuthStatus } from './oauth-receipt-facts'
 
 export function OAuthReceiptContent(props: {
   state: ReturnType<typeof useOAuthReceipt>
@@ -62,7 +62,37 @@ export function OAuthReceiptContent(props: {
       )}
       {receipt.data && !receipt.isError && (
         <FieldGroup>
-          <OAuthReceiptFacts receipt={receipt.data} />
+          <div>
+            <OAuthStatus status={receipt.data.status} />
+          </div>
+          {receipt.data.status === 'completed' && (
+            <Alert>
+              <AlertDescription>
+                {t(
+                  'Account connected. Open Upstream accounts to assign its team group.'
+                )}
+              </AlertDescription>
+            </Alert>
+          )}
+          {canComplete && (
+            <ol className='list-decimal space-y-2 pl-5 text-sm'>
+              <li>
+                {t(
+                  'Open the authorization link and sign in to your provider account.'
+                )}
+              </li>
+              <li>
+                {t(
+                  'After approval, copy the full localhost callback address from the browser address bar, including code and state. The local page may show a connection error.'
+                )}
+              </li>
+              <li>
+                {t(
+                  'Return here, paste the callback address, and submit it once.'
+                )}
+              </li>
+            </ol>
+          )}
           {receipt.data.status === 'pending' &&
             link &&
             !expired &&
@@ -119,7 +149,8 @@ export function OAuthReceiptContent(props: {
                 </AlertDescription>
               </Alert>
             )}
-          {expired && receipt.data.status === 'pending' && (
+          {(receipt.data.status === 'expired' ||
+            (expired && receipt.data.status === 'pending')) && (
             <Alert>
               <AlertDescription>
                 {t(
@@ -167,6 +198,23 @@ export function OAuthReceiptContent(props: {
               </FieldGroup>
             </form>
           )}
+          {receipt.data.status === 'failed' && (
+            <Alert variant='destructive'>
+              <AlertDescription>
+                {t(
+                  'Account connection failed. Check the token or node, then start a new attempt.'
+                )}
+              </AlertDescription>
+            </Alert>
+          )}
+          <details className='rounded-lg border p-3'>
+            <summary className='cursor-pointer text-sm'>
+              {t('Connection details')}
+            </summary>
+            <div className='pt-3'>
+              <OAuthReceiptFacts receipt={receipt.data} />
+            </div>
+          </details>
           {errorMessage && (
             <Alert variant='destructive'>
               <AlertDescription>{errorMessage}</AlertDescription>

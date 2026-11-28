@@ -32,6 +32,7 @@ import { OAuthReceiptDialog } from './oauth-receipt-dialog'
 import { OAuthStatus } from './oauth-receipt-facts'
 import { OAuthStartDialog } from './oauth-start-dialog'
 import type { AccountOAuthReceipt, AccountOAuthTarget } from './oauth-types'
+import { TokenImportDialog } from './token-import-dialog'
 
 const EMPTY_RECEIPTS: AccountOAuthReceipt[] = []
 type Props = {
@@ -45,6 +46,7 @@ type Props = {
 
 export function OAuthPanel(props: Props) {
   const { t } = useTranslation()
+  const [importing, setImporting] = useState(false)
   const [active, setActive] = useState<{
     operationId: string
     authorizationUrl?: string
@@ -69,15 +71,15 @@ export function OAuthPanel(props: Props) {
   const columns: ColumnDef<AccountOAuthReceipt>[] = [
     {
       accessorKey: 'operation_id',
-      header: t('Authorization operation ID'),
+      header: t('Account name'),
       meta: { mobileTitle: true },
       cell: ({ row }) => (
         <Button
           variant='link'
-          className='h-auto font-mono text-xs break-all whitespace-normal'
+          className='h-auto text-sm break-all whitespace-normal'
           onClick={() => setActive({ operationId: row.original.operation_id })}
         >
-          {row.original.operation_id}
+          {row.original.name || row.original.operation_id}
         </Button>
       ),
     },
@@ -96,7 +98,11 @@ export function OAuthPanel(props: Props) {
       accessorKey: 'account_id',
       header: t('Account ID'),
       cell: ({ row }) => (
-        <span className='break-all'>{row.original.account_id || '—'}</span>
+        <span className='break-all'>
+          {row.original.status === 'completed'
+            ? row.original.account_id || '—'
+            : '—'}
+        </span>
       ),
     },
     {
@@ -133,7 +139,7 @@ export function OAuthPanel(props: Props) {
     <>
       <p className='text-muted-foreground text-sm'>
         {t(
-          'Receipts belong to the dashboard login session that started the authorization.'
+          'Choose official login or import an existing access token. Both methods use your approved node.'
         )}
       </p>
       {query.isError ? (
@@ -159,11 +165,34 @@ export function OAuthPanel(props: Props) {
               >
                 {t('Refresh receipts')}
               </Button>
+              <Button
+                size='sm'
+                variant='outline'
+                onClick={() => setImporting(true)}
+              >
+                {t('Import access token')}
+              </Button>
               <Button size='sm' onClick={props.onStart}>
-                {t('Start authorization')}
+                {t('Official login')}
               </Button>
             </div>
           }
+        />
+      )}
+      {importing && (
+        <TokenImportDialog
+          userId={props.userId}
+          sessionId={props.sessionId}
+          onClose={() => {
+            setImporting(false)
+            void query.refetch()
+          }}
+          onAccessDenied={props.onAccessDenied}
+          onImported={(receipt) => {
+            setImporting(false)
+            setActive({ operationId: receipt.operation_id })
+            void query.refetch()
+          }}
         />
       )}
       {props.startTarget && (
